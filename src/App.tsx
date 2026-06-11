@@ -950,7 +950,18 @@ function App() {
                 onChange={e => setPerfilBarbero({...perfilBarbero, whatsapp: e.target.value})} />
               <p style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>Para recibir notificaciones de nuevas citas</p>
             </div>
-
+<div className="form-group" style={{ marginBottom:12, marginTop:12 }}>
+  <label>🔑 API Key de CallMeBot</label>
+  <input 
+    type="text" 
+    placeholder="Ej: 123456" 
+    value={perfilBarbero.apikey_whatsapp || ''}
+    onChange={e => setPerfilBarbero({...perfilBarbero, apikey_whatsapp: e.target.value})}
+  />
+  <p style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>
+    Envía "I allow callmebot to send me messages" al +34 644 33 42 61 por WhatsApp para obtener tu apikey
+  </p>
+</div>
             {/* HORARIO */}
             <div style={{ marginTop:16 }}>
               <p style={{ color:'var(--cream-3)', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>📅 Mi horario</p>
