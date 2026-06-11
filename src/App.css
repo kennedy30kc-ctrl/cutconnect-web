@@ -943,3 +943,94 @@ input, textarea, select, button { font-family: inherit; font-size: inherit; }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .splash-title { font-size: 32px; }
 }
+/* ============================================================
+   IMAGE UPLOADER
+   ============================================================ */
+.image-uploader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 220px;
+}
+
+.uploader-preview {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  border: 2px dashed var(--dark-5);
+  background: var(--dark-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.uploader-preview:hover {
+  border-color: var(--red);
+}
+
+.uploader-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uploader-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+
+.uploader-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cream);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.btn-upload {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  color: var(--cream);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.btn-upload:hover {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.btn-upload:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   INVITE CODE SECTION
+   ============================================================ */
+.invite-code-section {
+  background: var(--dark-3);
+  border: 1px solid var(--dark-5);
+  border-left: 3px solid var(--red);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
