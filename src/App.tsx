@@ -1026,7 +1026,97 @@ function App() {
       </div>
     </div>
   )
+// ============================================================
+  // DUEÑO — TRIAL VENCIDO (PANTALLA DE PAGO)
+  // ============================================================
+  if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='trial') {
+    const diasRestantes = userData?.fecha_trial_inicio
+      ? Math.max(0, Math.ceil(14 - (Date.now() - new Date(userData.fecha_trial_inicio).getTime()) / (1000*60*60*24)))
+      : 14
 
+    if (diasRestantes <= 0) {
+      return (
+        <div className="dashboard-container">
+          <nav className="navbar">
+            <div className="navbar-left">
+              <div className="navbar-brand"><span>💈</span><h1>CutConnect</h1></div>
+              <span className="role-badge" style={{ background:'#E74C3C' }}>⛔ Vencido</span>
+            </div>
+            <div className="nav-links">
+              <button className="btn-logout" onClick={handleLogout}>Salir</button>
+            </div>
+          </nav>
+          <div className="dashboard-content">
+            <div className="page">
+              <div style={{ textAlign:'center', padding:'20px 0' }}>
+                <span style={{ fontSize:60 }}>⛔</span>
+                <h2 style={{ color:'#E74C3C', marginTop:12 }}>Tu período de prueba ha vencido</h2>
+                <p style={{ color:'var(--muted)', maxWidth:400, margin:'0 auto 24px' }}>
+                  Para seguir usando CutConnect y que tus clientes puedan ver tu negocio, renueva tu suscripción por <strong style={{ color:'var(--gold)' }}>$12 USD/mes</strong>.
+                </p>
+              </div>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:16, maxWidth:500, margin:'0 auto' }}>
+
+                {/* STRIPE */}
+                <div style={{ background:'var(--dark-3)', border:'2px solid #635BFF', borderRadius:16, padding:24 }}>
+                  <h3 style={{ margin:'0 0 8px 0', color:'#635BFF' }}>💳 Pagar con tarjeta</h3>
+                  <p style={{ color:'var(--muted)', fontSize:13, margin:'0 0 16px 0' }}>Visa, Mastercard, débito — pago seguro con Stripe</p>
+                  <button
+                    className="btn-primary"
+                    style={{ width:'100%', background:'#635BFF', borderColor:'#635BFF', fontSize:16, padding:'14px' }}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${API}/api/pagos/stripe/crear`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ barberia_id: userData?.barberia_id, email: userData?.email })
+                        })
+                        const data = await res.json()
+                        if (data.success) window.location.href = data.url
+                        else alert('Error: ' + data.error)
+                      } catch { alert('Error de conexión') }
+                    }}
+                  >
+                    💳 Pagar $12 USD ahora
+                  </button>
+                </div>
+
+                {/* BINANCE */}
+                <div style={{ background:'var(--dark-3)', border:'2px solid #F0B90B', borderRadius:16, padding:24 }}>
+                  <h3 style={{ margin:'0 0 8px 0', color:'#F0B90B' }}>📱 Pagar con Binance Pay</h3>
+                  <p style={{ color:'var(--muted)', fontSize:13, margin:'0 0 16px 0' }}>Envía exactamente <strong style={{ color:'#F0B90B' }}>$12 USDT</strong> escaneando el QR</p>
+                  <div style={{ textAlign:'center', marginBottom:16 }}>
+                    <img
+                      src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg"
+                      alt="QR Binance Pay"
+                      style={{ width:180, height:180, borderRadius:12, border:'2px solid #F0B90B' }}
+                    />
+                  </div>
+                  <div style={{ background:'var(--dark-2)', borderRadius:8, padding:12, marginBottom:12 }}>
+                    <p style={{ fontSize:12, color:'var(--muted)', margin:'0 0 4px 0' }}>Pay ID</p>
+                    <p style={{ fontSize:20, fontWeight:900, letterSpacing:4, color:'#F0B90B', margin:0 }}>176779028</p>
+                  </div>
+                  <p style={{ fontSize:12, color:'var(--muted)', margin:'0 0 12px 0' }}>
+                    Después de pagar, envía el comprobante por WhatsApp para activar tu cuenta:
+                  </p>
+                  
+                    href="https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20de%20CutConnect%20por%20Binance%20Pay.%20Adjunto%20el%20comprobante."
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display:'block', background:'#25D366', color:'#fff', textAlign:'center', padding:'12px', borderRadius:8, fontWeight:700, textDecoration:'none', fontSize:14 }}
+                  >
+                    📲 Enviar comprobante por WhatsApp
+                  </a>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  }
   // ============================================================
   // DUEÑO ACTIVO
   // ============================================================
