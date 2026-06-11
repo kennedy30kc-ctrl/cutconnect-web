@@ -910,93 +910,102 @@ function App() {
           )}
 
           {currentPage==='perfil' && (
-            <div className="page">
-              <h2>👤 Mi Perfil</h2>
-              {!perfilBarbero
-                ? <div className="empty-state"><span className="empty-icon">✂️</span><p>No tienes perfil vinculado. Pídele el código de invitación a tu dueño.</p></div>
-                : (
-                  <div>
-                    <div className="welcome-card owner" style={{ textAlign:'center', paddingTop:24 }}>
-                      <BarberoAvatar foto={perfilBarbero.foto} nombre={perfilBarbero.nombre} size={90} />
-                      <h3 style={{ marginTop:12 }}>{perfilBarbero.nombre}</h3>
-                      <p style={{ color:'var(--muted)' }}>✂️ {perfilBarbero.especialidad}</p>
-                      {perfilBarbero.calificacion_promedio > 0 && <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:4 }}><Estrellas valor={Math.round(perfilBarbero.calificacion_promedio)} /><span style={{ color:'var(--muted)', fontSize:13 }}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span></div>}
-                    </div>
+  <div className="page">
+    <h2>👤 Mi Perfil</h2>
+    {!perfilBarbero
+      ? <div className="empty-state"><span className="empty-icon">✂️</span><p>No tienes perfil vinculado. Pídele el código de invitación a tu dueño.</p></div>
+      : (
+        <div>
+          <div className="welcome-card owner" style={{ textAlign:'center', paddingTop:24 }}>
+            <BarberoAvatar foto={perfilBarbero.foto} nombre={perfilBarbero.nombre} size={90} />
+            <h3 style={{ marginTop:12 }}>{perfilBarbero.nombre}</h3>
+            <p style={{ color:'var(--muted)' }}>✂️ {perfilBarbero.especialidad}</p>
+            {perfilBarbero.calificacion_promedio > 0 && <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:4 }}><Estrellas valor={Math.round(perfilBarbero.calificacion_promedio)} /><span style={{ color:'var(--muted)', fontSize:13 }}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span></div>}
+          </div>
 
-                    <div style={{ marginTop:24 }}>
-                      <h3>📷 Mi foto</h3>
-                      <p style={{ color:'var(--muted)', fontSize:13, marginBottom:12 }}>Tómate una selfie o elige una foto de tu galería</p>
-                      <ImageUploader tipo="barbero" id={perfilBarbero.id} urlActual={perfilBarbero.foto} label="Toca para subir tu foto"
-                        onSuccess={(url) => { setPerfilBarbero({ ...perfilBarbero, foto: url }); setUserData({ ...userData, foto: url }) }} />
-                    </div>
+          {/* FOTO */}
+          <div style={{ marginTop:24 }}>
+            <h3>📷 Mi foto</h3>
+            <ImageUploader tipo="barbero" id={perfilBarbero.id} urlActual={perfilBarbero.foto} label="Toca para subir tu foto"
+              onSuccess={(url) => { setPerfilBarbero({ ...perfilBarbero, foto: url }); setUserData({ ...userData, foto: url }) }} />
+          </div>
 
-                    <div style={{ marginTop:24 }}>
-                      <h3>📝 Mi descripción</h3>
-                      {!editandoDesc
-                        ? <div>
-                            <p style={{ color: perfilBarbero.descripcion ? 'var(--cream)' : 'var(--muted)', fontSize:14 }}>{perfilBarbero.descripcion || 'Sin descripción aún. Cuéntales a tus clientes quién eres.'}</p>
-                            <button className="btn-secondary" style={{ marginTop:8 }} onClick={() => setEditandoDesc(true)}>✏️ Editar descripción</button>
-                          </div>
-                        : <div>
-                            <textarea value={descripcionBarbero} onChange={e => setDescripcionBarbero(e.target.value)} placeholder="Ej: Especialista en fades y barba clásica, 5 años de experiencia..." style={{ width:'100%', minHeight:80, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderRadius:8, padding:10, color:'var(--cream)', fontSize:13, resize:'vertical', boxSizing:'border-box' }} />
-                            <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                              <button className="btn-primary" onClick={handleGuardarDescripcion}>✅ Guardar</button>
-                              <button className="btn-secondary" onClick={() => setEditandoDesc(false)}>Cancelar</button>
-                            </div>
-                          </div>
-                      }
-                    </div>
+          {/* DATOS EDITABLES */}
+          <div style={{ marginTop:24, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderLeft:'3px solid var(--red)', borderRadius:12, padding:24 }}>
+            <h3 style={{ marginTop:0 }}>✏️ Editar mi información</h3>
+            <div className="form-group" style={{ marginBottom:12 }}>
+              <label>Especialidad</label>
+              <input type="text" placeholder="Fades, barba clásica..." value={descripcionBarbero} onChange={e => setDescripcionBarbero(e.target.value)}
+                defaultValue={perfilBarbero.especialidad} />
+            </div>
+            <div className="form-group" style={{ marginBottom:12 }}>
+              <label>Descripción</label>
+              <textarea placeholder="Cuéntales a tus clientes quién eres..." value={perfilBarbero.descripcion || ''}
+                onChange={e => setPerfilBarbero({...perfilBarbero, descripcion: e.target.value})}
+                style={{ width:'100%', minHeight:80, background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:8, padding:10, color:'var(--cream)', fontSize:13, resize:'vertical', boxSizing:'border-box' }} />
+            </div>
+            <div className="form-group" style={{ marginBottom:12 }}>
+              <label>📱 Mi WhatsApp</label>
+              <input type="tel" placeholder="+57 300 000 0000" value={perfilBarbero.whatsapp || ''}
+                onChange={e => setPerfilBarbero({...perfilBarbero, whatsapp: e.target.value})} />
+              <p style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>Para recibir notificaciones de nuevas citas</p>
+            </div>
 
-                    <div style={{ marginTop:24 }}>
-                      <h3>📅 Mi horario</h3>
-                      <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                        {DIAS.map(dia => {
-                          const h = perfilBarbero.horario?.[dia]
-                          return (
-                            <div key={dia} style={{ background: h?.activo ? 'rgba(192,57,43,0.15)' : 'var(--dark-3)', border:`1px solid ${h?.activo ? 'rgba(192,57,43,0.4)' : 'var(--dark-5)'}`, borderRadius:8, padding:'8px 12px', minWidth:80, textAlign:'center' }}>
-                              <div style={{ fontWeight:700, color:'var(--cream)', fontSize:13 }}>{DIAS_LABELS[dia]}</div>
-                              {h?.activo ? <div style={{ fontSize:11, color:'var(--muted)', marginTop:2 }}>{h.inicio}–{h.fin}</div> : <div style={{ fontSize:11, color:'var(--muted)', marginTop:2 }}>Libre</div>}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop:24, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderRadius:12, padding:16 }}>
-                      <p style={{ color:'var(--muted)', fontSize:12, marginBottom:4 }}>🔑 Código de invitación</p>
-                      <div style={{ fontSize:28, fontWeight:900, letterSpacing:8, color:'var(--gold)', textAlign:'center', padding:'12px 0' }}>{perfilBarbero.codigo_invitacion || '——'}</div>
-                      <p style={{ color:'var(--muted)', fontSize:11, textAlign:'center' }}>Comparte con colegas para unirse a tu barbería</p>
-                    </div>
+            {/* HORARIO */}
+            <div style={{ marginTop:16 }}>
+              <p style={{ color:'var(--cream-3)', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>📅 Mi horario</p>
+              {DIAS.map(dia => {
+                const h = perfilBarbero.horario?.[dia] || { activo: false, inicio: '08:00', fin: '18:00' }
+                return (
+                  <div key={dia} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, flexWrap:'wrap' }}>
+                    <label style={{ display:'flex', alignItems:'center', gap:6, minWidth:100, cursor:'pointer' }}>
+                      <input type="checkbox" checked={h.activo} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, activo: e.target.checked}}})}
+                        style={{ width:16, height:16, accentColor:'var(--red)' }} />
+                      <span style={{ color:'var(--cream)', fontSize:13, fontWeight:700 }}>{DIAS_LABELS[dia]}</span>
+                    </label>
+                    {h.activo && <>
+                      <input type="time" value={h.inicio} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, inicio: e.target.value}}})}
+                        style={{ padding:'6px 10px', fontSize:13, background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:6, color:'var(--cream)' }} />
+                      <span style={{ color:'var(--muted)' }}>a</span>
+                      <input type="time" value={h.fin} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, fin: e.target.value}}})}
+                        style={{ padding:'6px 10px', fontSize:13, background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:6, color:'var(--cream)' }} />
+                    </>}
+                    {!h.activo && <span style={{ color:'var(--muted)', fontSize:12 }}>No trabajo este día</span>}
                   </div>
                 )
-              }
+              })}
             </div>
-          )}
 
-          {currentPage==='citas' && (
-            <div className="page">
-              <h2>📋 Mis citas ({citas.length})</h2>
-              {citas.length===0
-                ? <div className="empty-state"><span className="empty-icon">📌</span><p>No tienes citas asignadas aún</p></div>
-                : <div className="citas-grid">
-                    {citas.map((c: any) => (
-                      <div key={c.id} className="cita-card">
-                        <h4>{c.cliente?.nombre || 'Cliente'}</h4>
-                        <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
-                        <p><strong>Fecha:</strong> {c.fecha}</p>
-                        <p><strong>Hora:</strong> {c.hora}</p>
-                        <p><strong>Tel:</strong> {c.cliente?.telefono || 'N/A'}</p>
-                        <span className="badge-agendada">✅ Agendada</span>
-                      </div>
-                    ))}
-                  </div>
-              }
-            </div>
-          )}
+            <button className="btn-primary" style={{ marginTop:16, width:'100%' }} onClick={async () => {
+              try {
+                await fetch(`${API}/api/barbero/perfil/${perfilBarbero.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    descripcion: perfilBarbero.descripcion,
+                    especialidad: perfilBarbero.especialidad,
+                    whatsapp: perfilBarbero.whatsapp,
+                    horario: perfilBarbero.horario
+                  })
+                })
+                alert('✅ Perfil actualizado')
+              } catch { alert('Error de conexión') }
+            }}>
+              ✅ Guardar cambios
+            </button>
+          </div>
+
+          {/* CÓDIGO DE INVITACIÓN */}
+          <div style={{ marginTop:24, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderRadius:12, padding:16 }}>
+            <p style={{ color:'var(--muted)', fontSize:12, marginBottom:4 }}>🔑 Código de invitación</p>
+            <div style={{ fontSize:28, fontWeight:900, letterSpacing:8, color:'var(--gold)', textAlign:'center', padding:'12px 0' }}>{perfilBarbero.codigo_invitacion || '——'}</div>
+            <p style={{ color:'var(--muted)', fontSize:11, textAlign:'center' }}>Comparte con colegas para unirse a tu barbería</p>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
+  </div>
+)}
 
   // ============================================================
   // DUEÑO PENDIENTE
