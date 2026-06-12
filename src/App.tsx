@@ -511,7 +511,7 @@ function App() {
       if (data.success) { setEditNegocio(false); alert('Negocio actualizado') } else setError(data.error||'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-  const handleLogout = () => { localStorage.removeItem('token'); setLoggedIn(false); setEmail(''); setPassword(''); setRol('cliente'); setUserData(null); setCurrentPage('dashboard'); setAuthMode('choice'); setAppMode('public') }
+  const handleLogout = () => { localStorage.removeItem('token'); setLoggedIn(false); setEmail(''); setPassword(''); setRol('cliente'); setUserData(null); setCurrentPage('dashboard'); setAppMode('public'); setAppMode('public') }
   const resetFormBarbero = () => { setFormBarbero({nombre:'',foto:'',especialidad:'',descripcion:'',horario:{lunes:{activo:true,inicio:'08:00',fin:'18:00'},martes:{activo:true,inicio:'08:00',fin:'18:00'},miercoles:{activo:true,inicio:'08:00',fin:'18:00'},jueves:{activo:true,inicio:'08:00',fin:'18:00'},viernes:{activo:true,inicio:'08:00',fin:'18:00'},sabado:{activo:true,inicio:'08:00',fin:'14:00'},domingo:{activo:false,inicio:'',fin:''}}}); setEditandoBarbero(null); setShowFormBarbero(false) }
   const handleGuardarBarbero = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
