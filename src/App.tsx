@@ -377,14 +377,14 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
 // ============================================================
 function App() {
   const [showSplash, setShowSplash] = useState(true)
-  const [appMode, setAppMode] = useState<'public'|'login'|'register'|'app'>('public')
+  const [appMode, setAppMode] = useState<'public'|'login'|'register'|'recovery'|'app'>('public')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rol, setRol] = useState('cliente')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [loggedIn, setLoggedIn] = useState(false)
-  const [authMode, setAuthMode] = useState<'choice'|'login'|'register'|'recovery'>('choice')
+  const [_authMode, setAuthMode] = useState<'public'|'login'|'register'|'recovery'|'app'>('public')
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [userData, setUserData] = useState<any>(null)
 
@@ -636,7 +636,7 @@ function App() {
         </form>
         <div className="auth-links">
           <button className="link-btn" onClick={() => setAppMode('public')}>← Volver</button>
-          <button className="link-btn" onClick={() => setAppMode('recovery')}>¿Olvidaste tu contraseña?</button>
+          <button className="link-btn" onClick={() => setAppMode('login')}>¿Olvidaste tu contraseña?</button>
         </div>
         <div style={{textAlign:'center',marginTop:16}}>
           <span style={{color:'#555',fontSize:13}}>¿No tienes cuenta? </span>
