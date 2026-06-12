@@ -5,9 +5,8 @@ const API = 'https://cutconnect-backend-production.up.railway.app'
 const ADMIN_PATH = '/admin'
 const DIAS = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo']
 const DIAS_LABELS: any = { lunes:'Lun', martes:'Mar', miercoles:'Mié', jueves:'Jue', viernes:'Vie', sabado:'Sáb', domingo:'Dom' }
-
-const IMAGEN_BARBERIA = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80'
-const IMAGEN_PELUQUERIA = 'https://images.unsplash.com/photo-1560066984-138daaa0a7a6?w=400&q=80'
+const IMAGEN_BARBERIA = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80'
+const IMAGEN_PELUQUERIA = 'https://images.unsplash.com/photo-1560066984-138daaa0a7a6?w=600&q=80'
 
 function getInitials(nombre: string) {
   return nombre.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -18,9 +17,8 @@ function Estrellas({ valor, max = 5, onSelect }: { valor: number, max?: number, 
   return (
     <div style={{ display:'flex', gap:2 }}>
       {Array.from({ length: max }, (_, i) => i + 1).map(n => (
-        <span
-          key={n}
-          style={{ fontSize: onSelect ? 28 : 14, cursor: onSelect ? 'pointer' : 'default', color: n <= (hover || valor) ? '#F1C40F' : '#555', transition:'color 0.1s' }}
+        <span key={n}
+          style={{ fontSize: onSelect ? 28 : 14, cursor: onSelect ? 'pointer' : 'default', color: n <= (hover || valor) ? '#C9A84C' : '#333', transition:'color 0.1s' }}
           onClick={() => onSelect?.(n)}
           onMouseEnter={() => onSelect && setHover(n)}
           onMouseLeave={() => onSelect && setHover(0)}
@@ -32,31 +30,24 @@ function Estrellas({ valor, max = 5, onSelect }: { valor: number, max?: number, 
 
 function BarberiaLogo({ logo, nombre, size = 52 }: { logo?: string, nombre: string, size?: number }) {
   const [imgError, setImgError] = useState(false)
-  if (logo && !imgError) {
-    return <img src={logo} alt={nombre} className="barberia-logo-img" style={{ width: size, height: size }} onError={() => setImgError(true)} />
-  }
+  if (logo && !imgError) return <img src={logo} alt={nombre} className="barberia-logo-img" style={{ width: size, height: size }} onError={() => setImgError(true)} />
   return <div className="barberia-logo-avatar" style={{ width: size, height: size, fontSize: size * 0.34 }}>{getInitials(nombre)}</div>
 }
 
 function BarberoAvatar({ foto, nombre, size = 52 }: { foto?: string, nombre: string, size?: number }) {
   const [imgError, setImgError] = useState(false)
-  if (foto && !imgError) {
-    return <img src={foto} alt={nombre} className="barberia-logo-img" style={{ width: size, height: size, borderRadius: '50%' }} onError={() => setImgError(true)} />
-  }
+  if (foto && !imgError) return <img src={foto} alt={nombre} className="barberia-logo-img" style={{ width: size, height: size, borderRadius: '50%' }} onError={() => setImgError(true)} />
   return <div className="barberia-logo-avatar" style={{ width: size, height: size, fontSize: size * 0.34, borderRadius: '50%' }}>{getInitials(nombre)}</div>
 }
 
-function ImageUploader({ tipo, id, urlActual, onSuccess, label }: {
-  tipo: 'logo' | 'barbero', id: number, urlActual?: string, onSuccess: (url: string) => void, label: string
-}) {
+function ImageUploader({ tipo, id, urlActual, onSuccess, label }: { tipo: 'logo'|'barbero', id: number, urlActual?: string, onSuccess: (url: string) => void, label: string }) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(urlActual || '')
   const inputRef = useRef<HTMLInputElement>(null)
-
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { alert('La imagen no puede superar 5MB'); return }
+    if (file.size > 5 * 1024 * 1024) { alert('Máximo 5MB'); return }
     const reader = new FileReader()
     reader.onload = (ev) => setPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
@@ -64,25 +55,18 @@ function ImageUploader({ tipo, id, urlActual, onSuccess, label }: {
     try {
       const formData = new FormData()
       formData.append('imagen', file)
-      const endpoint = tipo === 'logo' ? `/api/upload/logo/${id}` : `/api/upload/barbero/${id}`
-      const res = await fetch(`${API}${endpoint}`, { method: 'POST', body: formData })
+      const res = await fetch(`${API}/api/upload/${tipo === 'logo' ? 'logo' : 'barbero'}/${id}`, { method: 'POST', body: formData })
       const data = await res.json()
       if (data.success) { setPreview(data.url); onSuccess(data.url) }
-      else alert('Error al subir imagen: ' + data.error)
-    } catch { alert('Error de conexión al subir imagen') }
+      else alert('Error: ' + data.error)
+    } catch { alert('Error de conexión') }
     finally { setUploading(false) }
   }
-
   return (
     <div className="image-uploader">
       <div className="uploader-preview" onClick={() => inputRef.current?.click()} style={{ cursor:'pointer' }}>
-        {preview
-          ? <img src={preview} alt="preview" className="uploader-img" style={{ borderRadius: tipo === 'barbero' ? '50%' : 12 }} />
-          : <div className="uploader-placeholder">
-              <span style={{ fontSize:32 }}>{tipo === 'logo' ? '🏪' : '📷'}</span>
-              <p>{label}</p>
-            </div>
-        }
+        {preview ? <img src={preview} alt="preview" className="uploader-img" style={{ borderRadius: tipo === 'barbero' ? '50%' : 12 }} />
+          : <div className="uploader-placeholder"><span style={{ fontSize:32 }}>{tipo === 'logo' ? '🏪' : '📷'}</span><p>{label}</p></div>}
         {uploading && <div className="uploader-overlay"><span>⏳ Subiendo...</span></div>}
       </div>
       <button type="button" className="btn-upload" onClick={() => inputRef.current?.click()} disabled={uploading}>
@@ -93,13 +77,10 @@ function ImageUploader({ tipo, id, urlActual, onSuccess, label }: {
   )
 }
 
-function ModalCalificacion({ tipo, id, barberiaId, usuarioId, nombre, onClose, onDone }: {
-  tipo: 'barbero' | 'barberia', id: number, barberiaId: number, usuarioId: number, nombre: string, onClose: () => void, onDone: () => void
-}) {
+function ModalCalificacion({ tipo, id, barberiaId, usuarioId, nombre, onClose, onDone }: { tipo: 'barbero'|'barberia', id: number, barberiaId: number, usuarioId: number, nombre: string, onClose: () => void, onDone: () => void }) {
   const [estrellas, setEstrellas] = useState(0)
   const [comentario, setComentario] = useState('')
   const [loading, setLoading] = useState(false)
-
   const handleEnviar = async () => {
     if (estrellas === 0) { alert('Selecciona una calificación'); return }
     setLoading(true)
@@ -113,26 +94,55 @@ function ModalCalificacion({ tipo, id, barberiaId, usuarioId, nombre, onClose, o
     } catch { alert('Error de conexión') }
     finally { setLoading(false) }
   }
-
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-      <div style={{ background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:16, padding:28, maxWidth:380, width:'100%' }}>
-        <h3 style={{ marginTop:0 }}>⭐ Calificar a {nombre}</h3>
-        <p style={{ color:'var(--muted)', fontSize:13 }}>¿Cómo fue tu experiencia?</p>
-        <div style={{ marginBottom:16 }}>
-          <Estrellas valor={estrellas} onSelect={setEstrellas} />
-        </div>
-        <textarea
-          placeholder="Comentario opcional..."
-          value={comentario}
-          onChange={e => setComentario(e.target.value)}
-          style={{ width:'100%', minHeight:80, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderRadius:8, padding:10, color:'var(--cream)', fontSize:13, resize:'vertical', boxSizing:'border-box' }}
-        />
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div style={{ background:'#1A1A1A', border:'1px solid #2A2A2A', borderRadius:16, padding:28, maxWidth:380, width:'100%' }}>
+        <h3 style={{ marginTop:0, color:'#fff' }}>⭐ Calificar a {nombre}</h3>
+        <p style={{ color:'#888', fontSize:13, marginBottom:16 }}>¿Cómo fue tu experiencia?</p>
+        <Estrellas valor={estrellas} onSelect={setEstrellas} />
+        <textarea placeholder="Comentario opcional..." value={comentario} onChange={e => setComentario(e.target.value)}
+          style={{ width:'100%', minHeight:80, background:'#111', border:'1px solid #2A2A2A', borderRadius:8, padding:10, color:'#fff', fontSize:13, resize:'vertical', boxSizing:'border-box', marginTop:16 }} />
         <div style={{ display:'flex', gap:10, marginTop:16 }}>
           <button className="btn-primary" onClick={handleEnviar} disabled={loading || estrellas === 0}>{loading ? '⏳...' : '✅ Enviar'}</button>
           <button className="btn-secondary" onClick={onClose}>Cancelar</button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function FidelizacionCard({ barberiaId, usuarioId }: { barberiaId: number, usuarioId: number }) {
+  const [data, setData] = useState<any>(null)
+  useEffect(() => {
+    fetch(`${API}/api/fidelizacion/${barberiaId}/${usuarioId}`).then(r => r.json()).then(d => { if (d.success) setData(d.data) }).catch(() => {})
+  }, [barberiaId, usuarioId])
+  if (!data) return null
+  const pct = Math.min((data.citas_actuales / data.citas_requeridas) * 100, 100)
+  const dots = Array.from({ length: data.citas_requeridas }, (_, i) => i < data.citas_actuales)
+  return (
+    <div className="fidelizacion-card">
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div>
+          <p style={{ fontSize:12, color:'#888', textTransform:'uppercase', letterSpacing:1 }}>🎖 Tarjeta de fidelización</p>
+          <p style={{ fontSize:14, color:'#fff', fontWeight:700, marginTop:4 }}>{data.citas_actuales} / {data.citas_requeridas} citas</p>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <p style={{ fontSize:11, color:'#888' }}>Premio</p>
+          <p style={{ fontSize:13, color:'#C9A84C', fontWeight:700 }}>{data.beneficio}</p>
+        </div>
+      </div>
+      <div className="fidelizacion-progress"><div className="fidelizacion-fill" style={{ width:`${pct}%` }}></div></div>
+      <div className="fidelizacion-citas">
+        {dots.slice(0, 20).map((done, i) => (
+          <div key={i} className={`fidelizacion-cita-dot ${done ? 'done' : 'pending'}`}>{done ? '✓' : i + 1}</div>
+        ))}
+      </div>
+      {data.citas_actuales >= data.citas_requeridas && (
+        <div style={{ background:'rgba(201,168,76,0.15)', border:'1px solid rgba(201,168,76,0.4)', borderRadius:10, padding:'10px 14px', textAlign:'center' }}>
+          <p style={{ color:'#C9A84C', fontWeight:700, fontSize:14 }}>🎉 ¡Felicidades! Tienes un premio pendiente</p>
+          <p style={{ color:'#888', fontSize:12, marginTop:4 }}>Muestra esta pantalla en tu próxima visita</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -163,77 +173,44 @@ function App() {
   const [authMode, setAuthMode] = useState<'choice'|'login'|'register'|'recovery'>('choice')
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [userData, setUserData] = useState<any>(null)
-
   const [barberias, setBarberias] = useState<any[]>([])
   const [servicios, setServicios] = useState<any[]>([])
   const [citas, setCitas] = useState<any[]>([])
   const [barberosList, setBarberosList] = useState<any[]>([])
   const [rankingBarberos, setRankingBarberos] = useState<any[]>([])
-
   const [recoveryEmail, setRecoveryEmail] = useState('')
   const [recoveryPassword, setRecoveryPassword] = useState('')
   const [paisSeleccionado, setPaisSeleccionado] = useState('Colombia')
   const [tipoNegocioFiltro, setTipoNegocioFiltro] = useState('todos')
   const [codigoInvitacion, setCodigoInvitacion] = useState('')
   const [usarCodigo, setUsarCodigo] = useState(false)
-
-  const [ownerData, setOwnerData] = useState({
-    negocio_nombre:'', pais:'Colombia', estado:'', municipio:'', ciudad:'',
-    negocio_telefono:'', negocio_logo:'', negocio_descripcion:'',
-    direccion:'', latitud:'', longitud:'', tipo_negocio:'barberia'
-  })
-
+  const [ownerData, setOwnerData] = useState({ negocio_nombre:'', pais:'Colombia', estado:'', municipio:'', ciudad:'', negocio_telefono:'', negocio_logo:'', negocio_descripcion:'', direccion:'', latitud:'', longitud:'', tipo_negocio:'barberia' })
   const [editNegocio, setEditNegocio] = useState(false)
-  const [editNegocioData, setEditNegocioData] = useState({ nombre:'', descripcion:'', telefono:'', logo:'', tipo_negocio:'barberia' })
-
+  const [editNegocioData, setEditNegocioData] = useState({ nombre:'', descripcion:'', telefono:'', logo:'', tipo_negocio:'barberia', fidelizacion_citas: 10, fidelizacion_beneficio: '' })
   const [formData, setFormData] = useState({ barberia_id:'', barbero_id:'', servicio_id:'', fecha:'', hora:'' })
   const [selectedBarberia, setSelectedBarberia] = useState<any>(null)
   const [selectedBarbero, setSelectedBarbero] = useState<any>(null)
   const [horasDisponibles, setHorasDisponibles] = useState<string[]>([])
-
   const [searchCiudad, setSearchCiudad] = useState('')
   const [buscando, setBuscando] = useState(false)
   const [gpsUsado, setGpsUsado] = useState(false)
-
   const [adminLoggedIn, setAdminLoggedIn] = useState(false)
   const [adminPassword, setAdminPassword] = useState('')
   const [adminNegocios, setAdminNegocios] = useState<any[]>([])
   const [adminStats, setAdminStats] = useState<any>(null)
   const [adminMsg, setAdminMsg] = useState('')
   const [adminPage, setAdminPage] = useState<'pendientes'|'todos'>('pendientes')
-
   const [misBarberos, setMisBarberos] = useState<any[]>([])
   const [showFormBarbero, setShowFormBarbero] = useState(false)
   const [editandoBarbero, setEditandoBarbero] = useState<any>(null)
-  const [formBarbero, setFormBarbero] = useState({
-    nombre:'', foto:'', especialidad:'', descripcion:'',
-    horario: {
-      lunes:    { activo:true,  inicio:'08:00', fin:'18:00' },
-      martes:   { activo:true,  inicio:'08:00', fin:'18:00' },
-      miercoles:{ activo:true,  inicio:'08:00', fin:'18:00' },
-      jueves:   { activo:true,  inicio:'08:00', fin:'18:00' },
-      viernes:  { activo:true,  inicio:'08:00', fin:'18:00' },
-      sabado:   { activo:true,  inicio:'08:00', fin:'14:00' },
-      domingo:  { activo:false, inicio:'',      fin:''      }
-    }
-  })
-
+  const [formBarbero, setFormBarbero] = useState({ nombre:'', foto:'', especialidad:'', descripcion:'', horario: { lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
   const [perfilBarbero, setPerfilBarbero] = useState<any>(null)
-  const [descripcionBarbero, setDescripcionBarbero] = useState('')
-  const [editandoDesc, setEditandoDesc] = useState(false)
-
   const [modalCal, setModalCal] = useState<any>(null)
-
   const isAdminRoute = window.location.pathname === ADMIN_PATH
 
   useEffect(() => { if (loggedIn) cargarDatos() }, [loggedIn])
-  useEffect(() => {
-    if (formData.barbero_id && formData.fecha) cargarDisponibilidad(formData.barbero_id, formData.fecha)
-    else setHorasDisponibles([])
-  }, [formData.barbero_id, formData.fecha])
-  useEffect(() => {
-    if (loggedIn && userData?.rol === 'barbero') cargarPerfilBarbero()
-  }, [loggedIn, userData?.rol])
+  useEffect(() => { if (formData.barbero_id && formData.fecha) cargarDisponibilidad(formData.barbero_id, formData.fecha); else setHorasDisponibles([]) }, [formData.barbero_id, formData.fecha])
+  useEffect(() => { if (loggedIn && userData?.rol === 'barbero') cargarPerfilBarbero() }, [loggedIn, userData?.rol])
 
   const cargarDatos = async (lat?: number, lon?: number, ciudad?: string, tipo?: string) => {
     try {
@@ -253,37 +230,14 @@ function App() {
       setBarberias(dBarb.data || []); setServicios(dServ.data || []); setCitas(dCitas.data || [])
     } catch (err) { console.error(err) }
   }
-
-  const cargarCitasDueno = async () => {
-    try { const res = await fetch(`${API}/api/citas/barberia/${userData?.barberia_id}`); const d = await res.json(); setCitas(d.data || []) } catch { setCitas([]) }
-  }
-  const cargarCitasBarbero = async () => {
-    try { const res = await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d = await res.json(); setCitas(d.data || []) } catch { setCitas([]) }
-  }
-  const cargarBarberosBarberia = async (id: any) => {
-    try { const res = await fetch(`${API}/api/barberos/${id}`); const d = await res.json(); setBarberosList(d.data || []) } catch { setBarberosList([]) }
-  }
-  const cargarMisBarberos = async () => {
-    try { const res = await fetch(`${API}/api/barberos/${userData?.barberia_id}`); const d = await res.json(); setMisBarberos(d.data || []) } catch { setMisBarberos([]) }
-  }
-  const cargarRanking = async () => {
-    try { const res = await fetch(`${API}/api/stats/barberos/${userData?.barberia_id}`); const d = await res.json(); setRankingBarberos(d.data || []) } catch { setRankingBarberos([]) }
-  }
-  const cargarPerfilBarbero = async () => {
-    try { const res = await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d = await res.json(); if (d.success) { setPerfilBarbero(d.data); setDescripcionBarbero(d.data.descripcion || '') } } catch { }
-  }
-  const cargarDisponibilidad = async (barberoId: any, fecha: string) => {
-    try { const res = await fetch(`${API}/api/disponibilidad/${barberoId}/${fecha}`); const d = await res.json(); setHorasDisponibles(d.data || []) } catch { setHorasDisponibles([]) }
-  }
-
-  const buscarPorGPS = () => {
-    if (!navigator.geolocation) { setError('Tu navegador no soporta geolocalización'); return }
-    setBuscando(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setGpsUsado(true); setBuscando(false); cargarDatos(pos.coords.latitude, pos.coords.longitude, undefined, tipoNegocioFiltro) },
-      () => { setBuscando(false); setError('No se pudo obtener ubicación') }
-    )
-  }
+  const cargarCitasDueno = async () => { try { const res = await fetch(`${API}/api/citas/barberia/${userData?.barberia_id}`); const d = await res.json(); setCitas(d.data || []) } catch { setCitas([]) } }
+  const cargarCitasBarbero = async () => { try { const res = await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d = await res.json(); setCitas(d.data || []) } catch { setCitas([]) } }
+  const cargarBarberosBarberia = async (id: any) => { try { const res = await fetch(`${API}/api/barberos/${id}`); const d = await res.json(); setBarberosList(d.data || []) } catch { setBarberosList([]) } }
+  const cargarMisBarberos = async () => { try { const res = await fetch(`${API}/api/barberos/${userData?.barberia_id}`); const d = await res.json(); setMisBarberos(d.data || []) } catch { setMisBarberos([]) } }
+  const cargarRanking = async () => { try { const res = await fetch(`${API}/api/stats/barberos/${userData?.barberia_id}`); const d = await res.json(); setRankingBarberos(d.data || []) } catch { setRankingBarberos([]) } }
+  const cargarPerfilBarbero = async () => { try { const res = await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d = await res.json(); if (d.success) setPerfilBarbero(d.data) } catch { } }
+  const cargarDisponibilidad = async (barberoId: any, fecha: string) => { try { const res = await fetch(`${API}/api/disponibilidad/${barberoId}/${fecha}`); const d = await res.json(); setHorasDisponibles(d.data || []) } catch { setHorasDisponibles([]) } }
+  const buscarPorGPS = () => { if (!navigator.geolocation) { setError('GPS no soportado'); return }; setBuscando(true); navigator.geolocation.getCurrentPosition((pos) => { setGpsUsado(true); setBuscando(false); cargarDatos(pos.coords.latitude, pos.coords.longitude, undefined, tipoNegocioFiltro) }, () => { setBuscando(false); setError('No se pudo obtener ubicación') }) }
   const buscarPorCiudad = () => { if (!searchCiudad.trim()) return; setGpsUsado(false); cargarDatos(undefined, undefined, searchCiudad, tipoNegocioFiltro) }
 
   const handleLogin = async (e: any) => {
@@ -295,7 +249,6 @@ function App() {
       else setError(data.error || 'Error al iniciar sesión')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
   const handleRegister = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
@@ -307,7 +260,6 @@ function App() {
       else setError(data.error || 'Error al registrarse')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
   const handleRegisterDueno = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
@@ -317,40 +269,25 @@ function App() {
       else setError(data.error || 'Error al registrarse')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
-  const obtenerUbicacion = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setOwnerData({ ...ownerData, latitud: pos.coords.latitude.toString(), longitud: pos.coords.longitude.toString() }),
-        (err) => alert('❌ No se pudo obtener ubicación: ' + err.message)
-      )
-    } else alert('❌ Tu navegador no soporta geolocalización')
-  }
-
+  const obtenerUbicacion = () => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((pos) => setOwnerData({ ...ownerData, latitud: pos.coords.latitude.toString(), longitud: pos.coords.longitude.toString() }), (err) => alert('❌ ' + err.message)) } }
   const handleRecuperarContrasena = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
       const res = await fetch(`${API}/api/auth/recuperar-contrasena`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: recoveryEmail, nueva_contrasena: recoveryPassword }) })
       const data = await res.json()
-      if (data.success) { alert('✅ Contraseña actualizada.'); setAuthMode('login'); setRecoveryEmail(''); setRecoveryPassword('') }
+      if (data.success) { alert('✅ Contraseña actualizada.'); setAuthMode('login') }
       else setError(data.error || 'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
   const handleAgendar = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
       const res = await fetch(`${API}/api/citas/agendar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ...formData, usuario_id: userData.id }) })
       const data = await res.json()
-      if (data.success) {
-        alert('💈 ¡Cita agendada!')
-        setFormData({ barberia_id:'', barbero_id:'', servicio_id:'', fecha:'', hora:'' })
-        setSelectedBarberia(null); setSelectedBarbero(null); setBarberosList([])
-        await cargarDatos(); setCurrentPage('citas')
-      } else setError(data.error || 'Error al agendar')
+      if (data.success) { alert('💈 ¡Cita agendada!'); setFormData({ barberia_id:'', barbero_id:'', servicio_id:'', fecha:'', hora:'' }); setSelectedBarberia(null); setSelectedBarbero(null); setBarberosList([]); await cargarDatos(); setCurrentPage('citas') }
+      else setError(data.error || 'Error al agendar')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
   const handleGuardarNegocio = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
@@ -360,27 +297,8 @@ function App() {
       else setError(data.error || 'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
-  const handleGuardarDescripcion = async () => {
-    if (!perfilBarbero) return
-    try {
-      await fetch(`${API}/api/barbero/perfil/${perfilBarbero.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ descripcion: descripcionBarbero }) })
-      setPerfilBarbero({ ...perfilBarbero, descripcion: descripcionBarbero })
-      setEditandoDesc(false)
-      alert('✅ Descripción guardada')
-    } catch { alert('Error de conexión') }
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('token'); setLoggedIn(false); setEmail(''); setPassword('')
-    setRol('cliente'); setUserData(null); setCurrentPage('dashboard'); setAuthMode('choice')
-  }
-
-  const resetFormBarbero = () => {
-    setFormBarbero({ nombre:'', foto:'', especialidad:'', descripcion:'', horario: { lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
-    setEditandoBarbero(null); setShowFormBarbero(false)
-  }
-
+  const handleLogout = () => { localStorage.removeItem('token'); setLoggedIn(false); setEmail(''); setPassword(''); setRol('cliente'); setUserData(null); setCurrentPage('dashboard'); setAuthMode('choice') }
+  const resetFormBarbero = () => { setFormBarbero({ nombre:'', foto:'', especialidad:'', descripcion:'', horario: { lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } }); setEditandoBarbero(null); setShowFormBarbero(false) }
   const handleGuardarBarbero = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
@@ -389,26 +307,12 @@ function App() {
       else res = await fetch(`${API}/api/barberos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ...formBarbero, barberia_id: userData?.barberia_id }) })
       const data = await res.json()
       if (data.success) { resetFormBarbero(); cargarMisBarberos() }
-      else setError(data.error || 'Error al guardar')
+      else setError(data.error || 'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
-  const handleEditarBarbero = (b: any) => {
-    setEditandoBarbero(b)
-    setFormBarbero({ nombre: b.nombre, foto: b.foto || '', especialidad: b.especialidad, descripcion: b.descripcion || '', horario: b.horario })
-    setShowFormBarbero(true)
-  }
-
-  const handleEliminarBarbero = async (id: number) => {
-    if (!confirm('¿Desactivar este barbero?')) return
-    await fetch(`${API}/api/barberos/${id}`, { method:'DELETE' })
-    cargarMisBarberos()
-  }
-
-  const updateHorarioDia = (dia: string, campo: string, valor: any) => {
-    setFormBarbero({ ...formBarbero, horario: { ...formBarbero.horario, [dia]: { ...(formBarbero.horario as any)[dia], [campo]: valor } } })
-  }
-
+  const handleEditarBarbero = (b: any) => { setEditandoBarbero(b); setFormBarbero({ nombre: b.nombre, foto: b.foto || '', especialidad: b.especialidad, descripcion: b.descripcion || '', horario: b.horario }); setShowFormBarbero(true) }
+  const handleEliminarBarbero = async (id: number) => { if (!confirm('¿Desactivar?')) return; await fetch(`${API}/api/barberos/${id}`, { method:'DELETE' }); cargarMisBarberos() }
+  const updateHorarioDia = (dia: string, campo: string, valor: any) => { setFormBarbero({ ...formBarbero, horario: { ...formBarbero.horario, [dia]: { ...(formBarbero.horario as any)[dia], [campo]: valor } } }) }
   const handleAdminLogin = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
@@ -418,41 +322,33 @@ function App() {
       else setError('Contraseña incorrecta')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-
   const cargarAdminData = async () => {
     try {
-      const [resN, resS] = await Promise.all([
-        fetch(`${API}/api/admin/negocios`, { headers:{'x-admin-token':'admin_token_cutconnect'} }),
-        fetch(`${API}/api/admin/stats`, { headers:{'x-admin-token':'admin_token_cutconnect'} })
-      ])
+      const [resN, resS] = await Promise.all([fetch(`${API}/api/admin/negocios`, { headers:{'x-admin-token':'admin_token_cutconnect'} }), fetch(`${API}/api/admin/stats`, { headers:{'x-admin-token':'admin_token_cutconnect'} })])
       const dN = await resN.json(); const dS = await resS.json()
       setAdminNegocios(dN.data || []); setAdminStats(dS.data || null)
     } catch { setAdminMsg('Error cargando datos') }
   }
-
   const accionAdmin = async (endpoint: string, id: number) => {
     try {
       const res = await fetch(`${API}/api/admin/${endpoint}/${id}`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'} })
-      const data = await res.json()
-      setAdminMsg(data.message || data.error); cargarAdminData()
-    } catch { setAdminMsg('Error al ejecutar acción') }
+      const data = await res.json(); setAdminMsg(data.message || data.error); cargarAdminData()
+    } catch { setAdminMsg('Error') }
     setTimeout(() => setAdminMsg(''), 4000)
   }
 
   if (showSplash) return <SplashScreen onDone={() => setShowSplash(false)} />
 
-  // ============================================================
   // ADMIN
-  // ============================================================
   if (isAdminRoute) {
     if (!adminLoggedIn) return (
       <div className="login-container">
         <div className="login-box">
           <div className="logo-section"><span className="logo-emoji">🔐</span><h1>Cut<span>Connect</span></h1><p className="subtitle">Panel Administrador</p></div>
           <form onSubmit={handleAdminLogin} className="auth-form">
-            <div className="form-group"><label>Contraseña de administrador</label><input type="password" placeholder="••••••••" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} required /></div>
+            <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} required /></div>
             {error && <p className="error">{error}</p>}
-            <button type="submit" className="btn-submit" disabled={loading}>{loading ? '⏳ Verificando...' : '🔓 Entrar al Panel'}</button>
+            <button type="submit" className="btn-submit" disabled={loading}>{loading ? '⏳...' : '🔓 Entrar'}</button>
           </form>
         </div>
       </div>
@@ -461,7 +357,7 @@ function App() {
     return (
       <div className="admin-container">
         <div className="admin-navbar">
-          <div><h1>💈 CutConnect — Admin</h1><p className="admin-subtitle">Panel de control exclusivo</p></div>
+          <div><h1>💈 Cut<span style={{color:'#C9A84C'}}>Connect</span> — Admin</h1><p className="admin-subtitle">Panel de control exclusivo</p></div>
           <div style={{ display:'flex', gap:10 }}>
             <button className="btn-admin btn-rechazar" onClick={() => setAdminPage('pendientes')} style={{ fontWeight: adminPage==='pendientes' ? 900 : 400 }}>⏳ Pendientes</button>
             <button className="btn-admin btn-rechazar" onClick={() => setAdminPage('todos')} style={{ fontWeight: adminPage==='todos' ? 900 : 400 }}>📋 Todos</button>
@@ -491,7 +387,7 @@ function App() {
                 <div className="negocio-nombre">{n.tipo_negocio === 'peluqueria' ? '💇' : '💈'} {n.nombre}</div>
                 <div className="negocio-meta">📍 {n.ciudad}, {n.estado}, {n.pais} · 📞 {n.telefono}</div>
                 <div className="negocio-email">✉️ {n.email_dueno}</div>
-                {n.estado_verificacion==='trial' && n.diasTrial!==null && <div style={{ color:'#D7BDE2', fontSize:12, marginTop:3 }}>⏱ {n.diasTrial} días restantes</div>}
+                {n.estado_verificacion==='trial' && n.diasTrial!==null && <div style={{ color:'#C9A84C', fontSize:12, marginTop:3 }}>⏱ {n.diasTrial} días restantes</div>}
               </div>
               <span className={`status-badge status-${n.estado_verificacion}`}>
                 {n.estado_verificacion==='pendiente' && '⏳ Pendiente'}
@@ -512,6 +408,7 @@ function App() {
     )
   }
 
+  // CHOICE
   if (!loggedIn && authMode==='choice') return (
     <div className="login-container">
       <div className="login-box">
@@ -524,6 +421,7 @@ function App() {
     </div>
   )
 
+  // LOGIN
   if (!loggedIn && authMode==='login') return (
     <div className="login-container">
       <div className="login-box">
@@ -543,6 +441,7 @@ function App() {
     </div>
   )
 
+  // REGISTRO DUEÑO
   if (!loggedIn && authMode==='register' && rol==='dueño') return (
     <div className="login-container">
       <div className="login-box large-box">
@@ -552,15 +451,15 @@ function App() {
           <fieldset className="form-section">
             <legend>🌎 País</legend>
             <div className="pais-selector">
-              <button type="button" className={`pais-btn ${ownerData.pais==='Colombia' ? 'active' : ''}`} onClick={() => setOwnerData({...ownerData, pais:'Colombia'})}>🇨🇴 Colombia</button>
-              <button type="button" className={`pais-btn ${ownerData.pais==='Venezuela' ? 'active' : ''}`} onClick={() => setOwnerData({...ownerData, pais:'Venezuela'})}>🇻🇪 Venezuela</button>
+              <button type="button" className={`pais-btn ${ownerData.pais==='Colombia'?'active':''}`} onClick={() => setOwnerData({...ownerData, pais:'Colombia'})}>🇨🇴 Colombia</button>
+              <button type="button" className={`pais-btn ${ownerData.pais==='Venezuela'?'active':''}`} onClick={() => setOwnerData({...ownerData, pais:'Venezuela'})}>🇻🇪 Venezuela</button>
             </div>
           </fieldset>
           <fieldset className="form-section">
             <legend>💈 Tipo de negocio</legend>
             <div className="category-selector">
-              <button type="button" className={`category-btn ${ownerData.tipo_negocio==='barberia' ? 'active' : ''}`} onClick={() => setOwnerData({...ownerData, tipo_negocio:'barberia'})}><span className="cat-icon">💈</span>Barbería</button>
-              <button type="button" className={`category-btn ${ownerData.tipo_negocio==='peluqueria' ? 'active' : ''}`} onClick={() => setOwnerData({...ownerData, tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
+              <button type="button" className={`category-btn ${ownerData.tipo_negocio==='barberia'?'active':''}`} onClick={() => setOwnerData({...ownerData, tipo_negocio:'barberia'})}><span className="cat-icon">💈</span>Barbería</button>
+              <button type="button" className={`category-btn ${ownerData.tipo_negocio==='peluqueria'?'active':''}`} onClick={() => setOwnerData({...ownerData, tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
             </div>
           </fieldset>
           <fieldset className="form-section">
@@ -595,6 +494,7 @@ function App() {
     </div>
   )
 
+  // REGISTRO CLIENTE/BARBERO
   if (!loggedIn && authMode==='register' && rol!=='dueño') return (
     <div className="login-container">
       <div className="login-box">
@@ -604,8 +504,8 @@ function App() {
           <div className="form-group">
             <label>País</label>
             <div className="pais-selector">
-              <button type="button" className={`pais-btn ${paisSeleccionado==='Colombia' ? 'active' : ''}`} onClick={() => setPaisSeleccionado('Colombia')}>🇨🇴 Colombia</button>
-              <button type="button" className={`pais-btn ${paisSeleccionado==='Venezuela' ? 'active' : ''}`} onClick={() => setPaisSeleccionado('Venezuela')}>🇻🇪 Venezuela</button>
+              <button type="button" className={`pais-btn ${paisSeleccionado==='Colombia'?'active':''}`} onClick={() => setPaisSeleccionado('Colombia')}>🇨🇴 Colombia</button>
+              <button type="button" className={`pais-btn ${paisSeleccionado==='Venezuela'?'active':''}`} onClick={() => setPaisSeleccionado('Venezuela')}>🇻🇪 Venezuela</button>
             </div>
           </div>
           <div className="form-group"><label>Email</label><input type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} required /></div>
@@ -621,14 +521,14 @@ function App() {
           {rol === 'barbero' && (
             <div className="invite-code-section">
               <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginBottom:10 }}>
-                <input type="checkbox" checked={usarCodigo} onChange={e => setUsarCodigo(e.target.checked)} style={{ width:16, height:16, accentColor:'var(--red)' }} />
-                <span>Tengo un código de invitación</span>
+                <input type="checkbox" checked={usarCodigo} onChange={e => setUsarCodigo(e.target.checked)} style={{ width:16, height:16, accentColor:'#C9A84C' }} />
+                <span style={{ fontSize:14 }}>Tengo un código de invitación</span>
               </label>
               {usarCodigo && (
                 <div className="form-group">
                   <label>Código de invitación</label>
                   <input type="text" placeholder="847291" value={codigoInvitacion} onChange={e => setCodigoInvitacion(e.target.value)} maxLength={6} style={{ fontSize:24, letterSpacing:8, textAlign:'center', fontWeight:700 }} />
-                  <p style={{ fontSize:12, color:'var(--muted)', marginTop:4 }}>Tu dueño te lo compartió por WhatsApp</p>
+                  <p style={{ fontSize:12, color:'#888', marginTop:4 }}>Tu dueño te lo compartió por WhatsApp</p>
                 </div>
               )}
             </div>
@@ -641,6 +541,7 @@ function App() {
     </div>
   )
 
+  // RECOVERY
   if (!loggedIn && authMode==='recovery') return (
     <div className="login-container">
       <div className="login-box">
@@ -650,56 +551,55 @@ function App() {
           <div className="form-group"><label>Email registrado</label><input type="email" placeholder="tu@email.com" value={recoveryEmail} onChange={e => setRecoveryEmail(e.target.value)} required /></div>
           <div className="form-group"><label>Nueva contraseña</label><input type="password" placeholder="••••••••" value={recoveryPassword} onChange={e => setRecoveryPassword(e.target.value)} required /></div>
           {error && <p className="error">{error}</p>}
-          <button type="submit" className="btn-submit" disabled={loading}>{loading ? '⏳ Procesando...' : '🔄 Cambiar contraseña'}</button>
+          <button type="submit" className="btn-submit" disabled={loading}>{loading ? '⏳...' : '🔄 Cambiar contraseña'}</button>
         </form>
         <button className="link-btn" onClick={() => setAuthMode('login')}>← Volver</button>
       </div>
     </div>
   )
 
-  // ============================================================
   // CLIENTE
-  // ============================================================
   if (loggedIn && userData?.rol==='cliente') return (
     <div className="dashboard-container">
       {modalCal && <ModalCalificacion {...modalCal} onClose={() => setModalCal(null)} onDone={() => cargarDatos()} />}
       <nav className="navbar">
-        <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>CutConnect</h1></div><span className="role-badge">👤 Cliente</span></div>
+        <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>Cut<span>Connect</span></h1></div><span className="role-badge">👤 Cliente</span></div>
         <div className="nav-links">
-          <button className={currentPage==='dashboard' ? 'active' : ''} onClick={() => setCurrentPage('dashboard')}>🏠 Inicio</button>
-          <button className={currentPage==='agendar' ? 'active' : ''} onClick={() => { setCurrentPage('agendar'); cargarDatos() }}>📅 Agendar</button>
-          <button className={currentPage==='citas' ? 'active' : ''} onClick={() => { setCurrentPage('citas'); cargarDatos() }}>📋 Mis citas</button>
+          <button className={currentPage==='dashboard'?'active':''} onClick={() => setCurrentPage('dashboard')}>🏠 Inicio</button>
+          <button className={currentPage==='agendar'?'active':''} onClick={() => { setCurrentPage('agendar'); cargarDatos() }}>📅 Agendar</button>
+          <button className={currentPage==='citas'?'active':''} onClick={() => { setCurrentPage('citas'); cargarDatos() }}>📋 Mis citas</button>
           <button className="btn-logout" onClick={handleLogout}>Salir</button>
         </div>
       </nav>
       <div className="dashboard-content">
         {currentPage==='dashboard' && (
           <div className="page">
-            <h2>¡Bienvenido, {userData?.nombre}! 👋</h2>
+            <h2>Hola, {userData?.nombre} 👋</h2>
             <div className="welcome-card">
               <p><strong>País:</strong> {userData?.pais}</p>
               <p><strong>Email:</strong> {userData?.email}</p>
               <p><strong>Citas agendadas:</strong> {citas.length}</p>
             </div>
-
-            {/* Banner tipo de negocio */}
-            <div style={{ display:'flex', gap:12, marginTop:24, marginBottom:8 }}>
-              <div style={{ flex:1, borderRadius:16, overflow:'hidden', position:'relative', minHeight:120, cursor:'pointer' }} onClick={() => { setTipoNegocioFiltro('barberia'); setCurrentPage('agendar'); cargarDatos() }}>
+            <div style={{ display:'flex', gap:12 }}>
+              <div style={{ flex:1, borderRadius:16, overflow:'hidden', position:'relative', minHeight:130, cursor:'pointer' }} onClick={() => { setTipoNegocioFiltro('barberia'); setCurrentPage('agendar'); cargarDatos() }}>
                 <img src={IMAGEN_BARBERIA} alt="Barberías" style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />
-                <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-                  <span style={{ fontSize:32 }}>💈</span>
-                  <span style={{ color:'#fff', fontWeight:900, fontSize:16, marginTop:4 }}>Barberías</span>
+                <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.7) 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', padding:16 }}>
+                  <span style={{ fontSize:28 }}>💈</span>
+                  <span style={{ color:'#fff', fontWeight:900, fontSize:15, marginTop:4 }}>Barberías</span>
                 </div>
               </div>
-              <div style={{ flex:1, borderRadius:16, overflow:'hidden', position:'relative', minHeight:120, cursor:'pointer' }} onClick={() => { setTipoNegocioFiltro('peluqueria'); setCurrentPage('agendar'); cargarDatos() }}>
+              <div style={{ flex:1, borderRadius:16, overflow:'hidden', position:'relative', minHeight:130, cursor:'pointer' }} onClick={() => { setTipoNegocioFiltro('peluqueria'); setCurrentPage('agendar'); cargarDatos() }}>
                 <img src={IMAGEN_PELUQUERIA} alt="Peluquerías" style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />
-                <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-                  <span style={{ fontSize:32 }}>💇</span>
-                  <span style={{ color:'#fff', fontWeight:900, fontSize:16, marginTop:4 }}>Peluquerías</span>
+                <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.7) 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', padding:16 }}>
+                  <span style={{ fontSize:28 }}>💇</span>
+                  <span style={{ color:'#fff', fontWeight:900, fontSize:15, marginTop:4 }}>Peluquerías</span>
                 </div>
               </div>
             </div>
-            <p style={{ color:'var(--muted)', fontSize:12, textAlign:'center' }}>Toca para buscar cerca de ti</p>
+            <div className="action-buttons">
+              <button onClick={() => { setCurrentPage('agendar'); cargarDatos() }} className="btn-primary">💈 Agendar cita</button>
+              <button onClick={() => { setCurrentPage('citas'); cargarDatos() }} className="btn-secondary">📋 Mis citas</button>
+            </div>
           </div>
         )}
 
@@ -710,14 +610,14 @@ function App() {
               <p className="search-title">🗺️ Encuentra tu barbería o peluquería</p>
               <div className="tipo-filter">
                 {['todos','barberia','peluqueria'].map(t => (
-                  <button key={t} className={`tipo-btn ${tipoNegocioFiltro===t ? 'active' : ''}`} onClick={() => { setTipoNegocioFiltro(t); if (gpsUsado) buscarPorGPS() }}>
-                    {t==='todos' && '🔍 Todos'}{t==='barberia' && '💈 Barberías'}{t==='peluqueria' && '💇 Peluquerías'}
+                  <button key={t} className={`tipo-btn ${tipoNegocioFiltro===t?'active':''}`} onClick={() => { setTipoNegocioFiltro(t); if (gpsUsado) buscarPorGPS() }}>
+                    {t==='todos'&&'🔍 Todos'}{t==='barberia'&&'💈 Barberías'}{t==='peluqueria'&&'💇 Peluquerías'}
                   </button>
                 ))}
               </div>
-              <button className="btn-gps" onClick={buscarPorGPS} disabled={buscando}>{buscando ? '⏳ Buscando...' : '📍 Cerca de mí (GPS)'}</button>
+              <button className="btn-gps" onClick={buscarPorGPS} disabled={buscando}>{buscando?'⏳ Buscando...':'📍 Cerca de mí (GPS)'}</button>
               <div className="search-divider">o busca por ciudad</div>
-              <div className="search-bar" style={{ marginTop:10 }}>
+              <div className="search-bar">
                 <input type="text" placeholder="Ej: Medellín, Bogotá, Caracas..." value={searchCiudad} onChange={e => setSearchCiudad(e.target.value)} onKeyDown={e => e.key==='Enter' && buscarPorCiudad()} />
                 <button className="btn-search" onClick={buscarPorCiudad}>🔍 Buscar</button>
               </div>
@@ -725,37 +625,24 @@ function App() {
 
             {barberias.length > 0 && (
               <>
-                <h3>{gpsUsado ? '📍 Cerca de ti' : '🏙️ Resultados'} ({barberias.length})</h3>
+                <h3>{gpsUsado?'📍 Cerca de ti':'🏙️ Resultados'} ({barberias.length})</h3>
                 <div className="barberias-grid">
                   {barberias.map((b: any) => (
-                    <div key={b.id} className={`barberia-card ${selectedBarberia?.id===b.id ? 'selected' : ''}`}>
-                      {/* Imagen banner */}
-                      <div style={{ width:'100%', height:100, borderRadius:'10px 10px 0 0', overflow:'hidden', position:'relative', marginBottom:8 }}>
-                        {b.logo
-                          ? <img src={b.logo} alt={b.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                          : <img src={b.tipo_negocio==='peluqueria' ? IMAGEN_PELUQUERIA : IMAGEN_BARBERIA} alt={b.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                        }
-                        <span style={{ position:'absolute', top:8, right:8, background:'rgba(0,0,0,0.6)', borderRadius:20, padding:'2px 8px', fontSize:18 }}>{b.tipo_negocio==='peluqueria' ? '💇' : '💈'}</span>
-                      </div>
-                      <div className="barberia-card-header">
-                        <div className="barberia-info">
-                          <div className="barberia-nombre">{b.nombre}</div>
-                          <div className="barberia-ciudad">📍 {b.ciudad}</div>
-                          {b.distancia!==undefined && <div className="barberia-distancia">🛣️ {b.distancia.toFixed(1)} km</div>}
-                          {b.calificacion_promedio > 0 && <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2 }}><Estrellas valor={Math.round(b.calificacion_promedio)} /><span style={{ fontSize:12, color:'var(--muted)' }}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
-                        </div>
+                    <div key={b.id} className={`barberia-card ${selectedBarberia?.id===b.id?'selected':''}`} onClick={() => { setSelectedBarberia(b); setSelectedBarbero(null); setBarberosList([]); setFormData({...formData, barberia_id: b.id, barbero_id:'', hora:''}); cargarBarberosBarberia(b.id) }}>
+                      <div className="barberia-card-banner">
+                        <img src={b.logo || (b.tipo_negocio==='peluqueria' ? IMAGEN_PELUQUERIA : IMAGEN_BARBERIA)} alt={b.nombre} onError={(e: any) => { e.target.src = b.tipo_negocio==='peluqueria' ? IMAGEN_PELUQUERIA : IMAGEN_BARBERIA }} />
+                        <div className="barberia-card-banner-overlay"></div>
+                        <span className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'💇 Peluquería':'💈 Barbería'}</span>
                       </div>
                       <div className="barberia-card-body">
+                        <div className="barberia-nombre">{b.nombre}</div>
+                        <div className="barberia-ciudad">📍 {b.ciudad}</div>
+                        {b.distancia!==undefined && <div className="barberia-distancia">🛣️ {b.distancia.toFixed(1)} km</div>}
+                        {b.calificacion_promedio > 0 && <div style={{ display:'flex', alignItems:'center', gap:4 }}><Estrellas valor={Math.round(b.calificacion_promedio)} /><span style={{ fontSize:12, color:'#888' }}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
                         {b.descripcion && <p className="barberia-descripcion">{b.descripcion}</p>}
-                        {b.telefono && <p className="barberia-tel">📞 {b.telefono}</p>}
-                        <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <button className={`btn-elegir ${selectedBarberia?.id===b.id ? 'selected' : ''}`} onClick={() => { setSelectedBarberia(b); setSelectedBarbero(null); setBarberosList([]); setFormData({...formData, barberia_id: b.id, barbero_id:'', hora:''}); cargarBarberosBarberia(b.id) }}>
-                            {selectedBarberia?.id===b.id ? '✅ Seleccionada' : 'Elegir'}
-                          </button>
-                          <button style={{ background:'transparent', border:'1px solid var(--dark-5)', borderRadius:8, color:'var(--cream)', fontSize:12, padding:'6px 10px', cursor:'pointer' }}
-                            onClick={() => setModalCal({ tipo:'barberia', id: b.id, barberiaId: b.id, usuarioId: userData.id, nombre: b.nombre })}>
-                            ⭐ Calificar
-                          </button>
+                        <div style={{ display:'flex', gap:8, marginTop:4 }}>
+                          <button className={`btn-elegir ${selectedBarberia?.id===b.id?'selected':''}`} onClick={e => { e.stopPropagation() }}>{selectedBarberia?.id===b.id?'✅ Seleccionada':'Elegir'}</button>
+                          <button style={{ background:'transparent', border:'1px solid #2A2A2A', borderRadius:8, color:'#888', fontSize:12, padding:'6px 10px', cursor:'pointer' }} onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id: b.id, barberiaId: b.id, usuarioId: userData.id, nombre: b.nombre }) }}>⭐ Calificar</button>
                         </div>
                       </div>
                     </div>
@@ -764,49 +651,37 @@ function App() {
               </>
             )}
 
-            {barberias.length===0 && !buscando && (
-              <div className="empty-state" style={{ marginTop:20 }}>
-                <span className="empty-icon">💈</span>
-                <p>Usa el GPS o busca por ciudad para ver negocios disponibles</p>
-              </div>
-            )}
+            {barberias.length===0 && !buscando && <div className="empty-state"><span className="empty-icon">💈</span><p>Usa el GPS o busca por ciudad para ver negocios disponibles</p></div>}
 
             {selectedBarberia && (
               <>
-                <h3>✂️ Elige tu profesional en {selectedBarberia.nombre}</h3>
+                <h3>✂️ Profesionales en {selectedBarberia.nombre}</h3>
                 {barberosList.length === 0
-                  ? <div className="empty-state" style={{ padding:'20px 0' }}><span className="empty-icon">✂️</span><p>Este negocio aún no tiene profesionales registrados</p></div>
-                  : (
-                    <div className="barberias-grid">
+                  ? <div className="empty-state"><span className="empty-icon">✂️</span><p>Este negocio aún no tiene profesionales</p></div>
+                  : <div className="barberias-grid">
                       {barberosList.map((b: any) => (
-                        <div key={b.id} className={`barberia-card ${selectedBarbero?.id===b.id ? 'selected' : ''}`}>
-                          <div className="barberia-card-header">
-                            <BarberoAvatar foto={b.foto} nombre={b.nombre} size={52} />
-                            <div className="barberia-info">
-                              <div className="barberia-nombre">{b.nombre}</div>
-                              <div className="barberia-ciudad">✂️ {b.especialidad}</div>
-                              {b.calificacion_promedio > 0 && <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2 }}><Estrellas valor={Math.round(b.calificacion_promedio)} /><span style={{ fontSize:12, color:'var(--muted)' }}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
-                              {b.descripcion && <p style={{ fontSize:12, color:'var(--muted)', margin:'4px 0 0 0' }}>{b.descripcion}</p>}
-                            </div>
-                          </div>
+                        <div key={b.id} className={`barberia-card ${selectedBarbero?.id===b.id?'selected':''}`}>
                           <div className="barberia-card-body">
+                            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
+                              <BarberoAvatar foto={b.foto} nombre={b.nombre} size={56} />
+                              <div>
+                                <div className="barberia-nombre">{b.nombre}</div>
+                                <div className="barberia-ciudad">✂️ {b.especialidad}</div>
+                                {b.calificacion_promedio > 0 && <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:2 }}><Estrellas valor={Math.round(b.calificacion_promedio)} /><span style={{ fontSize:11, color:'#888' }}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
+                              </div>
+                            </div>
+                            {b.descripcion && <p className="barberia-descripcion" style={{ marginBottom:8 }}>{b.descripcion}</p>}
                             <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>
-                              {DIAS.map(dia => { const h = b.horario[dia]; return h?.activo ? <span key={dia} style={{ background:'rgba(192,57,43,0.15)', color:'#E8D5B7', border:'1px solid rgba(192,57,43,0.3)', borderRadius:4, padding:'2px 6px', fontSize:10, fontWeight:700 }}>{DIAS_LABELS[dia]}</span> : null })}
+                              {DIAS.map(dia => { const h = b.horario[dia]; return h?.activo ? <span key={dia} style={{ background:'rgba(201,168,76,0.1)', color:'#C9A84C', border:'1px solid rgba(201,168,76,0.3)', borderRadius:4, padding:'2px 6px', fontSize:10, fontWeight:700 }}>{DIAS_LABELS[dia]}</span> : null })}
                             </div>
                             <div style={{ display:'flex', gap:8 }}>
-                              <button className={`btn-elegir ${selectedBarbero?.id===b.id ? 'selected' : ''}`} onClick={() => { setSelectedBarbero(b); setFormData({...formData, barbero_id: b.id, hora:''}) }}>
-                                {selectedBarbero?.id===b.id ? '✅ Seleccionado' : 'Elegir'}
-                              </button>
-                              <button style={{ background:'transparent', border:'1px solid var(--dark-5)', borderRadius:8, color:'var(--cream)', fontSize:12, padding:'6px 10px', cursor:'pointer' }}
-                                onClick={() => setModalCal({ tipo:'barbero', id: b.id, barberiaId: selectedBarberia.id, usuarioId: userData.id, nombre: b.nombre })}>
-                                ⭐ Calificar
-                              </button>
+                              <button className={`btn-elegir ${selectedBarbero?.id===b.id?'selected':''}`} onClick={() => { setSelectedBarbero(b); setFormData({...formData, barbero_id: b.id, hora:''}) }}>{selectedBarbero?.id===b.id?'✅ Seleccionado':'Elegir'}</button>
+                              <button style={{ background:'transparent', border:'1px solid #2A2A2A', borderRadius:8, color:'#888', fontSize:12, padding:'6px 10px', cursor:'pointer' }} onClick={() => setModalCal({ tipo:'barbero', id: b.id, barberiaId: selectedBarberia.id, usuarioId: userData.id, nombre: b.nombre })}>⭐ Calificar</button>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  )
                 }
               </>
             )}
@@ -833,14 +708,15 @@ function App() {
                         ? <p style={{ color:'#E74C3C', fontSize:14 }}>❌ No hay horas disponibles ese día</p>
                         : <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:4 }}>
                             {horasDisponibles.map(h => (
-                              <button key={h} type="button" onClick={() => setFormData({...formData, hora: h})} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid', borderColor: formData.hora===h ? 'var(--red)' : 'var(--dark-5)', background: formData.hora===h ? 'var(--red)' : 'var(--dark-3)', color:'var(--cream)', fontWeight:700, cursor:'pointer', fontSize:13 }}>{h}</button>
+                              <button key={h} type="button" onClick={() => setFormData({...formData, hora: h})}
+                                style={{ padding:'10px 16px', borderRadius:8, border:'1px solid', borderColor: formData.hora===h?'#C9A84C':'#2A2A2A', background: formData.hora===h?'rgba(201,168,76,0.2)':'#1A1A1A', color: formData.hora===h?'#C9A84C':'#fff', fontWeight:700, cursor:'pointer', fontSize:14 }}>{h}</button>
                             ))}
                           </div>
                       }
                     </div>
                   )}
                   {error && <p className="error">{error}</p>}
-                  <button type="submit" className="btn-primary" disabled={loading || !formData.hora}>{loading ? '⏳ Agendando...' : '💈 Confirmar cita'}</button>
+                  <button type="submit" className="btn-primary" disabled={loading || !formData.hora}>{loading?'⏳ Agendando...':'💈 Confirmar cita'}</button>
                 </form>
               </>
             )}
@@ -850,14 +726,15 @@ function App() {
         {currentPage==='citas' && (
           <div className="page">
             <h2>📋 Mis citas ({citas.length})</h2>
+            {selectedBarberia && <FidelizacionCard barberiaId={selectedBarberia.id} usuarioId={userData.id} />}
             {citas.length===0
               ? <div className="empty-state"><span className="empty-icon">📌</span><p>Aún no tienes citas agendadas</p><button onClick={() => setCurrentPage('agendar')} className="btn-primary">💈 Agendar mi primera cita</button></div>
               : <div className="citas-grid">
                   {citas.map((c: any) => (
                     <div key={c.id} className="cita-card">
-                      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-                        <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre || 'B'} size={36} />
-                        <h4 style={{ margin:0 }}>{c.barberia?.nombre}</h4>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                        <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={36} />
+                        <h4>{c.barberia?.nombre}</h4>
                       </div>
                       {c.barbero && <p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
                       <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
@@ -874,157 +751,152 @@ function App() {
     </div>
   )
 
-  // ============================================================
   // BARBERO
-  // ============================================================
   if (loggedIn && userData?.rol==='barbero') {
     const citasHoy = citas.filter((c: any) => c.fecha === new Date().toISOString().split('T')[0])
     return (
       <div className="dashboard-container">
         <nav className="navbar">
-          <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>CutConnect</h1></div><span className="role-badge">✂️ Barbero</span></div>
+          <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>Cut<span>Connect</span></h1></div><span className="role-badge">✂️ Barbero</span></div>
           <div className="nav-links">
-            <button className={currentPage==='dashboard' ? 'active' : ''} onClick={() => setCurrentPage('dashboard')}>🏠 Inicio</button>
-            <button className={currentPage==='citas' ? 'active' : ''} onClick={() => { setCurrentPage('citas'); cargarCitasBarbero() }}>📋 Mis citas</button>
-            <button className={currentPage==='perfil' ? 'active' : ''} onClick={() => { setCurrentPage('perfil'); cargarPerfilBarbero() }}>👤 Mi perfil</button>
+            <button className={currentPage==='dashboard'?'active':''} onClick={() => setCurrentPage('dashboard')}>🏠 Inicio</button>
+            <button className={currentPage==='citas'?'active':''} onClick={() => { setCurrentPage('citas'); cargarCitasBarbero() }}>📋 Mis citas</button>
+            <button className={currentPage==='perfil'?'active':''} onClick={() => { setCurrentPage('perfil'); cargarPerfilBarbero() }}>👤 Mi perfil</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
         <div className="dashboard-content">
           {currentPage==='dashboard' && (
             <div className="page">
-              <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24 }}>
-                <BarberoAvatar foto={perfilBarbero?.foto} nombre={userData?.nombre || 'B'} size={64} />
-                <div><h2 style={{ margin:0 }}>¡Hola, {userData?.nombre}! ✂️</h2><p style={{ margin:0, color:'var(--muted)', fontSize:14 }}>{perfilBarbero?.especialidad || 'Profesional'}</p></div>
+              <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:8 }}>
+                <BarberoAvatar foto={perfilBarbero?.foto} nombre={userData?.nombre||'B'} size={64} />
+                <div><h2 style={{ margin:0 }}>Hola, {userData?.nombre} ✂️</h2><p style={{ color:'#888', fontSize:14 }}>{perfilBarbero?.especialidad||'Profesional'}</p></div>
               </div>
               <div className="stats-grid">
-                <div className="stat-card"><span className="stat-icon">📅</span><h4>Citas totales</h4><p className="stat-number">{citas.length}</p></div>
-                <div className="stat-card"><span className="stat-icon">☀️</span><h4>Citas hoy</h4><p className="stat-number">{citasHoy.length}</p></div>
+                <div className="stat-card"><span className="stat-icon">📅</span><h4>Total citas</h4><p className="stat-number">{citas.length}</p></div>
+                <div className="stat-card"><span className="stat-icon">☀️</span><h4>Hoy</h4><p className="stat-number">{citasHoy.length}</p></div>
                 {perfilBarbero?.calificacion_promedio > 0 && <div className="stat-card"><span className="stat-icon">⭐</span><h4>Calificación</h4><p className="stat-number">{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</p></div>}
               </div>
-              <div className="action-buttons" style={{ marginTop:20 }}>
+              <div className="action-buttons">
                 <button onClick={() => { setCurrentPage('citas'); cargarCitasBarbero() }} className="btn-primary">📅 Ver mis citas</button>
-                <button onClick={() => { setCurrentPage('perfil'); cargarPerfilBarbero() }} className="btn-secondary">👤 Mi perfil y foto</button>
+                <button onClick={() => { setCurrentPage('perfil'); cargarPerfilBarbero() }} className="btn-secondary">👤 Mi perfil</button>
               </div>
             </div>
           )}
 
           {currentPage==='perfil' && (
-  <div className="page">
-    <h2>👤 Mi Perfil</h2>
-    {!perfilBarbero
-      ? <div className="empty-state"><span className="empty-icon">✂️</span><p>No tienes perfil vinculado. Pídele el código de invitación a tu dueño.</p></div>
-      : (
-        <div>
-          <div className="welcome-card owner" style={{ textAlign:'center', paddingTop:24 }}>
-            <BarberoAvatar foto={perfilBarbero.foto} nombre={perfilBarbero.nombre} size={90} />
-            <h3 style={{ marginTop:12 }}>{perfilBarbero.nombre}</h3>
-            <p style={{ color:'var(--muted)' }}>✂️ {perfilBarbero.especialidad}</p>
-            {perfilBarbero.calificacion_promedio > 0 && <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:4 }}><Estrellas valor={Math.round(perfilBarbero.calificacion_promedio)} /><span style={{ color:'var(--muted)', fontSize:13 }}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span></div>}
-          </div>
+            <div className="page">
+              <h2>👤 Mi Perfil</h2>
+              {!perfilBarbero
+                ? <div className="empty-state"><span className="empty-icon">✂️</span><p>No tienes perfil vinculado. Pídele el código al dueño.</p></div>
+                : (
+                  <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+                    <div className="welcome-card owner" style={{ textAlign:'center', paddingTop:24 }}>
+                      <BarberoAvatar foto={perfilBarbero.foto} nombre={perfilBarbero.nombre} size={90} />
+                      <h3 style={{ marginTop:12 }}>{perfilBarbero.nombre}</h3>
+                      <p style={{ color:'#888' }}>✂️ {perfilBarbero.especialidad}</p>
+                      {perfilBarbero.calificacion_promedio > 0 && <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:4 }}><Estrellas valor={Math.round(perfilBarbero.calificacion_promedio)} /><span style={{ color:'#888', fontSize:13 }}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span></div>}
+                    </div>
 
-          {/* FOTO */}
-          <div style={{ marginTop:24 }}>
-            <h3>📷 Mi foto</h3>
-            <ImageUploader tipo="barbero" id={perfilBarbero.id} urlActual={perfilBarbero.foto} label="Toca para subir tu foto"
-              onSuccess={(url) => { setPerfilBarbero({ ...perfilBarbero, foto: url }); setUserData({ ...userData, foto: url }) }} />
-          </div>
+                    <div>
+                      <h3>📷 Mi foto</h3>
+                      <p style={{ color:'#888', fontSize:13, marginBottom:12 }}>Tómate una selfie o elige de tu galería</p>
+                      <ImageUploader tipo="barbero" id={perfilBarbero.id} urlActual={perfilBarbero.foto} label="Subir foto"
+                        onSuccess={(url) => { setPerfilBarbero({ ...perfilBarbero, foto: url }); setUserData({ ...userData, foto: url }) }} />
+                    </div>
 
-          {/* DATOS EDITABLES */}
-          <div style={{ marginTop:24, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderLeft:'3px solid var(--red)', borderRadius:12, padding:24 }}>
-            <h3 style={{ marginTop:0 }}>✏️ Editar mi información</h3>
-            <div className="form-group" style={{ marginBottom:12 }}>
-              <label>Especialidad</label>
-              <input type="text" placeholder="Fades, barba clásica..." value={descripcionBarbero} onChange={e => setDescripcionBarbero(e.target.value)}
-                defaultValue={perfilBarbero.especialidad} />
-            </div>
-            <div className="form-group" style={{ marginBottom:12 }}>
-              <label>Descripción</label>
-              <textarea placeholder="Cuéntales a tus clientes quién eres..." value={perfilBarbero.descripcion || ''}
-                onChange={e => setPerfilBarbero({...perfilBarbero, descripcion: e.target.value})}
-                style={{ width:'100%', minHeight:80, background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:8, padding:10, color:'var(--cream)', fontSize:13, resize:'vertical', boxSizing:'border-box' }} />
-            </div>
-            <div className="form-group" style={{ marginBottom:12 }}>
-              <label>📱 Mi WhatsApp</label>
-              <input type="tel" placeholder="+57 300 000 0000" value={perfilBarbero.whatsapp || ''}
-                onChange={e => setPerfilBarbero({...perfilBarbero, whatsapp: e.target.value})} />
-              <p style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>Para recibir notificaciones de nuevas citas</p>
-            </div>
-<div className="form-group" style={{ marginBottom:12, marginTop:12 }}>
-  <label>🔑 API Key de CallMeBot</label>
-  <input 
-    type="text" 
-    placeholder="Ej: 123456" 
-    value={perfilBarbero.apikey_whatsapp || ''}
-    onChange={e => setPerfilBarbero({...perfilBarbero, apikey_whatsapp: e.target.value})}
-  />
-  <p style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>
-    Envía "I allow callmebot to send me messages" al +34 644 33 42 61 por WhatsApp para obtener tu apikey
-  </p>
-</div>
-            {/* HORARIO */}
-            <div style={{ marginTop:16 }}>
-              <p style={{ color:'var(--cream-3)', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>📅 Mi horario</p>
-              {DIAS.map(dia => {
-                const h = perfilBarbero.horario?.[dia] || { activo: false, inicio: '08:00', fin: '18:00' }
-                return (
-                  <div key={dia} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, flexWrap:'wrap' }}>
-                    <label style={{ display:'flex', alignItems:'center', gap:6, minWidth:100, cursor:'pointer' }}>
-                      <input type="checkbox" checked={h.activo} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, activo: e.target.checked}}})}
-                        style={{ width:16, height:16, accentColor:'var(--red)' }} />
-                      <span style={{ color:'var(--cream)', fontSize:13, fontWeight:700 }}>{DIAS_LABELS[dia]}</span>
-                    </label>
-                    {h.activo && <>
-                      <input type="time" value={h.inicio} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, inicio: e.target.value}}})}
-                        style={{ padding:'6px 10px', fontSize:13, background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:6, color:'var(--cream)' }} />
-                      <span style={{ color:'var(--muted)' }}>a</span>
-                      <input type="time" value={h.fin} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, fin: e.target.value}}})}
-                        style={{ padding:'6px 10px', fontSize:13, background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:6, color:'var(--cream)' }} />
-                    </>}
-                    {!h.activo && <span style={{ color:'var(--muted)', fontSize:12 }}>No trabajo este día</span>}
+                    <div style={{ background:'#1A1A1A', border:'1px solid #2A2A2A', borderLeft:'3px solid #C9A84C', borderRadius:12, padding:24 }}>
+                      <h3 style={{ marginTop:0 }}>✏️ Editar mi información</h3>
+                      <div className="form-group" style={{ marginBottom:12 }}>
+                        <label>Especialidad</label>
+                        <input type="text" placeholder="Fades, barba clásica..." value={perfilBarbero.especialidad||''} onChange={e => setPerfilBarbero({...perfilBarbero, especialidad: e.target.value})} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom:12 }}>
+                        <label>Descripción</label>
+                        <textarea placeholder="Cuéntales quién eres..." value={perfilBarbero.descripcion||''} onChange={e => setPerfilBarbero({...perfilBarbero, descripcion: e.target.value})}
+                          style={{ width:'100%', minHeight:80, background:'#111', border:'1px solid #2A2A2A', borderRadius:8, padding:10, color:'#fff', fontSize:13, resize:'vertical', boxSizing:'border-box' }} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom:12 }}>
+                        <label>📱 Mi WhatsApp</label>
+                        <input type="tel" placeholder="+57 300 000 0000" value={perfilBarbero.whatsapp||''} onChange={e => setPerfilBarbero({...perfilBarbero, whatsapp: e.target.value})} />
+                        <p style={{ fontSize:11, color:'#888', marginTop:4 }}>Para recibir notificaciones de nuevas citas</p>
+                      </div>
+                      <div className="form-group" style={{ marginBottom:16 }}>
+                        <label>🔑 API Key de CallMeBot</label>
+                        <input type="text" placeholder="Ej: 123456" value={perfilBarbero.apikey_whatsapp||''} onChange={e => setPerfilBarbero({...perfilBarbero, apikey_whatsapp: e.target.value})} />
+                        <p style={{ fontSize:11, color:'#888', marginTop:4 }}>Envía "I allow callmebot to send me messages" al +34 644 33 42 61 por WhatsApp para obtener tu apikey</p>
+                      </div>
+
+                      <p style={{ color:'#888', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>📅 Mi horario</p>
+                      {DIAS.map(dia => {
+                        const h = perfilBarbero.horario?.[dia] || { activo: false, inicio: '08:00', fin: '18:00' }
+                        return (
+                          <div key={dia} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, flexWrap:'wrap' }}>
+                            <label style={{ display:'flex', alignItems:'center', gap:6, minWidth:100, cursor:'pointer' }}>
+                              <input type="checkbox" checked={h.activo} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, activo: e.target.checked}}})} style={{ width:16, height:16, accentColor:'#C9A84C' }} />
+                              <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>{DIAS_LABELS[dia]}</span>
+                            </label>
+                            {h.activo && <>
+                              <input type="time" value={h.inicio} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, inicio: e.target.value}}})}
+                                style={{ padding:'6px 10px', fontSize:13, background:'#111', border:'1px solid #2A2A2A', borderRadius:6, color:'#fff' }} />
+                              <span style={{ color:'#888' }}>a</span>
+                              <input type="time" value={h.fin} onChange={e => setPerfilBarbero({...perfilBarbero, horario: {...perfilBarbero.horario, [dia]: {...h, fin: e.target.value}}})}
+                                style={{ padding:'6px 10px', fontSize:13, background:'#111', border:'1px solid #2A2A2A', borderRadius:6, color:'#fff' }} />
+                            </>}
+                            {!h.activo && <span style={{ color:'#888', fontSize:12 }}>No trabajo este día</span>}
+                          </div>
+                        )
+                      })}
+
+                      <button className="btn-primary" style={{ marginTop:16, width:'100%' }} onClick={async () => {
+                        try {
+                          await fetch(`${API}/api/barbero/perfil/${perfilBarbero.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ descripcion: perfilBarbero.descripcion, especialidad: perfilBarbero.especialidad, whatsapp: perfilBarbero.whatsapp, apikey_whatsapp: perfilBarbero.apikey_whatsapp, horario: perfilBarbero.horario }) })
+                          alert('✅ Perfil actualizado')
+                        } catch { alert('Error de conexión') }
+                      }}>✅ Guardar cambios</button>
+                    </div>
+
+                    <div style={{ background:'#1A1A1A', border:'1px solid #2A2A2A', borderRadius:12, padding:16 }}>
+                      <p style={{ color:'#888', fontSize:12, marginBottom:4 }}>🔑 Código de invitación</p>
+                      <div style={{ fontSize:28, fontWeight:900, letterSpacing:8, color:'#C9A84C', textAlign:'center', padding:'12px 0' }}>{perfilBarbero.codigo_invitacion||'——'}</div>
+                      <p style={{ color:'#888', fontSize:11, textAlign:'center' }}>Comparte con colegas para unirse a tu barbería</p>
+                    </div>
                   </div>
                 )
-              })}
+              }
             </div>
+          )}
 
-            <button className="btn-primary" style={{ marginTop:16, width:'100%' }} onClick={async () => {
-              try {
-                await fetch(`${API}/api/barbero/perfil/${perfilBarbero.id}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    descripcion: perfilBarbero.descripcion,
-                    especialidad: perfilBarbero.especialidad,
-                    whatsapp: perfilBarbero.whatsapp,
-                    horario: perfilBarbero.horario
-                  })
-                })
-                alert('✅ Perfil actualizado')
-              } catch { alert('Error de conexión') }
-            }}>
-              ✅ Guardar cambios
-            </button>
-          </div>
-
-          {/* CÓDIGO DE INVITACIÓN */}
-          <div style={{ marginTop:24, background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderRadius:12, padding:16 }}>
-            <p style={{ color:'var(--muted)', fontSize:12, marginBottom:4 }}>🔑 Código de invitación</p>
-            <div style={{ fontSize:28, fontWeight:900, letterSpacing:8, color:'var(--gold)', textAlign:'center', padding:'12px 0' }}>{perfilBarbero.codigo_invitacion || '——'}</div>
-            <p style={{ color:'var(--muted)', fontSize:11, textAlign:'center' }}>Comparte con colegas para unirse a tu barbería</p>
-          </div>
+          {currentPage==='citas' && (
+            <div className="page">
+              <h2>📋 Mis citas ({citas.length})</h2>
+              {citas.length===0
+                ? <div className="empty-state"><span className="empty-icon">📌</span><p>No tienes citas asignadas aún</p></div>
+                : <div className="citas-grid">
+                    {citas.map((c: any) => (
+                      <div key={c.id} className="cita-card">
+                        <h4>{c.cliente?.nombre||'Cliente'}</h4>
+                        <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
+                        <p><strong>Fecha:</strong> {c.fecha}</p>
+                        <p><strong>Hora:</strong> {c.hora}</p>
+                        <p><strong>Tel:</strong> {c.cliente?.telefono||'N/A'}</p>
+                        <span className="badge-agendada">✅ Agendada</span>
+                      </div>
+                    ))}
+                  </div>
+              }
+            </div>
+          )}
         </div>
-      )
-    }
-  </div>
-)}
+      </div>
+    )
+  }
 
-  // ============================================================
   // DUEÑO PENDIENTE
-  // ============================================================
   if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='pendiente') return (
     <div className="dashboard-container">
       <nav className="navbar">
-        <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>CutConnect</h1></div><span className="role-badge pending">⏳ Pendiente</span></div>
+        <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>Cut<span>Connect</span></h1></div><span className="role-badge pending">⏳ Pendiente</span></div>
         <div className="nav-links"><button className="btn-logout" onClick={handleLogout}>Salir</button></div>
       </nav>
       <div className="dashboard-content">
@@ -1035,7 +907,7 @@ function App() {
             <h3>Estamos revisando tu negocio</h3>
             <p>Recibirás respuesta en 24–48 horas. Una vez aprobado tendrás <strong>14 días gratis</strong>.</p>
             <div className="pending-info">
-              <p>{userData?.tipo_negocio==='peluqueria' ? '💇' : '💈'} <strong>{userData?.negocio_nombre}</strong></p>
+              <p>{userData?.tipo_negocio==='peluqueria'?'💇':'💈'} <strong>{userData?.negocio_nombre}</strong></p>
               <p>📍 {userData?.ciudad}, {userData?.estado}</p>
               <p>📞 {userData?.negocio_telefono}</p>
               <p>✉️ {userData?.email}</p>
@@ -1046,128 +918,87 @@ function App() {
       </div>
     </div>
   )
-// ============================================================
-  // DUEÑO — TRIAL VENCIDO (PANTALLA DE PAGO)
-  // ============================================================
+
+  // DUEÑO TRIAL VENCIDO
   if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='trial') {
-    const diasRestantes = userData?.fecha_trial_inicio
-      ? Math.max(0, Math.ceil(14 - (Date.now() - new Date(userData.fecha_trial_inicio).getTime()) / (1000*60*60*24)))
-      : 14
-
-    if (diasRestantes <= 0) {
-      return (
-        <div className="dashboard-container">
-          <nav className="navbar">
-            <div className="navbar-left">
-              <div className="navbar-brand"><span>💈</span><h1>CutConnect</h1></div>
-              <span className="role-badge" style={{ background:'#E74C3C' }}>⛔ Vencido</span>
+    const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0, Math.ceil(14 - (Date.now() - new Date(userData.fecha_trial_inicio).getTime()) / (1000*60*60*24))) : 14
+    if (diasRestantes <= 0) return (
+      <div className="dashboard-container">
+        <nav className="navbar">
+          <div className="navbar-left"><div className="navbar-brand"><span>💈</span><h1>Cut<span>Connect</span></h1></div><span className="role-badge" style={{ background:'rgba(231,76,60,0.1)', borderColor:'rgba(231,76,60,0.3)', color:'#E74C3C' }}>⛔ Vencido</span></div>
+          <div className="nav-links"><button className="btn-logout" onClick={handleLogout}>Salir</button></div>
+        </nav>
+        <div className="dashboard-content">
+          <div className="page">
+            <div style={{ textAlign:'center', padding:'20px 0' }}>
+              <span style={{ fontSize:60 }}>⛔</span>
+              <h2 style={{ color:'#E74C3C', marginTop:12 }}>Tu período de prueba ha vencido</h2>
+              <p style={{ color:'#888', maxWidth:400, margin:'0 auto 24px' }}>Para seguir usando CutConnect y que tus clientes puedan encontrarte, renueva tu suscripción por <strong style={{ color:'#C9A84C' }}>$12 USD/mes</strong>.</p>
             </div>
-            <div className="nav-links">
-              <button className="btn-logout" onClick={handleLogout}>Salir</button>
-            </div>
-          </nav>
-          <div className="dashboard-content">
-            <div className="page">
-              <div style={{ textAlign:'center', padding:'20px 0' }}>
-                <span style={{ fontSize:60 }}>⛔</span>
-                <h2 style={{ color:'#E74C3C', marginTop:12 }}>Tu período de prueba ha vencido</h2>
-                <p style={{ color:'var(--muted)', maxWidth:400, margin:'0 auto 24px' }}>
-                  Para seguir usando CutConnect y que tus clientes puedan ver tu negocio, renueva tu suscripción por <strong style={{ color:'var(--gold)' }}>$12 USD/mes</strong>.
-                </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:16, maxWidth:500, margin:'0 auto' }}>
+              <div style={{ background:'#1A1A1A', border:'2px solid #635BFF', borderRadius:16, padding:24 }}>
+                <h3 style={{ margin:'0 0 8px 0', color:'#635BFF' }}>💳 Pagar con tarjeta</h3>
+                <p style={{ color:'#888', fontSize:13, margin:'0 0 16px 0' }}>Visa, Mastercard, débito — pago seguro con Stripe</p>
+                <button className="btn-primary" style={{ width:'100%', background:'#635BFF', fontSize:15, padding:'14px' }}
+                  onClick={async () => { try { const res = await fetch(`${API}/api/pagos/stripe/crear`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ barberia_id: userData?.barberia_id, email: userData?.email }) }); const data = await res.json(); if (data.success) window.location.href = data.url; else alert('Error: ' + data.error) } catch { alert('Error de conexión') } }}>
+                  💳 Pagar $12 USD ahora
+                </button>
               </div>
-
-              <div style={{ display:'flex', flexDirection:'column', gap:16, maxWidth:500, margin:'0 auto' }}>
-
-                {/* STRIPE */}
-                <div style={{ background:'var(--dark-3)', border:'2px solid #635BFF', borderRadius:16, padding:24 }}>
-                  <h3 style={{ margin:'0 0 8px 0', color:'#635BFF' }}>💳 Pagar con tarjeta</h3>
-                  <p style={{ color:'var(--muted)', fontSize:13, margin:'0 0 16px 0' }}>Visa, Mastercard, débito — pago seguro con Stripe</p>
-                  <button
-                    className="btn-primary"
-                    style={{ width:'100%', background:'#635BFF', borderColor:'#635BFF', fontSize:16, padding:'14px' }}
-                    onClick={async () => {
-                      try {
-                        const res = await fetch(`${API}/api/pagos/stripe/crear`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ barberia_id: userData?.barberia_id, email: userData?.email })
-                        })
-                        const data = await res.json()
-                        if (data.success) window.location.href = data.url
-                        else alert('Error: ' + data.error)
-                      } catch { alert('Error de conexión') }
-                    }}
-                  >
-                    💳 Pagar $12 USD ahora
-                  </button>
+              <div style={{ background:'#1A1A1A', border:'2px solid #F0B90B', borderRadius:16, padding:24 }}>
+                <h3 style={{ margin:'0 0 8px 0', color:'#F0B90B' }}>📱 Pagar con Binance Pay</h3>
+                <p style={{ color:'#888', fontSize:13, margin:'0 0 16px 0' }}>Envía exactamente <strong style={{ color:'#F0B90B' }}>$12 USDT</strong></p>
+                <div style={{ textAlign:'center', marginBottom:16 }}>
+                  <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance" style={{ width:180, height:180, borderRadius:12, border:'2px solid #F0B90B' }} />
                 </div>
-
-                {/* BINANCE */}
-                <div style={{ background:'var(--dark-3)', border:'2px solid #F0B90B', borderRadius:16, padding:24 }}>
-                  <h3 style={{ margin:'0 0 8px 0', color:'#F0B90B' }}>📱 Pagar con Binance Pay</h3>
-                  <p style={{ color:'var(--muted)', fontSize:13, margin:'0 0 16px 0' }}>Envía exactamente <strong style={{ color:'#F0B90B' }}>$12 USDT</strong> escaneando el QR</p>
-                  <div style={{ textAlign:'center', marginBottom:16 }}>
-                    <img
-                      src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg"
-                      alt="QR Binance Pay"
-                      style={{ width:180, height:180, borderRadius:12, border:'2px solid #F0B90B' }}
-                    />
-                  </div>
-                  <div style={{ background:'var(--dark-2)', borderRadius:8, padding:12, marginBottom:12 }}>
-                    <p style={{ fontSize:12, color:'var(--muted)', margin:'0 0 4px 0' }}>Pay ID</p>
-                    <p style={{ fontSize:20, fontWeight:900, letterSpacing:4, color:'#F0B90B', margin:0 }}>176779028</p>
-                  </div>
-                  <p style={{ fontSize:12, color:'var(--muted)', margin:'0 0 12px 0' }}>
-                    Después de pagar, envía el comprobante por WhatsApp para activar tu cuenta:
-                  </p>
-                  
-                    href="https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20de%20CutConnect%20por%20Binance%20Pay.%20Adjunto%20el%20comprobante."
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ display:'block', background:'#25D366', color:'#fff', textAlign:'center', padding:'12px', borderRadius:8, fontWeight:700, textDecoration:'none', fontSize:14 }}
-                  >
-                    📲 Enviar comprobante por WhatsApp
-                  </a>
+                <div style={{ background:'#111', borderRadius:8, padding:12, marginBottom:12 }}>
+                  <p style={{ fontSize:11, color:'#888', margin:'0 0 4px 0' }}>Pay ID</p>
+                  <p style={{ fontSize:22, fontWeight:900, letterSpacing:4, color:'#F0B90B', margin:0 }}>176779028</p>
                 </div>
-
+                <a href="https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20de%20CutConnect%20por%20Binance%20Pay." target="_blank" rel="noreferrer"
+                  style={{ display:'block', background:'#25D366', color:'#fff', textAlign:'center', padding:'12px', borderRadius:8, fontWeight:700, textDecoration:'none', fontSize:14 }}>
+                  📲 Enviar comprobante por WhatsApp
+                </a>
               </div>
             </div>
           </div>
         </div>
-      )
-    }
+      </div>
+    )
   }
-  // ============================================================
+
   // DUEÑO ACTIVO
-  // ============================================================
   if (loggedIn && userData?.rol==='dueño' && ['trial','activo','aprobado'].includes(userData?.estado_verificacion)) {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0, Math.ceil(14 - (Date.now() - new Date(userData.fecha_trial_inicio).getTime()) / (1000*60*60*24))) : 14
     const maxCitas = Math.max(...rankingBarberos.map(b => b.total_citas), 1)
-
     return (
       <div className="dashboard-container">
         <nav className="navbar">
           <div className="navbar-left">
-            <div className="navbar-brand"><span>💈</span><h1>CutConnect</h1></div>
-            <span className={`role-badge ${userData?.estado_verificacion==='trial' ? 'trial' : ''}`}>{userData?.estado_verificacion==='trial' ? '🟣 Trial' : '👔 Dueño'}</span>
+            <div className="navbar-brand"><span>💈</span><h1>Cut<span>Connect</span></h1></div>
+            <span className={`role-badge ${userData?.estado_verificacion==='trial'?'trial':''}`}>{userData?.estado_verificacion==='trial'?'🟣 Trial':'👔 Dueño'}</span>
           </div>
           <div className="nav-links">
-            <button className={currentPage==='dashboard' ? 'active' : ''} onClick={() => setCurrentPage('dashboard')}>🏠 Panel</button>
-            <button className={currentPage==='equipo' ? 'active' : ''} onClick={() => { setCurrentPage('equipo'); cargarMisBarberos() }}>✂️ Equipo</button>
-            <button className={currentPage==='citas' ? 'active' : ''} onClick={() => { setCurrentPage('citas'); cargarCitasDueno() }}>📋 Citas</button>
-            <button className={currentPage==='negocio' ? 'active' : ''} onClick={() => setCurrentPage('negocio')}>🏪 Mi negocio</button>
+            <button className={currentPage==='dashboard'?'active':''} onClick={() => setCurrentPage('dashboard')}>🏠 Panel</button>
+            <button className={currentPage==='equipo'?'active':''} onClick={() => { setCurrentPage('equipo'); cargarMisBarberos() }}>✂️ Equipo</button>
+            <button className={currentPage==='citas'?'active':''} onClick={() => { setCurrentPage('citas'); cargarCitasDueno() }}>📋 Citas</button>
+            <button className={currentPage==='negocio'?'active':''} onClick={() => setCurrentPage('negocio')}>🏪 Mi negocio</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
-
         <div className="dashboard-content">
-          {userData?.estado_verificacion==='trial' && (
+          {userData?.estado_verificacion==='trial' && diasRestantes <= 3 && (
+            <div style={{ background:'rgba(231,76,60,0.1)', borderBottom:'1px solid rgba(231,76,60,0.3)', padding:'10px 24px', display:'flex', alignItems:'center', gap:10 }}>
+              <span>⚠️</span>
+              <p style={{ fontSize:13, color:'#E74C3C' }}>¡Tu trial vence en <strong>{diasRestantes} días</strong>! Renueva tu suscripción para no perder tu cuenta.</p>
+            </div>
+          )}
+          {userData?.estado_verificacion==='trial' && diasRestantes > 3 && (
             <div className="trial-banner"><span>🟣</span><p>Período de prueba. Te quedan <strong>{diasRestantes} días</strong>.</p></div>
           )}
 
           {currentPage==='dashboard' && (
             <div className="page">
-              <h2>{userData?.tipo_negocio==='peluqueria' ? '💇' : '💈'} Panel de Control</h2>
+              <h2>{userData?.tipo_negocio==='peluqueria'?'💇':'💈'} Panel de Control</h2>
               <div className="welcome-card owner">
                 <p><strong>🏪</strong> {userData?.negocio_nombre}</p>
                 <p><strong>📍</strong> {userData?.ciudad}, {userData?.estado}</p>
@@ -1177,27 +1008,24 @@ function App() {
                 <div className="stat-card"><span className="stat-icon">📅</span><h4>Citas totales</h4><p className="stat-number">{citas.length}</p></div>
                 <div className="stat-card"><span className="stat-icon">✂️</span><h4>Profesionales</h4><p className="stat-number">{misBarberos.length}</p></div>
                 <div className="stat-card"><span className="stat-icon">✅</span><h4>Agendadas</h4><p className="stat-number">{citas.filter((c:any) => c.estado==='agendada').length}</p></div>
-                {userData?.estado_verificacion==='trial' && <div className="stat-card"><span className="stat-icon">⏱️</span><h4>Días trial</h4><p className="stat-number">{diasRestantes}</p></div>}
+                {userData?.estado_verificacion==='trial' && <div className="stat-card"><span className="stat-icon">⏱️</span><h4>Días trial</h4><p className="stat-number" style={{ color: diasRestantes <= 3 ? '#E74C3C' : '#fff' }}>{diasRestantes}</p></div>}
               </div>
               {rankingBarberos.length > 0 && (
                 <>
-                  <h3>🏆 Ranking</h3>
+                  <h3>🏆 Ranking de profesionales</h3>
                   <div className="ranking-grid">
                     {rankingBarberos.map((b, i) => (
                       <div key={b.barbero_id} className="ranking-item">
                         <div className={`ranking-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':''}`}>{i+1}</div>
                         <BarberoAvatar foto={b.foto} nombre={b.nombre} size={36} />
                         <div className="ranking-info"><div className="ranking-nombre">{b.nombre}</div><div className="ranking-especialidad">{b.total_citas} citas</div></div>
-                        <div className="ranking-bar-container">
-                          <div className="ranking-bar"><div className="ranking-bar-fill" style={{ width:`${(b.total_citas/maxCitas)*100}%` }}></div></div>
-                          <div className="ranking-citas">{Math.round((b.total_citas/citas.length)*100)}%</div>
-                        </div>
+                        <div className="ranking-bar-container"><div className="ranking-bar"><div className="ranking-bar-fill" style={{ width:`${(b.total_citas/maxCitas)*100}%` }}></div></div><div className="ranking-citas">{Math.round((b.total_citas/citas.length)*100)}%</div></div>
                       </div>
                     ))}
                   </div>
                 </>
               )}
-              <div className="action-buttons" style={{ marginTop:20 }}>
+              <div className="action-buttons">
                 <button onClick={() => { setCurrentPage('equipo'); cargarMisBarberos() }} className="btn-primary">✂️ Gestionar equipo</button>
                 <button onClick={() => { setCurrentPage('citas'); cargarCitasDueno(); cargarRanking() }} className="btn-secondary">📋 Ver citas</button>
               </div>
@@ -1209,35 +1037,44 @@ function App() {
               <h2>🏪 Mi Negocio</h2>
               <div style={{ marginBottom:24 }}>
                 <h3>🖼️ Logo del negocio</h3>
-                <p style={{ color:'var(--muted)', fontSize:13, marginBottom:12 }}>Se mostrará a todos los clientes al buscar tu negocio</p>
-                <ImageUploader tipo="logo" id={userData?.barberia_id} urlActual={userData?.negocio_logo} label="Toca para subir el logo"
+                <p style={{ color:'#888', fontSize:13, marginBottom:12 }}>Se mostrará a todos los clientes</p>
+                <ImageUploader tipo="logo" id={userData?.barberia_id} urlActual={userData?.negocio_logo} label="Subir logo"
                   onSuccess={(url) => setUserData({ ...userData, negocio_logo: url })} />
               </div>
-
               <div className="welcome-card owner">
                 <p><strong>Nombre:</strong> {userData?.negocio_nombre}</p>
-                <p><strong>Tipo:</strong> {userData?.tipo_negocio==='peluqueria' ? '💇 Peluquería' : '💈 Barbería'}</p>
+                <p><strong>Tipo:</strong> {userData?.tipo_negocio==='peluqueria'?'💇 Peluquería':'💈 Barbería'}</p>
                 <p><strong>Ciudad:</strong> {userData?.ciudad}</p>
                 <p><strong>Teléfono:</strong> {userData?.negocio_telefono}</p>
               </div>
-
               {!editNegocio
-                ? <button className="btn-primary" style={{ marginTop:16 }} onClick={() => { setEditNegocioData({ nombre: userData?.negocio_nombre||'', descripcion:'', telefono: userData?.negocio_telefono||'', logo: userData?.negocio_logo||'', tipo_negocio: userData?.tipo_negocio||'barberia' }); setEditNegocio(true) }}>✏️ Editar datos</button>
+                ? <button className="btn-primary" style={{ marginTop:16 }} onClick={() => { setEditNegocioData({ nombre: userData?.negocio_nombre||'', descripcion:'', telefono: userData?.negocio_telefono||'', logo: userData?.negocio_logo||'', tipo_negocio: userData?.tipo_negocio||'barberia', fidelizacion_citas: 10, fidelizacion_beneficio: '' }); setEditNegocio(true) }}>✏️ Editar datos</button>
                 : (
                   <form onSubmit={handleGuardarNegocio} className="edit-negocio-form" style={{ marginTop:16 }}>
                     <h3 style={{ marginTop:0 }}>✏️ Editar negocio</h3>
-                    <div className="form-group" style={{ marginBottom:12 }}><label>Tipo</label>
+                    <div className="form-group"><label>Tipo</label>
                       <div className="category-selector">
                         <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='barberia'?'active':''}`} onClick={() => setEditNegocioData({...editNegocioData, tipo_negocio:'barberia'})}><span className="cat-icon">💈</span>Barbería</button>
                         <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='peluqueria'?'active':''}`} onClick={() => setEditNegocioData({...editNegocioData, tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
                       </div>
                     </div>
-                    <div className="form-group" style={{ marginBottom:12 }}><label>Nombre</label><input type="text" value={editNegocioData.nombre} onChange={e => setEditNegocioData({...editNegocioData, nombre: e.target.value})} /></div>
-                    <div className="form-group" style={{ marginBottom:12 }}><label>Descripción</label><textarea value={editNegocioData.descripcion} onChange={e => setEditNegocioData({...editNegocioData, descripcion: e.target.value})} /></div>
-                    <div className="form-group" style={{ marginBottom:12 }}><label>Teléfono</label><input type="tel" value={editNegocioData.telefono} onChange={e => setEditNegocioData({...editNegocioData, telefono: e.target.value})} /></div>
+                    <div className="form-group"><label>Nombre</label><input type="text" value={editNegocioData.nombre} onChange={e => setEditNegocioData({...editNegocioData, nombre: e.target.value})} /></div>
+                    <div className="form-group"><label>Descripción</label><textarea value={editNegocioData.descripcion} onChange={e => setEditNegocioData({...editNegocioData, descripcion: e.target.value})} /></div>
+                    <div className="form-group"><label>Teléfono</label><input type="tel" value={editNegocioData.telefono} onChange={e => setEditNegocioData({...editNegocioData, telefono: e.target.value})} /></div>
+                    <div style={{ background:'#111', border:'1px solid #2A2A2A', borderLeft:'3px solid #C9A84C', borderRadius:10, padding:16 }}>
+                      <h4 style={{ color:'#C9A84C', marginBottom:12 }}>🎖 Programa de fidelización</h4>
+                      <div className="form-group" style={{ marginBottom:12 }}>
+                        <label>Citas necesarias para el premio</label>
+                        <input type="number" min={1} max={50} value={editNegocioData.fidelizacion_citas} onChange={e => setEditNegocioData({...editNegocioData, fidelizacion_citas: parseInt(e.target.value)})} />
+                      </div>
+                      <div className="form-group">
+                        <label>Premio para el cliente</label>
+                        <input type="text" placeholder="Ej: Corte gratis, 20% descuento..." value={editNegocioData.fidelizacion_beneficio} onChange={e => setEditNegocioData({...editNegocioData, fidelizacion_beneficio: e.target.value})} />
+                      </div>
+                    </div>
                     {error && <p className="error">{error}</p>}
-                    <div style={{ display:'flex', gap:10, marginTop:16 }}>
-                      <button type="submit" className="btn-primary" disabled={loading}>{loading ? '⏳...' : '✅ Guardar'}</button>
+                    <div style={{ display:'flex', gap:10 }}>
+                      <button type="submit" className="btn-primary" disabled={loading}>{loading?'⏳...':'✅ Guardar'}</button>
                       <button type="button" className="btn-secondary" onClick={() => setEditNegocio(false)}>Cancelar</button>
                     </div>
                   </form>
@@ -1250,49 +1087,44 @@ function App() {
             <div className="page">
               <h2>✂️ Mi Equipo</h2>
               {!showFormBarbero && <div style={{ marginBottom:20 }}><button className="btn-primary" onClick={() => { resetFormBarbero(); setShowFormBarbero(true) }}>➕ Agregar profesional</button></div>}
-
               {showFormBarbero && (
-                <div style={{ background:'var(--dark-3)', border:'1px solid var(--dark-5)', borderLeft:'3px solid var(--red)', borderRadius:12, padding:24, marginBottom:24 }}>
-                  <h3 style={{ marginTop:0 }}>{editandoBarbero ? '✏️ Editar' : '➕ Nuevo profesional'}</h3>
+                <div style={{ background:'#1A1A1A', border:'1px solid #2A2A2A', borderLeft:'3px solid #C9A84C', borderRadius:12, padding:24, marginBottom:24 }}>
+                  <h3 style={{ marginTop:0 }}>{editandoBarbero?'✏️ Editar':'➕ Nuevo profesional'}</h3>
                   <form onSubmit={handleGuardarBarbero} className="form">
                     <div className="form-row">
                       <div className="form-group"><label>Nombre</label><input type="text" placeholder="Ej: Carlos" value={formBarbero.nombre} onChange={e => setFormBarbero({...formBarbero, nombre: e.target.value})} required /></div>
                       <div className="form-group"><label>Especialidad</label><input type="text" placeholder="Fades, barba..." value={formBarbero.especialidad} onChange={e => setFormBarbero({...formBarbero, especialidad: e.target.value})} /></div>
                     </div>
-                    <div className="form-group"><label>Descripción (opcional)</label><textarea placeholder="Ej: 5 años de experiencia en fades..." value={formBarbero.descripcion} onChange={e => setFormBarbero({...formBarbero, descripcion: e.target.value})} /></div>
-                    <div style={{ marginTop:16 }}>
-                      <p style={{ color:'var(--cream-3)', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>📅 Horario</p>
+                    <div className="form-group"><label>Descripción</label><textarea placeholder="Años de experiencia, estilo..." value={formBarbero.descripcion} onChange={e => setFormBarbero({...formBarbero, descripcion: e.target.value})} /></div>
+                    <div style={{ marginTop:8 }}>
+                      <p style={{ color:'#888', fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>📅 Horario</p>
                       {DIAS.map(dia => {
                         const h = (formBarbero.horario as any)[dia]
                         return (
                           <div key={dia} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, flexWrap:'wrap' }}>
                             <label style={{ display:'flex', alignItems:'center', gap:6, minWidth:100, cursor:'pointer' }}>
-                              <input type="checkbox" checked={h.activo} onChange={e => updateHorarioDia(dia, 'activo', e.target.checked)} style={{ width:16, height:16, accentColor:'var(--red)' }} />
-                              <span style={{ color:'var(--cream)', fontSize:13, fontWeight:700 }}>{DIAS_LABELS[dia]}</span>
+                              <input type="checkbox" checked={h.activo} onChange={e => updateHorarioDia(dia, 'activo', e.target.checked)} style={{ width:16, height:16, accentColor:'#C9A84C' }} />
+                              <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>{DIAS_LABELS[dia]}</span>
                             </label>
                             {h.activo && <>
-                              <div className="form-group" style={{ margin:0 }}><input type="time" value={h.inicio} onChange={e => updateHorarioDia(dia, 'inicio', e.target.value)} style={{ padding:'6px 10px', fontSize:13 }} /></div>
-                              <span style={{ color:'var(--muted)' }}>a</span>
-                              <div className="form-group" style={{ margin:0 }}><input type="time" value={h.fin} onChange={e => updateHorarioDia(dia, 'fin', e.target.value)} style={{ padding:'6px 10px', fontSize:13 }} /></div>
+                              <input type="time" value={h.inicio} onChange={e => updateHorarioDia(dia, 'inicio', e.target.value)} style={{ padding:'6px 10px', fontSize:13, background:'#111', border:'1px solid #2A2A2A', borderRadius:6, color:'#fff' }} />
+                              <span style={{ color:'#888' }}>a</span>
+                              <input type="time" value={h.fin} onChange={e => updateHorarioDia(dia, 'fin', e.target.value)} style={{ padding:'6px 10px', fontSize:13, background:'#111', border:'1px solid #2A2A2A', borderRadius:6, color:'#fff' }} />
                             </>}
-                            {!h.activo && <span style={{ color:'var(--muted)', fontSize:12 }}>No trabaja</span>}
+                            {!h.activo && <span style={{ color:'#888', fontSize:12 }}>No trabaja</span>}
                           </div>
                         )
                       })}
                     </div>
                     {error && <p className="error">{error}</p>}
                     <div style={{ display:'flex', gap:10 }}>
-                      <button type="submit" className="btn-primary" disabled={loading}>{loading ? '⏳...' : editandoBarbero ? '✅ Actualizar' : '✅ Agregar'}</button>
+                      <button type="submit" className="btn-primary" disabled={loading}>{loading?'⏳...':editandoBarbero?'✅ Actualizar':'✅ Agregar'}</button>
                       <button type="button" className="btn-secondary" onClick={resetFormBarbero}>Cancelar</button>
                     </div>
                   </form>
                 </div>
               )}
-
-              {misBarberos.length===0 && !showFormBarbero && (
-                <div className="empty-state"><span className="empty-icon">✂️</span><p>Aún no tienes profesionales</p><button className="btn-primary" onClick={() => setShowFormBarbero(true)}>➕ Agregar el primero</button></div>
-              )}
-
+              {misBarberos.length===0 && !showFormBarbero && <div className="empty-state"><span className="empty-icon">✂️</span><p>Aún no tienes profesionales</p><button className="btn-primary" onClick={() => setShowFormBarbero(true)}>➕ Agregar el primero</button></div>}
               <div className="citas-grid">
                 {misBarberos.map((b: any) => (
                   <div key={b.id} className="cita-card">
@@ -1301,16 +1133,16 @@ function App() {
                       <div>
                         <h4 style={{ margin:0 }}>{b.nombre}</h4>
                         <p style={{ margin:0, fontSize:12 }}>✂️ {b.especialidad}</p>
-                        <span style={{ fontSize:11, color: b.usuario_id ? '#2ecc71' : '#f39c12', fontWeight:700 }}>{b.usuario_id ? '🔗 Vinculado' : '⏳ Sin cuenta'}</span>
+                        <span style={{ fontSize:11, color: b.usuario_id?'#27AE60':'#F39C12', fontWeight:700 }}>{b.usuario_id?'🔗 Vinculado':'⏳ Sin cuenta'}</span>
                       </div>
                     </div>
-                    <div style={{ background:'var(--dark-2)', border:'1px solid var(--dark-5)', borderRadius:8, padding:'8px 12px', marginBottom:12, textAlign:'center' }}>
-                      <p style={{ fontSize:11, color:'var(--muted)', margin:'0 0 4px 0' }}>Código de invitación</p>
-                      <div style={{ fontSize:22, fontWeight:900, letterSpacing:6, color:'var(--gold)' }}>{b.codigo_invitacion}</div>
-                      <p style={{ fontSize:10, color:'var(--muted)', margin:'4px 0 0 0' }}>Compartir por WhatsApp 💬</p>
+                    <div style={{ background:'#111', border:'1px solid #2A2A2A', borderRadius:8, padding:'8px 12px', marginBottom:12, textAlign:'center' }}>
+                      <p style={{ fontSize:11, color:'#888', margin:'0 0 4px 0' }}>Código de invitación</p>
+                      <div style={{ fontSize:22, fontWeight:900, letterSpacing:6, color:'#C9A84C' }}>{b.codigo_invitacion}</div>
+                      <p style={{ fontSize:10, color:'#888', margin:'4px 0 0 0' }}>Compartir por WhatsApp 💬</p>
                     </div>
                     <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:12 }}>
-                      {DIAS.map(dia => { const h = b.horario[dia]; return h?.activo ? <span key={dia} style={{ background:'rgba(192,57,43,0.15)', color:'var(--cream-3)', border:'1px solid rgba(192,57,43,0.3)', borderRadius:4, padding:'2px 6px', fontSize:10, fontWeight:700 }}>{DIAS_LABELS[dia]}</span> : null })}
+                      {DIAS.map(dia => { const h = b.horario[dia]; return h?.activo ? <span key={dia} style={{ background:'rgba(201,168,76,0.1)', color:'#C9A84C', border:'1px solid rgba(201,168,76,0.3)', borderRadius:4, padding:'2px 6px', fontSize:10, fontWeight:700 }}>{DIAS_LABELS[dia]}</span> : null })}
                     </div>
                     <div className="cita-actions">
                       <button className="btn-confirm" onClick={() => handleEditarBarbero(b)}>✏️ Editar</button>
@@ -1329,12 +1161,12 @@ function App() {
                 : <div className="citas-grid">
                     {citas.map((c: any) => (
                       <div key={c.id} className="cita-card">
-                        <h4>{c.cliente?.nombre || 'Cliente'}</h4>
+                        <h4>{c.cliente?.nombre||'Cliente'}</h4>
                         {c.barbero && <p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
                         <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
                         <p><strong>Fecha:</strong> {c.fecha}</p>
                         <p><strong>Hora:</strong> {c.hora}</p>
-                        <p><strong>Tel:</strong> {c.cliente?.telefono || 'N/A'}</p>
+                        <p><strong>Tel:</strong> {c.cliente?.telefono||'N/A'}</p>
                         <span className="badge-agendada">✅ Agendada</span>
                       </div>
                     ))}
@@ -1350,4 +1182,4 @@ function App() {
   return null
 }
 
-export default App 
+export default App
