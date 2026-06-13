@@ -212,7 +212,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
   const [adBanners, setAdBanners] = useState<any[]>(AD_BANNER_DEFAULT)
 
   useEffect(() => {
-    fetch(`${API}/api/admin/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
+    fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
 
   useEffect(() => {
