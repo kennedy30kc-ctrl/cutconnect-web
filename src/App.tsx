@@ -16,11 +16,12 @@ const HERO_SLIDES = [
 const IMAGEN_BARBERIA = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80'
 const IMAGEN_PELUQUERIA = 'https://images.unsplash.com/photo-1560066984-138daaa0a7a6?w=600&q=80'
 
-const AD_BANNER = {
-  title: 'Productos para Barbería',
-  subtitle: 'Equipos profesionales con envío a Colombia y Venezuela',
-  bg: 'https://images.unsplash.com/photo-1621607512022-6aecc4fed814?w=800&q=80',
-  cta: 'Ver catálogo'
+const AD_BANNER_DEFAULT = {
+  titulo: 'Productos para Barbería',
+  subtitulo: 'Equipos profesionales con envío a Colombia y Venezuela',
+  imagen_url: 'https://images.unsplash.com/photo-1621607512022-6aecc4fed814?w=800&q=80',
+  boton_texto: 'Ver catálogo',
+  boton_url: '#'
 }
 
 function getInitials(nombre: string) {
@@ -151,6 +152,24 @@ function FidelizacionCard({ barberiaId, usuarioId }: { barberiaId:number, usuari
   )
 }
 
+function AdBanner({ banner }: { banner: any }) {
+  return (
+    <div className="ad-banner">
+      <div className="ad-banner-bg" style={{ backgroundImage:`url(${banner.imagen_url})` }} />
+      <div className="ad-banner-content">
+        <div>
+          <div className="ad-banner-label">Publicidad</div>
+          <div className="ad-banner-title">{banner.titulo}</div>
+          <div className="ad-banner-subtitle">{banner.subtitulo}</div>
+        </div>
+        <button className="ad-banner-btn" onClick={() => banner.boton_url && banner.boton_url !== '#' && window.open(banner.boton_url, '_blank')}>
+          {banner.boton_texto}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SplashScreen({ onDone }: { onDone:()=>void }) {
   useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t) }, [])
   return (
@@ -165,9 +184,6 @@ function SplashScreen({ onDone }: { onDone:()=>void }) {
   )
 }
 
-// ============================================================
-// PUBLIC PAGE — sin registro
-// ============================================================
 function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>void }) {
   const [slideIndex, setSlideIndex] = useState(0)
   const [scrolled, setScrolled] = useState(false)
@@ -178,6 +194,11 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
   const [modalCal, setModalCal] = useState<any>(null)
   const [selectedBarberia, setSelectedBarberia] = useState<any>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [adBanner, setAdBanner] = useState<any>(AD_BANNER_DEFAULT)
+
+  useEffect(() => {
+    fetch(`${API}/api/anuncios/activo`).then(r=>r.json()).then(d=>{ if(d.success && d.data) setAdBanner(d.data) }).catch(()=>{})
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => setSlideIndex(i => (i+1) % HERO_SLIDES.length), 5000)
@@ -218,7 +239,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
     <div className="public-page">
       {modalCal && <ModalCalificacion {...modalCal} onClose={() => setModalCal(null)} onDone={() => {}} />}
 
-      {/* Login prompt modal */}
       {showLoginPrompt && (
         <div className="modal-overlay" onClick={() => setShowLoginPrompt(false)}>
           <div className="modal-box" style={{ position:'relative', textAlign:'center' }}>
@@ -233,7 +253,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         </div>
       )}
 
-      {/* NAV */}
       <nav className={`public-nav ${scrolled?'scrolled':''}`}>
         <div className="public-nav-logo">Cut<span>Connect</span></div>
         <div className="public-nav-actions">
@@ -242,12 +261,10 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         </div>
       </nav>
 
-      {/* HERO */}
       <div className="hero">
         <div className="hero-slides">
           {HERO_SLIDES.map((src, i) => (
-            <div key={i} className={`hero-slide ${i===slideIndex?'active':''}`}
-              style={{ backgroundImage:`url(${src})` }} />
+            <div key={i} className={`hero-slide ${i===slideIndex?'active':''}`} style={{ backgroundImage:`url(${src})` }} />
           ))}
         </div>
         <div className="hero-overlay" />
@@ -271,30 +288,24 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         </div>
       </div>
 
-      {/* SERVICES STRIP */}
       <div className="services-strip">
-  {[
-    { key:'todos', name:'Todos', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
-    { key:'corte', name:'Corte', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg> },
-    { key:'barba', name:'Barba', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 7c0 5-3 9-8 9s-8-4-8-9"/><path d="M12 16v6"/><path d="M8 22h8"/></svg> },
-    { key:'tinte', name:'Tinte', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 6v6l4 2"/></svg> },
-    { key:'secado', name:'Secado', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg> },
-    { key:'alisado', name:'Alisado', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg> },
-    { key:'tratamiento', name:'Tratamiento', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> },
-  ].map((s) => (
-    <div key={s.key} className={`service-item ${tipoFiltro===s.key?'active':''}`}
-      onClick={() => {
-        setTipoFiltro(s.key)
-        if (s.key === 'todos') cargarBarberias()
-        else cargarBarberias(undefined, undefined, undefined, s.key)
-      }}>
-      <div className="service-icon" style={{ color: tipoFiltro===s.key ? '#C9A84C' : '#555' }}>{s.icon}</div>
-      <div className="service-name" style={{ color: tipoFiltro===s.key ? '#fff' : '#555' }}>{s.name}</div>
-    </div>
-  ))}
-</div>
+        {[
+          { key:'todos', name:'Todos', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
+          { key:'corte', name:'Corte', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg> },
+          { key:'barba', name:'Barba', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 7c0 5-3 9-8 9s-8-4-8-9"/><path d="M12 16v6"/><path d="M8 22h8"/></svg> },
+          { key:'tinte', name:'Tinte', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 6v6l4 2"/></svg> },
+          { key:'secado', name:'Secado', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg> },
+          { key:'alisado', name:'Alisado', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg> },
+          { key:'tratamiento', name:'Tratamiento', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> },
+        ].map((s) => (
+          <div key={s.key} className={`service-item ${tipoFiltro===s.key?'active':''}`}
+            onClick={() => { setTipoFiltro(s.key); if (s.key==='todos') cargarBarberias(); else cargarBarberias(undefined,undefined,undefined,s.key) }}>
+            <div className="service-icon" style={{ color: tipoFiltro===s.key ? '#C9A84C' : '#555' }}>{s.icon}</div>
+            <div className="service-name" style={{ color: tipoFiltro===s.key ? '#fff' : '#555' }}>{s.name}</div>
+          </div>
+        ))}
+      </div>
 
-      {/* BARBERIAS */}
       <div className="public-section">
         <div className="section-header">
           <div>
@@ -321,19 +332,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         <div className="barberias-grid">
           {barberias.map((b: any, idx: number) => (
             <>
-              {idx === 3 && (
-                <div key="ad" className="ad-banner">
-                  <div className="ad-banner-bg" style={{ backgroundImage:`url(${AD_BANNER.bg})` }} />
-                  <div className="ad-banner-content">
-                    <div>
-                      <div className="ad-banner-label">Publicidad</div>
-                      <div className="ad-banner-title">{AD_BANNER.title}</div>
-                      <div className="ad-banner-subtitle">{AD_BANNER.subtitle}</div>
-                    </div>
-                    <button className="ad-banner-btn">{AD_BANNER.cta}</button>
-                  </div>
-                </div>
-              )}
+              {idx === 3 && <AdBanner key="ad" banner={adBanner} />}
               <div key={b.id} className="barberia-card" onClick={() => { setSelectedBarberia(b); setShowLoginPrompt(true) }}>
                 <div className="barberia-card-banner">
                   <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre}
@@ -366,7 +365,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         </div>
       </div>
 
-      {/* FOOTER */}
       <div style={{ borderTop:'1px solid rgba(255,255,255,0.04)', padding:'40px 48px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
         <div style={{ fontFamily:'Playfair Display,serif', fontSize:20, fontWeight:800 }}>Cut<span style={{ color:'#C9A84C' }}>Connect</span></div>
         <p style={{ color:'#333', fontSize:12 }}>© 2025 CutConnect · Colombia · Venezuela</p>
@@ -379,9 +377,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
   )
 }
 
-// ============================================================
-// APP
-// ============================================================
 function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [appMode, setAppMode] = useState<'public'|'login'|'register'|'recovery'|'app'>('public')
@@ -391,10 +386,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [loggedIn, setLoggedIn] = useState(false)
-  const [_authMode, setAuthMode] = useState<'public'|'login'|'register'|'recovery'|'app'>('public')
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [userData, setUserData] = useState<any>(null)
-
   const [barberias, setBarberias] = useState<any[]>([])
   const [servicios, setServicios] = useState<any[]>([])
   const [citas, setCitas] = useState<any[]>([])
@@ -421,19 +414,26 @@ function App() {
   const [adminNegocios, setAdminNegocios] = useState<any[]>([])
   const [adminStats, setAdminStats] = useState<any>(null)
   const [adminMsg, setAdminMsg] = useState('')
-  const [adminPage, setAdminPage] = useState<'pendientes'|'todos'>('pendientes')
+  const [adminPage, setAdminPage] = useState<'pendientes'|'todos'|'anuncios'>('pendientes')
+  const [anuncios, setAnuncios] = useState<any[]>([])
+  const [formAnuncio, setFormAnuncio] = useState({ titulo:'', subtitulo:'', imagen_url:'', boton_texto:'Ver más', boton_url:'', activo:true })
+  const [editAnuncio, setEditAnuncio] = useState<any>(null)
   const [misBarberos, setMisBarberos] = useState<any[]>([])
   const [showFormBarbero, setShowFormBarbero] = useState(false)
   const [editandoBarbero, setEditandoBarbero] = useState<any>(null)
   const [formBarbero, setFormBarbero] = useState({ nombre:'', foto:'', especialidad:'', descripcion:'', horario:{ lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
   const [perfilBarbero, setPerfilBarbero] = useState<any>(null)
   const [modalCal, setModalCal] = useState<any>(null)
+  const [adBanner, setAdBanner] = useState<any>(AD_BANNER_DEFAULT)
 
   const isAdminRoute = window.location.pathname === ADMIN_PATH
 
   useEffect(() => { if (loggedIn) cargarDatos() }, [loggedIn])
   useEffect(() => { if (formData.barbero_id && formData.fecha) cargarDisponibilidad(formData.barbero_id, formData.fecha); else setHorasDisponibles([]) }, [formData.barbero_id, formData.fecha])
   useEffect(() => { if (loggedIn && userData?.rol==='barbero') cargarPerfilBarbero() }, [loggedIn, userData?.rol])
+  useEffect(() => {
+    fetch(`${API}/api/anuncios/activo`).then(r=>r.json()).then(d=>{ if(d.success && d.data) setAdBanner(d.data) }).catch(()=>{})
+  }, [])
 
   const cargarDatos = async (lat?: number, lon?: number, ciudad?: string, tipo?: string) => {
     try {
@@ -498,7 +498,7 @@ function App() {
     try {
       const res = await fetch(`${API}/api/auth/recuperar-contrasena`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:recoveryEmail,nueva_contrasena:recoveryPassword}) })
       const data = await res.json()
-      if (data.success) { alert('Contraseña actualizada.'); setAuthMode('login') } else setError(data.error||'Error')
+      if (data.success) { alert('Contraseña actualizada.'); setAppMode('login') } else setError(data.error||'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
   const handleAgendar = async (e: any) => {
@@ -518,7 +518,7 @@ function App() {
       if (data.success) { setEditNegocio(false); alert('Negocio actualizado') } else setError(data.error||'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
   }
-  const handleLogout = () => { localStorage.removeItem('token'); setLoggedIn(false); setEmail(''); setPassword(''); setRol('cliente'); setUserData(null); setCurrentPage('dashboard'); setAppMode('public'); setAppMode('public') }
+  const handleLogout = () => { localStorage.removeItem('token'); setLoggedIn(false); setEmail(''); setPassword(''); setRol('cliente'); setUserData(null); setCurrentPage('dashboard'); setAppMode('public') }
   const resetFormBarbero = () => { setFormBarbero({nombre:'',foto:'',especialidad:'',descripcion:'',horario:{lunes:{activo:true,inicio:'08:00',fin:'18:00'},martes:{activo:true,inicio:'08:00',fin:'18:00'},miercoles:{activo:true,inicio:'08:00',fin:'18:00'},jueves:{activo:true,inicio:'08:00',fin:'18:00'},viernes:{activo:true,inicio:'08:00',fin:'18:00'},sabado:{activo:true,inicio:'08:00',fin:'14:00'},domingo:{activo:false,inicio:'',fin:''}}}); setEditandoBarbero(null); setShowFormBarbero(false) }
   const handleGuardarBarbero = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
@@ -543,19 +543,34 @@ function App() {
   }
   const cargarAdminData = async () => {
     try {
-      const [r1,r2] = await Promise.all([fetch(`${API}/api/admin/negocios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}), fetch(`${API}/api/admin/stats`,{headers:{'x-admin-token':'admin_token_cutconnect'}})])
-      const d1=await r1.json(); const d2=await r2.json()
-      setAdminNegocios(d1.data||[]); setAdminStats(d2.data||null)
+      const [r1,r2,r3] = await Promise.all([
+        fetch(`${API}/api/admin/negocios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
+        fetch(`${API}/api/admin/stats`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
+        fetch(`${API}/api/admin/anuncios`,{headers:{'x-admin-token':'admin_token_cutconnect'}})
+      ])
+      const d1=await r1.json(); const d2=await r2.json(); const d3=await r3.json()
+      setAdminNegocios(d1.data||[]); setAdminStats(d2.data||null); setAnuncios(d3.data||[])
     } catch { setAdminMsg('Error cargando datos') }
   }
   const accionAdmin = async (endpoint: string, id: number) => {
     try { const res=await fetch(`${API}/api/admin/${endpoint}/${id}`,{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}}); const data=await res.json(); setAdminMsg(data.message||data.error); cargarAdminData() } catch { setAdminMsg('Error') }
     setTimeout(()=>setAdminMsg(''),4000)
   }
+  const guardarAnuncio = async () => {
+    try {
+      if (editAnuncio) {
+        await fetch(`${API}/api/admin/anuncios/${editAnuncio.id}`, { method:'PUT', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}, body:JSON.stringify(formAnuncio) })
+      } else {
+        await fetch(`${API}/api/admin/anuncios`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}, body:JSON.stringify(formAnuncio) })
+      }
+      setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',activo:true})
+      setEditAnuncio(null); cargarAdminData()
+      setAdminMsg('Anuncio guardado'); setTimeout(()=>setAdminMsg(''),3000)
+    } catch { setAdminMsg('Error al guardar') }
+  }
 
   if (showSplash) return <SplashScreen onDone={() => setShowSplash(false)} />
 
-  // ADMIN
   if (isAdminRoute) {
     if (!adminLoggedIn) return (
       <div className="login-container">
@@ -577,11 +592,12 @@ function App() {
           <div style={{display:'flex',gap:10}}>
             <button className="btn-admin btn-rechazar" onClick={()=>setAdminPage('pendientes')} style={{fontWeight:adminPage==='pendientes'?900:400}}>Pendientes</button>
             <button className="btn-admin btn-rechazar" onClick={()=>setAdminPage('todos')} style={{fontWeight:adminPage==='todos'?900:400}}>Todos</button>
+            <button className="btn-admin btn-activar" onClick={()=>setAdminPage('anuncios')} style={{fontWeight:adminPage==='anuncios'?900:400}}>Anuncios</button>
             <button className="btn-admin btn-suspender" onClick={()=>setAdminLoggedIn(false)}>Salir</button>
           </div>
         </div>
         <div className="admin-content">
-          {adminStats && (
+          {adminStats && adminPage !== 'anuncios' && (
             <div className="admin-stats">
               <div className="admin-stat"><span className="admin-stat-num gold">{adminStats.total}</span><span className="admin-stat-label">Total</span></div>
               <div className="admin-stat"><span className="admin-stat-num warn">{adminStats.pendientes}</span><span className="admin-stat-label">Pendientes</span></div>
@@ -594,42 +610,80 @@ function App() {
             </div>
           )}
           {adminMsg && <p className="success-msg">{adminMsg}</p>}
-          <p className="admin-section-title">{adminPage==='pendientes'?'Solicitudes pendientes':'Todos los negocios'}</p>
-          {negociosFiltrados.length===0 && <div className="empty-state"><p>No hay registros</p></div>}
-          {negociosFiltrados.map(n => (
-            <div key={n.id} className="negocio-row">
-              {n.logo?<img src={n.logo} alt={n.nombre} className="negocio-logo-img"/>:<div className="negocio-logo-av">{getInitials(n.nombre)}</div>}
-              <div className="negocio-info">
-                <div className="negocio-nombre">{n.nombre}</div>
-                <div className="negocio-meta">{n.ciudad}, {n.estado}, {n.pais} · {n.telefono}</div>
-                <div className="negocio-email">{n.email_dueno}</div>
-                {n.estado_verificacion==='trial'&&n.diasTrial!==null&&<div style={{color:'#C9A84C',fontSize:12,marginTop:3}}>{n.diasTrial} días restantes</div>}
+
+          {adminPage === 'anuncios' && (
+            <div>
+              <p className="admin-section-title">Gestión de anuncios</p>
+              <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:24,marginBottom:20}}>
+                <h3 style={{marginTop:0,marginBottom:16,fontSize:13,textTransform:'uppercase',letterSpacing:2,color:'#777'}}>{editAnuncio?'Editar anuncio':'Nuevo anuncio'}</h3>
+                <div className="form-group" style={{marginBottom:12}}><label>Título</label><input type="text" placeholder="Ej: Productos para Barbería" value={formAnuncio.titulo} onChange={e=>setFormAnuncio({...formAnuncio,titulo:e.target.value})} /></div>
+                <div className="form-group" style={{marginBottom:12}}><label>Subtítulo</label><input type="text" placeholder="Descripción breve..." value={formAnuncio.subtitulo} onChange={e=>setFormAnuncio({...formAnuncio,subtitulo:e.target.value})} /></div>
+                <div className="form-group" style={{marginBottom:12}}><label>URL de imagen de fondo</label><input type="url" placeholder="https://..." value={formAnuncio.imagen_url} onChange={e=>setFormAnuncio({...formAnuncio,imagen_url:e.target.value})} /></div>
+                <div className="form-row" style={{marginBottom:12}}>
+                  <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={formAnuncio.boton_texto} onChange={e=>setFormAnuncio({...formAnuncio,boton_texto:e.target.value})} /></div>
+                  <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={formAnuncio.boton_url} onChange={e=>setFormAnuncio({...formAnuncio,boton_url:e.target.value})} /></div>
+                </div>
+                <div style={{display:'flex',gap:10,marginTop:16}}>
+                  <button className="btn-primary" onClick={guardarAnuncio}>{editAnuncio?'Actualizar':'Publicar anuncio'}</button>
+                  {editAnuncio && <button className="btn-secondary" onClick={()=>{setEditAnuncio(null);setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',activo:true})}}>Cancelar</button>}
+                </div>
               </div>
-              <span className={`status-badge status-${n.estado_verificacion}`}>
-                {n.estado_verificacion==='pendiente'&&'Pendiente'}
-                {n.estado_verificacion==='trial'&&'Trial'}
-                {n.estado_verificacion==='activo'&&'Activo'}
-                {n.estado_verificacion==='suspendido'&&'Suspendido'}
-                {n.estado_verificacion==='rechazado'&&'Rechazado'}
-              </span>
-              <div className="admin-actions">
-                {n.estado_verificacion==='pendiente'&&<><button className="btn-admin btn-aprobar" onClick={()=>accionAdmin('aprobar',n.id)}>Aprobar</button><button className="btn-admin btn-rechazar" onClick={()=>accionAdmin('rechazar',n.id)}>Rechazar</button></>}
-                {(n.estado_verificacion==='trial'||n.estado_verificacion==='suspendido')&&<button className="btn-admin btn-activar" onClick={()=>accionAdmin('activar',n.id)}>Activar</button>}
-                {(n.estado_verificacion==='activo'||n.estado_verificacion==='trial')&&<button className="btn-admin btn-suspender" onClick={()=>accionAdmin('suspender',n.id)}>Suspender</button>}
-              </div>
+              {anuncios.map((a:any) => (
+                <div key={a.id} className="negocio-row">
+                  {a.imagen_url && <img src={a.imagen_url} alt={a.titulo} style={{width:60,height:44,borderRadius:8,objectFit:'cover',flexShrink:0}} />}
+                  <div className="negocio-info">
+                    <div className="negocio-nombre">{a.titulo}</div>
+                    <div className="negocio-meta">{a.subtitulo}</div>
+                    <div className="negocio-email">{a.boton_url}</div>
+                  </div>
+                  <span className={`status-badge ${a.activo?'status-activo':'status-suspendido'}`}>{a.activo?'Activo':'Inactivo'}</span>
+                  <div className="admin-actions">
+                    <button className="btn-admin btn-activar" onClick={()=>{setEditAnuncio(a);setFormAnuncio({titulo:a.titulo,subtitulo:a.subtitulo||'',imagen_url:a.imagen_url||'',boton_texto:a.boton_texto||'Ver más',boton_url:a.boton_url||'',activo:a.activo})}}>Editar</button>
+                    <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${a.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...a,activo:!a.activo})}); cargarAdminData()}}>
+                      {a.activo?'Desactivar':'Activar'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {adminPage !== 'anuncios' && (
+            <>
+              <p className="admin-section-title">{adminPage==='pendientes'?'Solicitudes pendientes':'Todos los negocios'}</p>
+              {negociosFiltrados.length===0 && <div className="empty-state"><p>No hay registros</p></div>}
+              {negociosFiltrados.map(n => (
+                <div key={n.id} className="negocio-row">
+                  {n.logo?<img src={n.logo} alt={n.nombre} className="negocio-logo-img"/>:<div className="negocio-logo-av">{getInitials(n.nombre)}</div>}
+                  <div className="negocio-info">
+                    <div className="negocio-nombre">{n.nombre}</div>
+                    <div className="negocio-meta">{n.ciudad}, {n.estado}, {n.pais} · {n.telefono}</div>
+                    <div className="negocio-email">{n.email_dueno}</div>
+                    {n.estado_verificacion==='trial'&&n.diasTrial!==null&&<div style={{color:'#C9A84C',fontSize:12,marginTop:3}}>{n.diasTrial} días restantes</div>}
+                  </div>
+                  <span className={`status-badge status-${n.estado_verificacion}`}>
+                    {n.estado_verificacion==='pendiente'&&'Pendiente'}
+                    {n.estado_verificacion==='trial'&&'Trial'}
+                    {n.estado_verificacion==='activo'&&'Activo'}
+                    {n.estado_verificacion==='suspendido'&&'Suspendido'}
+                    {n.estado_verificacion==='rechazado'&&'Rechazado'}
+                  </span>
+                  <div className="admin-actions">
+                    {n.estado_verificacion==='pendiente'&&<><button className="btn-admin btn-aprobar" onClick={()=>accionAdmin('aprobar',n.id)}>Aprobar</button><button className="btn-admin btn-rechazar" onClick={()=>accionAdmin('rechazar',n.id)}>Rechazar</button></>}
+                    {(n.estado_verificacion==='trial'||n.estado_verificacion==='suspendido')&&<button className="btn-admin btn-activar" onClick={()=>accionAdmin('activar',n.id)}>Activar</button>}
+                    {(n.estado_verificacion==='activo'||n.estado_verificacion==='trial')&&<button className="btn-admin btn-suspender" onClick={()=>accionAdmin('suspender',n.id)}>Suspender</button>}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
     )
   }
 
-  // PUBLIC PAGE
-  if (!loggedIn && appMode==='public') {
-    return <PublicPage onLogin={() => setAppMode('login')} onRegister={() => setAppMode('register')} />
-  }
+  if (!loggedIn && appMode==='public') return <PublicPage onLogin={() => setAppMode('login')} onRegister={() => setAppMode('register')} />
 
-  // LOGIN
   if (!loggedIn && appMode==='login') return (
     <div className="login-container">
       <div className="login-box">
@@ -643,7 +697,7 @@ function App() {
         </form>
         <div className="auth-links">
           <button className="link-btn" onClick={() => setAppMode('public')}>← Volver</button>
-          <button className="link-btn" onClick={() => setAppMode('login')}>¿Olvidaste tu contraseña?</button>
+          <button className="link-btn" onClick={() => setAppMode('recovery')}>¿Olvidaste tu contraseña?</button>
         </div>
         <div style={{textAlign:'center',marginTop:16}}>
           <span style={{color:'#555',fontSize:13}}>¿No tienes cuenta? </span>
@@ -653,7 +707,6 @@ function App() {
     </div>
   )
 
-  // REGISTER
   if (!loggedIn && appMode==='register') {
     if (rol==='dueño') return (
       <div className="login-container">
@@ -661,27 +714,23 @@ function App() {
           <div className="logo-section"><h1>Cut<span>Connect</span></h1></div>
           <p className="form-subtitle">Registrar mi negocio</p>
           <form onSubmit={handleRegisterDueno} className="owner-form">
-            <fieldset className="form-section">
-              <legend>País</legend>
+            <fieldset className="form-section"><legend>País</legend>
               <div className="pais-selector">
                 <button type="button" className={`pais-btn ${ownerData.pais==='Colombia'?'active':''}`} onClick={()=>setOwnerData({...ownerData,pais:'Colombia'})}>Colombia</button>
                 <button type="button" className={`pais-btn ${ownerData.pais==='Venezuela'?'active':''}`} onClick={()=>setOwnerData({...ownerData,pais:'Venezuela'})}>Venezuela</button>
               </div>
             </fieldset>
-            <fieldset className="form-section">
-              <legend>Tipo de negocio</legend>
+            <fieldset className="form-section"><legend>Tipo de negocio</legend>
               <div className="category-selector">
                 <button type="button" className={`category-btn ${ownerData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'barberia'})}><span className="cat-icon">✂</span>Barbería</button>
                 <button type="button" className={`category-btn ${ownerData.tipo_negocio==='peluqueria'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
               </div>
             </fieldset>
-            <fieldset className="form-section">
-              <legend>Acceso</legend>
+            <fieldset className="form-section"><legend>Acceso</legend>
               <div className="form-group"><label>Email</label><input type="email" placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
               <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
             </fieldset>
-            <fieldset className="form-section">
-              <legend>Datos del negocio</legend>
+            <fieldset className="form-section"><legend>Datos del negocio</legend>
               <div className="form-group"><label>Nombre del negocio</label><input type="text" placeholder="Barbería El Rey" value={ownerData.negocio_nombre} onChange={e=>setOwnerData({...ownerData,negocio_nombre:e.target.value})} required /></div>
               <div className="form-row">
                 <div className="form-group"><label>Departamento / Estado</label><input type="text" placeholder="Antioquia" value={ownerData.estado} onChange={e=>setOwnerData({...ownerData,estado:e.target.value})} required /></div>
@@ -691,8 +740,7 @@ function App() {
               <div className="form-group"><label>Teléfono</label><input type="tel" placeholder="+57 300 000 0000" value={ownerData.negocio_telefono} onChange={e=>setOwnerData({...ownerData,negocio_telefono:e.target.value})} required /></div>
               <div className="form-group"><label>Descripción</label><textarea placeholder="Cuéntanos sobre tu negocio..." value={ownerData.negocio_descripcion} onChange={e=>setOwnerData({...ownerData,negocio_descripcion:e.target.value})} /></div>
             </fieldset>
-            <fieldset className="form-section">
-              <legend>Ubicación GPS</legend>
+            <fieldset className="form-section"><legend>Ubicación GPS</legend>
               <button type="button" onClick={obtenerUbicacion} className="btn-gps">Obtener mi ubicación automáticamente</button>
               <div className="form-row">
                 <div className="form-group"><label>Latitud</label><input type="number" placeholder="4.7110" value={ownerData.latitud} onChange={e=>setOwnerData({...ownerData,latitud:e.target.value})} step="0.0001" required /></div>
@@ -712,8 +760,7 @@ function App() {
           <div className="logo-section"><h1>Cut<span>Connect</span></h1></div>
           <p className="form-subtitle">Crear cuenta</p>
           <form onSubmit={handleRegister} className="auth-form">
-            <div className="form-group">
-              <label>País</label>
+            <div className="form-group"><label>País</label>
               <div className="pais-selector">
                 <button type="button" className={`pais-btn ${paisSeleccionado==='Colombia'?'active':''}`} onClick={()=>setPaisSeleccionado('Colombia')}>Colombia</button>
                 <button type="button" className={`pais-btn ${paisSeleccionado==='Venezuela'?'active':''}`} onClick={()=>setPaisSeleccionado('Venezuela')}>Venezuela</button>
@@ -721,8 +768,7 @@ function App() {
             </div>
             <div className="form-group"><label>Email</label><input type="email" placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
             <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
-            <div className="form-group">
-              <label>Soy</label>
+            <div className="form-group"><label>Soy</label>
               <select value={rol} onChange={e=>setRol(e.target.value)} required>
                 <option value="cliente">Cliente — Quiero agendar citas</option>
                 <option value="barbero">Barbero / Peluquero</option>
@@ -755,7 +801,6 @@ function App() {
     )
   }
 
-  // RECOVERY
   if (!loggedIn && appMode==='recovery') return (
     <div className="login-container">
       <div className="login-box">
@@ -772,7 +817,6 @@ function App() {
     </div>
   )
 
-  // CLIENTE
   if (loggedIn && userData?.rol==='cliente') return (
     <div className="dashboard-container">
       {modalCal && <ModalCalificacion {...modalCal} onClose={()=>setModalCal(null)} onDone={()=>cargarDatos()} />}
@@ -808,6 +852,7 @@ function App() {
                 </div>
               </div>
             </div>
+            <AdBanner banner={adBanner} />
             <div className="action-buttons">
               <button onClick={()=>{setCurrentPage('agendar');cargarDatos()}} className="btn-primary">Agendar cita</button>
               <button onClick={()=>{setCurrentPage('citas');cargarDatos()}} className="btn-secondary">Mis citas</button>
@@ -841,15 +886,7 @@ function App() {
                 <div className="barberias-grid">
                   {barberias.map((b:any,idx:number) => (
                     <>
-                      {idx===3 && (
-                        <div key="ad" className="ad-banner">
-                          <div className="ad-banner-bg" style={{backgroundImage:`url(${AD_BANNER.bg})`}} />
-                          <div className="ad-banner-content">
-                            <div><div className="ad-banner-label">Publicidad</div><div className="ad-banner-title">{AD_BANNER.title}</div><div className="ad-banner-subtitle">{AD_BANNER.subtitle}</div></div>
-                            <button className="ad-banner-btn">{AD_BANNER.cta}</button>
-                          </div>
-                        </div>
-                      )}
+                      {idx===3 && <AdBanner key="ad" banner={adBanner} />}
                       <div key={b.id} className={`barberia-card ${selectedBarberia?.id===b.id?'selected':''}`}>
                         <div className="barberia-card-banner">
                           <img src={b.logo||(b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any)=>{e.target.src=b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA}} />
@@ -921,20 +958,17 @@ function App() {
               <>
                 <h3>Reservar con {selectedBarbero.nombre}</h3>
                 <form className="form" onSubmit={handleAgendar}>
-                  <div className="form-group">
-                    <label>Servicio</label>
+                  <div className="form-group"><label>Servicio</label>
                     <select value={formData.servicio_id} onChange={e=>setFormData({...formData,servicio_id:e.target.value})} required>
                       <option value="">Selecciona un servicio</option>
                       {servicios.map((s:any)=><option key={s.id} value={s.id}>{s.nombre} — ${s.precio}</option>)}
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label>Fecha</label>
+                  <div className="form-group"><label>Fecha</label>
                     <input type="date" value={formData.fecha} onChange={e=>setFormData({...formData,fecha:e.target.value,hora:''})} required min={new Date().toISOString().split('T')[0]} />
                   </div>
                   {formData.fecha && (
-                    <div className="form-group">
-                      <label>Hora disponible</label>
+                    <div className="form-group"><label>Hora disponible</label>
                       {horasDisponibles.length===0
                         ? <p style={{color:'#FF6B6B',fontSize:14}}>No hay horas disponibles ese día</p>
                         : <div style={{display:'flex',flexWrap:'wrap',gap:8,marginTop:4}}>
@@ -984,7 +1018,6 @@ function App() {
     </div>
   )
 
-  // BARBERO
   if (loggedIn && userData?.rol==='barbero') {
     const citasHoy = citas.filter((c:any)=>c.fecha===new Date().toISOString().split('T')[0])
     return (
@@ -1036,22 +1069,18 @@ function App() {
                     </div>
                     <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.05)',borderLeft:'2px solid #C9A84C',borderRadius:14,padding:24}}>
                       <h3 style={{marginTop:0,marginBottom:20}}>Editar mi información</h3>
-                      <div className="form-group" style={{marginBottom:14}}>
-                        <label>Especialidad</label>
+                      <div className="form-group" style={{marginBottom:14}}><label>Especialidad</label>
                         <input type="text" placeholder="Fades, barba clásica..." value={perfilBarbero.especialidad||''} onChange={e=>setPerfilBarbero({...perfilBarbero,especialidad:e.target.value})} />
                       </div>
-                      <div className="form-group" style={{marginBottom:14}}>
-                        <label>Descripción</label>
+                      <div className="form-group" style={{marginBottom:14}}><label>Descripción</label>
                         <textarea placeholder="Cuéntales quién eres..." value={perfilBarbero.descripcion||''} onChange={e=>setPerfilBarbero({...perfilBarbero,descripcion:e.target.value})}
                           style={{width:'100%',minHeight:80,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px 14px',color:'#fff',fontSize:13,resize:'vertical',boxSizing:'border-box',fontFamily:'Inter,sans-serif',outline:'none'}} />
                       </div>
-                      <div className="form-group" style={{marginBottom:14}}>
-                        <label>WhatsApp</label>
+                      <div className="form-group" style={{marginBottom:14}}><label>WhatsApp</label>
                         <input type="tel" placeholder="+57 300 000 0000" value={perfilBarbero.whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,whatsapp:e.target.value})} />
                         <p style={{fontSize:11,color:'#555',marginTop:6}}>Para recibir notificaciones de nuevas citas</p>
                       </div>
-                      <div className="form-group" style={{marginBottom:20}}>
-                        <label>API Key de CallMeBot</label>
+                      <div className="form-group" style={{marginBottom:20}}><label>API Key de CallMeBot</label>
                         <input type="text" placeholder="123456" value={perfilBarbero.apikey_whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,apikey_whatsapp:e.target.value})} />
                         <p style={{fontSize:11,color:'#555',marginTop:6}}>Envía "I allow callmebot to send me messages" al +34 644 33 42 61 por WhatsApp para obtener tu clave</p>
                       </div>
@@ -1112,7 +1141,6 @@ function App() {
     )
   }
 
-  // DUEÑO PENDIENTE
   if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='pendiente') return (
     <div className="dashboard-container">
       <nav className="navbar">
@@ -1125,7 +1153,7 @@ function App() {
           <div className="pending-card">
             <div className="pending-icon">—</div>
             <h3>Estamos revisando tu negocio</h3>
-            <p>Recibirás respuesta en 24–48 horas. Una vez aprobado tendrás 30 días gratuitos para explorar la plataforma.</p>
+            <p>Recibirás respuesta en 24–48 horas. Una vez aprobado tendrás 30 días gratuitos.</p>
             <div className="pending-info">
               <p><strong>{userData?.negocio_nombre}</strong></p>
               <p>{userData?.ciudad}, {userData?.estado}</p>
@@ -1139,7 +1167,6 @@ function App() {
     </div>
   )
 
-  // DUEÑO TRIAL VENCIDO
   if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='trial') {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0,Math.ceil(14-(Date.now()-new Date(userData.fecha_trial_inicio).getTime())/(1000*60*60*24))) : 14
     if (diasRestantes<=0) return (
@@ -1151,7 +1178,7 @@ function App() {
         <div className="dashboard-content">
           <div className="page">
             <h2>Tu período de prueba ha vencido</h2>
-            <p style={{color:'#555',maxWidth:460,lineHeight:1.7}}>Para continuar usando CutConnect y que tus clientes puedan encontrarte, activa tu suscripción mensual por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong>.</p>
+            <p style={{color:'#555',maxWidth:460,lineHeight:1.7}}>Para continuar usando CutConnect activa tu cuenta por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong>.</p>
             <div style={{display:'flex',flexDirection:'column',gap:14,maxWidth:480}}>
               <div style={{background:'#141414',border:'1px solid #635BFF',borderRadius:16,padding:24}}>
                 <h3 style={{margin:'0 0 6px',color:'#635BFF',fontSize:16}}>Pago con tarjeta</h3>
@@ -1162,7 +1189,7 @@ function App() {
               </div>
               <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24}}>
                 <h3 style={{margin:'0 0 6px',color:'#C9A84C',fontSize:16}}>Pago con Binance Pay</h3>
-                <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Envía exactamente <strong style={{color:'#C9A84C'}}>$12 USDT</strong></p>
+                <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Envía exactamente <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong></p>
                 <div style={{textAlign:'center',marginBottom:16}}>
                   <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)'}} />
                 </div>
@@ -1182,7 +1209,6 @@ function App() {
     )
   }
 
-  // DUEÑO ACTIVO
   if (loggedIn && userData?.rol==='dueño' && ['trial','activo','aprobado'].includes(userData?.estado_verificacion)) {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0,Math.ceil(14-(Date.now()-new Date(userData.fecha_trial_inicio).getTime())/(1000*60*60*24))) : 14
     const maxCitas = Math.max(...rankingBarberos.map(b=>b.total_citas),1)
@@ -1204,7 +1230,7 @@ function App() {
         <div className="dashboard-content">
           {userData?.estado_verificacion==='trial' && diasRestantes<=3 && (
             <div style={{background:'rgba(231,76,60,0.06)',borderBottom:'1px solid rgba(231,76,60,0.12)',padding:'10px 32px',display:'flex',alignItems:'center',gap:10}}>
-              <p style={{fontSize:13,color:'#FF6B6B'}}>Tu período de prueba vence en <strong>{diasRestantes} días</strong>. Activa tu cuenta para no perder tu historial.</p>
+              <p style={{fontSize:13,color:'#FF6B6B'}}>Tu período de prueba vence en <strong>{diasRestantes} días</strong>.</p>
             </div>
           )}
           {userData?.estado_verificacion==='trial' && diasRestantes>3 && (
@@ -1252,7 +1278,7 @@ function App() {
               <h2>Mi Negocio</h2>
               <div style={{marginBottom:24}}>
                 <h3 style={{marginBottom:12}}>Logo del negocio</h3>
-                <p style={{color:'#555',fontSize:13,marginBottom:14}}>Se mostrará a todos los clientes al buscar tu negocio</p>
+                <p style={{color:'#555',fontSize:13,marginBottom:14}}>Se mostrará a todos los clientes</p>
                 <ImageUploader tipo="logo" id={userData?.barberia_id} urlActual={userData?.negocio_logo} label="Subir logo" onSuccess={url=>setUserData({...userData,negocio_logo:url})} />
               </div>
               <div className="welcome-card owner">
@@ -1345,7 +1371,7 @@ function App() {
                       <div>
                         <h4 style={{margin:0}}>{b.nombre}</h4>
                         <p style={{margin:'3px 0 0',fontSize:12}}>{b.especialidad}</p>
-                        <span style={{fontSize:11,color:b.usuario_id?'#2ECC71':'#555',fontWeight:600,letterSpacing:0.5}}>{b.usuario_id?'Vinculado':'Sin cuenta propia'}</span>
+                        <span style={{fontSize:11,color:b.usuario_id?'#2ECC71':'#555',fontWeight:600}}>{b.usuario_id?'Vinculado':'Sin cuenta propia'}</span>
                       </div>
                     </div>
                     <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:8,padding:'10px 14px',marginBottom:12,textAlign:'center'}}>
