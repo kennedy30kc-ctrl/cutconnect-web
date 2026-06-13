@@ -618,7 +618,28 @@ function App() {
                 <h3 style={{marginTop:0,marginBottom:16,fontSize:13,textTransform:'uppercase',letterSpacing:2,color:'#777'}}>{editAnuncio?'Editar anuncio':'Nuevo anuncio'}</h3>
                 <div className="form-group" style={{marginBottom:12}}><label>Título</label><input type="text" placeholder="Ej: Productos para Barbería" value={formAnuncio.titulo} onChange={e=>setFormAnuncio({...formAnuncio,titulo:e.target.value})} /></div>
                 <div className="form-group" style={{marginBottom:12}}><label>Subtítulo</label><input type="text" placeholder="Descripción breve..." value={formAnuncio.subtitulo} onChange={e=>setFormAnuncio({...formAnuncio,subtitulo:e.target.value})} /></div>
-                <div className="form-group" style={{marginBottom:12}}><label>URL de imagen de fondo</label><input type="url" placeholder="https://..." value={formAnuncio.imagen_url} onChange={e=>setFormAnuncio({...formAnuncio,imagen_url:e.target.value})} /></div>
+                <div className="form-group" style={{marginBottom:12}}>
+  <label>Imagen de fondo</label>
+  {formAnuncio.imagen_url && (
+    <img src={formAnuncio.imagen_url} alt="preview" style={{width:'100%',height:120,objectFit:'cover',borderRadius:10,marginBottom:10}} />
+  )}
+  <input type="file" accept="image/*" style={{display:'none'}} id="upload-anuncio"
+    onChange={async (e) => {
+      const file = e.target.files?.[0]; if (!file) return
+      if (file.size > 5*1024*1024) { alert('Máximo 5MB'); return }
+      const fd = new FormData(); fd.append('imagen', file)
+      try {
+        const res = await fetch(`${API}/api/upload/anuncio/0`, { method:'POST', body:fd })
+        const data = await res.json()
+        if (data.success) setFormAnuncio({...formAnuncio, imagen_url: data.url})
+        else alert('Error: ' + data.error)
+      } catch { alert('Error de conexión') }
+    }}
+  />
+  <button type="button" className="btn-upload" style={{width:'100%'}} onClick={() => document.getElementById('upload-anuncio')?.click()}>
+    {formAnuncio.imagen_url ? 'Cambiar imagen' : 'Subir imagen'}
+  </button>
+</div>
                 <div className="form-row" style={{marginBottom:12}}>
                   <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={formAnuncio.boton_texto} onChange={e=>setFormAnuncio({...formAnuncio,boton_texto:e.target.value})} /></div>
                   <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={formAnuncio.boton_url} onChange={e=>setFormAnuncio({...formAnuncio,boton_url:e.target.value})} /></div>
