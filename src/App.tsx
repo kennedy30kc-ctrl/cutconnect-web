@@ -16,13 +16,13 @@ const HERO_SLIDES = [
 const IMAGEN_BARBERIA = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80'
 const IMAGEN_PELUQUERIA = 'https://images.unsplash.com/photo-1560066984-138daaa0a7a6?w=600&q=80'
 
-const AD_BANNER_DEFAULT = {
+const AD_BANNER_DEFAULT = [{
   titulo: 'Productos para Barbería',
   subtitulo: 'Equipos profesionales con envío a Colombia y Venezuela',
   imagen_url: 'https://images.unsplash.com/photo-1621607512022-6aecc4fed814?w=800&q=80',
   boton_texto: 'Ver catálogo',
   boton_url: '#'
-}
+}]
 
 function getInitials(nombre: string) {
   return nombre.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -152,9 +152,17 @@ function FidelizacionCard({ barberiaId, usuarioId }: { barberiaId:number, usuari
   )
 }
 
-function AdBanner({ banner }: { banner: any }) {
+function AdBanner({ banners }: { banners: any[] }) {
+  const [index, setIndex] = useState(0)
+  useEffect(() => {
+    if (banners.length <= 1) return
+    const interval = setInterval(() => setIndex(i => (i+1) % banners.length), 3000)
+    return () => clearInterval(interval)
+  }, [banners.length])
+  if (!banners.length) return null
+  const banner = banners[index]
   return (
-    <div className="ad-banner">
+    <div className="ad-banner" style={{ position:'relative' }}>
       <div className="ad-banner-bg" style={{ backgroundImage:`url(${banner.imagen_url})` }} />
       <div className="ad-banner-content">
         <div>
@@ -166,6 +174,13 @@ function AdBanner({ banner }: { banner: any }) {
           {banner.boton_texto}
         </button>
       </div>
+      {banners.length > 1 && (
+        <div style={{ position:'absolute', bottom:10, right:14, display:'flex', gap:5 }}>
+          {banners.map((_,i) => (
+            <div key={i} onClick={() => setIndex(i)} style={{ width:6, height:6, borderRadius:'50%', background: i===index ? '#C9A84C' : 'rgba(255,255,255,0.3)', cursor:'pointer', transition:'background 0.3s' }} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -194,10 +209,10 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
   const [modalCal, setModalCal] = useState<any>(null)
   const [selectedBarberia, setSelectedBarberia] = useState<any>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
-  const [adBanner, setAdBanner] = useState<any>(AD_BANNER_DEFAULT)
+  const [adBanners, setAdBanners] = useState<any[]>(AD_BANNER_DEFAULT)
 
   useEffect(() => {
-    fetch(`${API}/api/anuncios/activo`).then(r=>r.json()).then(d=>{ if(d.success && d.data) setAdBanner(d.data) }).catch(()=>{})
+    fetch(`${API}/api/admin/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
 
   useEffect(() => {
@@ -330,38 +345,40 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         )}
 
         <div className="barberias-grid">
-          {barberias.map((b: any, idx: number) => (
-            <>
-              {idx === 3 && <AdBanner key="ad" banner={adBanner} />}
-              <div key={b.id} className="barberia-card" onClick={() => { setSelectedBarberia(b); setShowLoginPrompt(true) }}>
-                <div className="barberia-card-banner">
-                  <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre}
-                    onError={(e:any) => { e.target.src = b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA }} />
-                  <div className="barberia-card-banner-overlay" />
-                  <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
-                </div>
-                <div className="barberia-card-body">
-                  <div className="barberia-nombre">{b.nombre}</div>
-                  <div className="barberia-ciudad">{b.ciudad}, {b.pais}</div>
-                  {b.distancia !== undefined && <div className="barberia-distancia">{b.distancia.toFixed(1)} km</div>}
-                  {b.calificacion_promedio > 0 && (
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <StarRating value={Math.round(b.calificacion_promedio)} />
-                      <span style={{ fontSize:12, color:'#777' }}>{Number(b.calificacion_promedio).toFixed(1)}</span>
-                    </div>
-                  )}
-                  {b.descripcion && <p className="barberia-descripcion">{b.descripcion}</p>}
-                  <div style={{ display:'flex', gap:8, marginTop:6 }}>
-                    <button className="btn-elegir" onClick={e => { e.stopPropagation(); setSelectedBarberia(b); setShowLoginPrompt(true) }}>Reservar</button>
-                    <button style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'#555', fontSize:11, padding:'8px 12px', cursor:'pointer', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}
-                      onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id:b.id, barberiaId:b.id, usuarioId:0, nombre:b.nombre }) }}>
-                      Calificar
-                    </button>
+          {barberias.map((b: any) => (
+            <div key={b.id} className="barberia-card" onClick={() => { setSelectedBarberia(b); setShowLoginPrompt(true) }}>
+              <div className="barberia-card-banner">
+                <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre}
+                  onError={(e:any) => { e.target.src = b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA }} />
+                <div className="barberia-card-banner-overlay" />
+                <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
+              </div>
+              <div className="barberia-card-body">
+                <div className="barberia-nombre">{b.nombre}</div>
+                <div className="barberia-ciudad">{b.ciudad}, {b.pais}</div>
+                {b.distancia !== undefined && <div className="barberia-distancia">{b.distancia.toFixed(1)} km</div>}
+                {b.calificacion_promedio > 0 && (
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <StarRating value={Math.round(b.calificacion_promedio)} />
+                    <span style={{ fontSize:12, color:'#777' }}>{Number(b.calificacion_promedio).toFixed(1)}</span>
                   </div>
+                )}
+                {b.descripcion && <p className="barberia-descripcion">{b.descripcion}</p>}
+                <div style={{ display:'flex', gap:8, marginTop:6 }}>
+                  <button className="btn-elegir" onClick={e => { e.stopPropagation(); setSelectedBarberia(b); setShowLoginPrompt(true) }}>Reservar</button>
+                  <button style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'#555', fontSize:11, padding:'8px 12px', cursor:'pointer', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}
+                    onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id:b.id, barberiaId:b.id, usuarioId:0, nombre:b.nombre }) }}>
+                    Calificar
+                  </button>
                 </div>
               </div>
-            </>
+            </div>
           ))}
+        </div>
+
+        {/* BANNER SIEMPRE VISIBLE AL FINAL */}
+        <div style={{ marginTop:40 }}>
+          <AdBanner banners={adBanners} />
         </div>
       </div>
 
@@ -424,7 +441,7 @@ function App() {
   const [formBarbero, setFormBarbero] = useState({ nombre:'', foto:'', especialidad:'', descripcion:'', horario:{ lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
   const [perfilBarbero, setPerfilBarbero] = useState<any>(null)
   const [modalCal, setModalCal] = useState<any>(null)
-  const [adBanner, setAdBanner] = useState<any>(AD_BANNER_DEFAULT)
+  const [adBanners, setAdBanners] = useState<any[]>(AD_BANNER_DEFAULT)
 
   const isAdminRoute = window.location.pathname === ADMIN_PATH
 
@@ -432,7 +449,7 @@ function App() {
   useEffect(() => { if (formData.barbero_id && formData.fecha) cargarDisponibilidad(formData.barbero_id, formData.fecha); else setHorasDisponibles([]) }, [formData.barbero_id, formData.fecha])
   useEffect(() => { if (loggedIn && userData?.rol==='barbero') cargarPerfilBarbero() }, [loggedIn, userData?.rol])
   useEffect(() => {
-    fetch(`${API}/api/anuncios/activo`).then(r=>r.json()).then(d=>{ if(d.success && d.data) setAdBanner(d.data) }).catch(()=>{})
+    fetch(`${API}/api/admin/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
 
   const cargarDatos = async (lat?: number, lon?: number, ciudad?: string, tipo?: string) => {
@@ -619,30 +636,29 @@ function App() {
                 <div className="form-group" style={{marginBottom:12}}><label>Título</label><input type="text" placeholder="Ej: Productos para Barbería" value={formAnuncio.titulo} onChange={e=>setFormAnuncio({...formAnuncio,titulo:e.target.value})} /></div>
                 <div className="form-group" style={{marginBottom:12}}><label>Subtítulo</label><input type="text" placeholder="Descripción breve..." value={formAnuncio.subtitulo} onChange={e=>setFormAnuncio({...formAnuncio,subtitulo:e.target.value})} /></div>
                 <div className="form-group" style={{marginBottom:12}}>
-  <label>Imagen de fondo</label>
-  {formAnuncio.imagen_url && (
-    <img src={formAnuncio.imagen_url} alt="preview" style={{width:'100%',height:120,objectFit:'cover',borderRadius:10,marginBottom:10}} />
-  )}
-  <input type="file" accept="image/*" style={{display:'none'}} id="upload-anuncio"
-    onChange={async (e) => {
-      const file = e.target.files?.[0]; if (!file) return
-      if (file.size > 5*1024*1024) { alert('Máximo 5MB'); return }
-      const fd = new FormData(); fd.append('imagen', file)
-      try {
-        const res = await fetch(`${API}/api/upload/anuncio/0`, { method:'POST', body:fd })
-        const data = await res.json()
-        if (data.success) setFormAnuncio({...formAnuncio, imagen_url: data.url})
-        else alert('Error: ' + data.error)
-      } catch { alert('Error de conexión') }
-    }}
-  />
-  <button type="button" className="btn-upload" style={{width:'100%'}} onClick={() => document.getElementById('upload-anuncio')?.click()}>
-    {formAnuncio.imagen_url ? 'Cambiar imagen' : 'Subir imagen'}
-  </button>
-</div>
+                  <label>Imagen de fondo</label>
+                  {formAnuncio.imagen_url && <img src={formAnuncio.imagen_url} alt="preview" style={{width:'100%',height:120,objectFit:'cover',borderRadius:10,marginBottom:10}} />}
+                  <input type="file" accept="image/*" style={{display:'none'}} id="upload-anuncio"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]; if (!file) return
+                      if (file.size > 5*1024*1024) { alert('Máximo 5MB'); return }
+                      const fd = new FormData(); fd.append('imagen', file)
+                      try {
+                        const res = await fetch(`${API}/api/upload/anuncio/0`, { method:'POST', body:fd })
+                        const data = await res.json()
+                        if (data.success) setFormAnuncio({...formAnuncio, imagen_url: data.url})
+                        else alert('Error: ' + data.error)
+                      } catch { alert('Error de conexión') }
+                    }}
+                  />
+                  <button type="button" className="btn-upload" style={{width:'100%'}} onClick={() => document.getElementById('upload-anuncio')?.click()}>
+                    {formAnuncio.imagen_url ? 'Cambiar imagen' : 'Subir imagen'}
+                  </button>
+                </div>
                 <div className="form-row" style={{marginBottom:12}}>
                   <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={formAnuncio.boton_texto} onChange={e=>setFormAnuncio({...formAnuncio,boton_texto:e.target.value})} /></div>
-        
+                  <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={formAnuncio.boton_url} onChange={e=>setFormAnuncio({...formAnuncio,boton_url:e.target.value})} /></div>
+                </div>
                 <div style={{display:'flex',gap:10,marginTop:16}}>
                   <button className="btn-primary" onClick={guardarAnuncio}>{editAnuncio?'Actualizar':'Publicar anuncio'}</button>
                   {editAnuncio && <button className="btn-secondary" onClick={()=>{setEditAnuncio(null);setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',activo:true})}}>Cancelar</button>}
@@ -872,7 +888,7 @@ function App() {
                 </div>
               </div>
             </div>
-            <AdBanner banner={adBanner} />
+            <AdBanner banners={adBanners} />
             <div className="action-buttons">
               <button onClick={()=>{setCurrentPage('agendar');cargarDatos()}} className="btn-primary">Agendar cita</button>
               <button onClick={()=>{setCurrentPage('citas');cargarDatos()}} className="btn-secondary">Mis citas</button>
@@ -904,32 +920,29 @@ function App() {
               <>
                 <h3>{gpsUsado?'Cerca de ti':'Resultados'} — {barberias.length} negocios</h3>
                 <div className="barberias-grid">
-                  {barberias.map((b:any,idx:number) => (
-                    <>
-                      {idx===3 && <AdBanner key="ad" banner={adBanner} />}
-                      <div key={b.id} className={`barberia-card ${selectedBarberia?.id===b.id?'selected':''}`}>
-                        <div className="barberia-card-banner">
-                          <img src={b.logo||(b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any)=>{e.target.src=b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA}} />
-                          <div className="barberia-card-banner-overlay" />
-                          <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
-                        </div>
-                        <div className="barberia-card-body">
-                          <div className="barberia-nombre">{b.nombre}</div>
-                          <div className="barberia-ciudad">{b.ciudad}</div>
-                          {b.distancia!==undefined&&<div className="barberia-distancia">{b.distancia.toFixed(1)} km</div>}
-                          {b.calificacion_promedio>0&&<div style={{display:'flex',alignItems:'center',gap:6}}><StarRating value={Math.round(b.calificacion_promedio)}/><span style={{fontSize:12,color:'#777'}}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
-                          {b.descripcion&&<p className="barberia-descripcion">{b.descripcion}</p>}
-                          <div style={{display:'flex',gap:8,marginTop:6}}>
-                            <button className={`btn-elegir ${selectedBarberia?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarberia(b);setSelectedBarbero(null);setBarberosList([]);setFormData({...formData,barberia_id:b.id,barbero_id:'',hora:''});cargarBarberosBarberia(b.id)}}>
-                              {selectedBarberia?.id===b.id?'Seleccionada':'Elegir'}
-                            </button>
-                            <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barberia',id:b.id,barberiaId:b.id,usuarioId:userData.id,nombre:b.nombre})}>
-                              Calificar
-                            </button>
-                          </div>
+                  {barberias.map((b:any) => (
+                    <div key={b.id} className={`barberia-card ${selectedBarberia?.id===b.id?'selected':''}`}>
+                      <div className="barberia-card-banner">
+                        <img src={b.logo||(b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any)=>{e.target.src=b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA}} />
+                        <div className="barberia-card-banner-overlay" />
+                        <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
+                      </div>
+                      <div className="barberia-card-body">
+                        <div className="barberia-nombre">{b.nombre}</div>
+                        <div className="barberia-ciudad">{b.ciudad}</div>
+                        {b.distancia!==undefined&&<div className="barberia-distancia">{b.distancia.toFixed(1)} km</div>}
+                        {b.calificacion_promedio>0&&<div style={{display:'flex',alignItems:'center',gap:6}}><StarRating value={Math.round(b.calificacion_promedio)}/><span style={{fontSize:12,color:'#777'}}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
+                        {b.descripcion&&<p className="barberia-descripcion">{b.descripcion}</p>}
+                        <div style={{display:'flex',gap:8,marginTop:6}}>
+                          <button className={`btn-elegir ${selectedBarberia?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarberia(b);setSelectedBarbero(null);setBarberosList([]);setFormData({...formData,barberia_id:b.id,barbero_id:'',hora:''});cargarBarberosBarberia(b.id)}}>
+                            {selectedBarberia?.id===b.id?'Seleccionada':'Elegir'}
+                          </button>
+                          <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barberia',id:b.id,barberiaId:b.id,usuarioId:userData.id,nombre:b.nombre})}>
+                            Calificar
+                          </button>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ))}
                 </div>
               </>
