@@ -642,8 +642,7 @@ function App() {
 </div>
                 <div className="form-row" style={{marginBottom:12}}>
                   <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={formAnuncio.boton_texto} onChange={e=>setFormAnuncio({...formAnuncio,boton_texto:e.target.value})} /></div>
-                  <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={formAnuncio.boton_url} onChange={e=>setFormAnuncio({...formAnuncio,boton_url:e.target.value})} /></div>
-                </div>
+        
                 <div style={{display:'flex',gap:10,marginTop:16}}>
                   <button className="btn-primary" onClick={guardarAnuncio}>{editAnuncio?'Actualizar':'Publicar anuncio'}</button>
                   {editAnuncio && <button className="btn-secondary" onClick={()=>{setEditAnuncio(null);setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',activo:true})}}>Cancelar</button>}
