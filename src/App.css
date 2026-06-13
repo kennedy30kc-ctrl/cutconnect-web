@@ -334,7 +334,7 @@ body {
   border: 1px solid rgba(201,168,76,0.2);
   border-radius: 18px; overflow: hidden;
   display: flex; align-items: center;
-  min-height: 120px; position: relative;
+  min-height: 180px; position: relative;
   transition: border-color 0.2s;
 }
 .ad-banner:hover { border-color: rgba(201,168,76,0.4); }
