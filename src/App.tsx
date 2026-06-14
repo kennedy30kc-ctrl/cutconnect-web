@@ -219,11 +219,7 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
     setLoading(true)
     try {
       await Promise.all(Object.entries(preciosEdit).map(([servicioId, precio]) =>
-        fetch(`${API}/api/precios/${barberiaId}`, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ servicio_id: parseInt(servicioId), precio: parseFloat(precio as string) })
-        })
+        fetch(`${API}/api/precios/${barberiaId}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ servicio_id: parseInt(servicioId), precio: parseFloat(precio as string) }) })
       ))
       const [s, p] = await Promise.all([
         fetch(`${API}/api/stats/ingresos/${barberiaId}`).then(r=>r.json()),
@@ -250,58 +246,40 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
             {statBox('Hoy', `$${stats.ingresos_hoy?.toFixed(0)||0}`)}
             {statBox('Semana', `$${stats.ingresos_semana?.toFixed(0)||0}`)}
             {statBox('Mes', `$${stats.ingresos_mes?.toFixed(0)||0}`)}
-            {statBox('Citas mes', stats.citas_mes||0, '#fff')}
+            {statBox('Citas mes', String(stats.citas_mes||0), '#fff')}
             {stats.ingreso_promedio > 0 && statBox('Promedio/cita', `$${stats.ingreso_promedio?.toFixed(0)}`)}
             {stats.proyeccion_mes > 0 && statBox('Proyección', `$${stats.proyeccion_mes?.toFixed(0)}`, '#2ECC71')}
           </div>
-
           {stats.servicio_mas_vendido && stats.servicio_mas_vendido !== '—' && (
             <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div>
-                <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Servicio más vendido</p>
-                <p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.servicio_mas_vendido}</p>
-              </div>
+              <div><p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Servicio más vendido</p><p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.servicio_mas_vendido}</p></div>
               <p style={{fontSize:22,fontWeight:900,color:'#C9A84C'}}>{stats.servicio_mas_vendido_count}x</p>
             </div>
           )}
-
-          {stats.servicio_mas_rentable && (
+          {stats.servicio_mas_rentable && stats.servicio_mas_rentable !== '—' && (
             <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div>
-                <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Servicio más rentable</p>
-                <p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.servicio_mas_rentable}</p>
-              </div>
+              <div><p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Servicio más rentable</p><p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.servicio_mas_rentable}</p></div>
               <p style={{fontSize:22,fontWeight:900,color:'#2ECC71'}}>${stats.ingreso_servicio_top?.toFixed(0)}</p>
             </div>
           )}
-
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            {stats.clientes_nuevos >= 0 && (
-              <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px'}}>
-                <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Clientes nuevos</p>
-                <p style={{fontSize:22,fontWeight:900,color:'#fff'}}>{stats.clientes_nuevos}</p>
-                <p style={{fontSize:11,color:'#555',marginTop:2}}>este mes</p>
-              </div>
-            )}
-            {stats.clientes_recurrentes >= 0 && (
-              <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px'}}>
-                <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Recurrentes</p>
-                <p style={{fontSize:22,fontWeight:900,color:'#C9A84C'}}>{stats.clientes_recurrentes}</p>
-                <p style={{fontSize:11,color:'#555',marginTop:2}}>más de 2 citas</p>
-              </div>
-            )}
+            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px'}}>
+              <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Clientes nuevos</p>
+              <p style={{fontSize:22,fontWeight:900,color:'#fff'}}>{stats.clientes_nuevos}</p>
+              <p style={{fontSize:11,color:'#555',marginTop:2}}>este mes</p>
+            </div>
+            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px'}}>
+              <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Recurrentes</p>
+              <p style={{fontSize:22,fontWeight:900,color:'#C9A84C'}}>{stats.clientes_recurrentes}</p>
+              <p style={{fontSize:11,color:'#555',marginTop:2}}>más de 2 citas</p>
+            </div>
           </div>
-
           {stats.hora_pico && (
             <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div>
-                <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Hora pico</p>
-                <p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.hora_pico}</p>
-              </div>
+              <div><p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Hora pico</p><p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.hora_pico}</p></div>
               <p style={{fontSize:13,color:'#777'}}>{stats.citas_hora_pico} citas</p>
             </div>
           )}
-
           {(stats.alertas_barberos_sin_citas > 0 || stats.dias_sin_citas > 0) && (
             <div style={{background:'rgba(231,76,60,0.06)',border:'1px solid rgba(231,76,60,0.15)',borderRadius:12,padding:'14px 16px'}}>
               <p style={{fontSize:10,color:'#FF6B6B',textTransform:'uppercase',letterSpacing:2,marginBottom:8,fontWeight:700}}>Alertas</p>
@@ -310,9 +288,7 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
             </div>
           )}
         </>
-      ) : (
-        <p style={{color:'#555',fontSize:13}}>Cargando estadísticas...</p>
-      )}
+      ) : <p style={{color:'#555',fontSize:13}}>Cargando estadísticas...</p>}
 
       <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:16}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
@@ -375,11 +351,7 @@ function PublicidadPage() {
     }
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/anuncios/solicitud`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({...form, activo: false, estado: 'pendiente'})
-      })
+      const res = await fetch(`${API}/api/anuncios/solicitud`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form, activo:false, estado:'pendiente'}) })
       const data = await res.json()
       if (data.success) setEnviado(true)
       else alert('Error: ' + data.error)
@@ -391,20 +363,18 @@ function PublicidadPage() {
       <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.2)',borderRadius:20,padding:44,maxWidth:480,textAlign:'center'}}>
         <div style={{fontSize:48,marginBottom:16}}>✓</div>
         <h2 style={{color:'#C9A84C',marginBottom:12,fontSize:24,fontWeight:800}}>Solicitud enviada</h2>
-        <p style={{color:'#777',fontSize:14,lineHeight:1.7,marginBottom:24}}>Recibimos tu solicitud de publicidad. En las próximas 24 horas te contactamos para confirmar el pago y activar tu anuncio.</p>
+        <p style={{color:'#777',fontSize:14,lineHeight:1.7,marginBottom:24}}>Recibimos tu solicitud. En las próximas 24 horas te contactamos para confirmar el pago y activar tu anuncio.</p>
         <div style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,padding:20,marginBottom:24}}>
           <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:8}}>Pago con Binance Pay</p>
           <p style={{fontSize:13,color:'#fff',marginBottom:12}}>Envía <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong> al Pay ID:</p>
           <p style={{fontSize:28,fontWeight:900,letterSpacing:6,color:'#C9A84C',marginBottom:12}}>176779028</p>
           <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance" style={{width:140,height:140,borderRadius:8,border:'1px solid rgba(201,168,76,0.3)'}} />
         </div>
-        <a href={`https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20quiero%20publicitar%20mi%20negocio%20en%20CutConnect.%20Mi%20empresa%3A%20${encodeURIComponent(form.anunciante_nombre)}%20en%20${encodeURIComponent(form.ciudad)}.%20Acabo%20de%20enviar%20el%20pago%20por%20Binance.`} target="_blank" rel="noreferrer"
+       <a href="https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20CutConnect%20por%20Binance%20Pay."
           style={{display:'block',background:'#25D366',color:'#fff',padding:14,borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:16}}>
           Enviar comprobante por WhatsApp
         </a>
-        <button onClick={() => window.location.href = '/'} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#777',borderRadius:8,padding:'10px 20px',cursor:'pointer',fontSize:13}}>
-          Volver al inicio
-        </button>
+        <button onClick={() => window.location.href = '/'} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#777',borderRadius:8,padding:'10px 20px',cursor:'pointer',fontSize:13}}>Volver al inicio</button>
       </div>
     </div>
   )
@@ -415,14 +385,12 @@ function PublicidadPage() {
         <div style={{fontFamily:'Playfair Display,serif',fontSize:20,fontWeight:800,color:'#fff'}}>Cut<span style={{color:'#C9A84C'}}>Connect</span></div>
         <button onClick={() => window.location.href = '/'} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#777',borderRadius:8,padding:'8px 16px',cursor:'pointer',fontSize:13}}>← Volver</button>
       </div>
-
       <div style={{maxWidth:600,margin:'0 auto',padding:'40px 24px'}}>
         <div style={{textAlign:'center',marginBottom:40}}>
           <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,marginBottom:12}}>Publicidad</p>
           <h1 style={{fontFamily:'Playfair Display,serif',fontSize:36,fontWeight:800,color:'#fff',marginBottom:12}}>Llega a más clientes</h1>
-          <p style={{color:'#555',fontSize:15,lineHeight:1.7}}>Publica tu negocio en CutConnect y llega a miles de clientes en tu ciudad por solo <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong></p>
+          <p style={{color:'#555',fontSize:15,lineHeight:1.7}}>Publica tu negocio en CutConnect por solo <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong></p>
         </div>
-
         <div style={{display:'flex',flexDirection:'column',gap:20}}>
           <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:24}}>
             <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:16,fontWeight:700}}>Datos del anunciante</p>
@@ -441,23 +409,20 @@ function PublicidadPage() {
                 </div>
                 <div className="form-group"><label>Ciudad *</label><input type="text" placeholder="Medellín" value={form.ciudad} onChange={e=>setForm({...form,ciudad:e.target.value})} /></div>
               </div>
-              <button type="button" className="btn-gps" onClick={obtenerUbicacion}>
-                {form.latitud ? `Ubicación capturada` : 'Capturar mi ubicación GPS'}
-              </button>
+              <button type="button" className="btn-gps" onClick={obtenerUbicacion}>{form.latitud ? 'Ubicación capturada ✓' : 'Capturar mi ubicación GPS'}</button>
             </div>
           </div>
-
           <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:24}}>
             <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:16,fontWeight:700}}>Contenido del anuncio</p>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <div className="form-group"><label>Título del anuncio *</label><input type="text" placeholder="Ej: Lavandería a domicilio" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} /></div>
+              <div className="form-group"><label>Título *</label><input type="text" placeholder="Ej: Lavandería a domicilio" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} /></div>
               <div className="form-group"><label>Subtítulo</label><input type="text" placeholder="Recogemos y entregamos en tu puerta" value={form.subtitulo} onChange={e=>setForm({...form,subtitulo:e.target.value})} /></div>
               <div className="form-row">
                 <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={form.boton_texto} onChange={e=>setForm({...form,boton_texto:e.target.value})} /></div>
                 <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={form.boton_url} onChange={e=>setForm({...form,boton_url:e.target.value})} /></div>
               </div>
               <div className="form-group">
-                <label>Imagen del banner * <span style={{color:'#555',fontWeight:400}}>(1200×300px recomendado)</span></label>
+                <label>Imagen del banner * <span style={{color:'#555',fontWeight:400}}>(1200×300px)</span></label>
                 {form.imagen_url && <img src={form.imagen_url} alt="preview" style={{width:'100%',height:100,objectFit:'cover',borderRadius:8,marginBottom:8}} />}
                 <input type="file" accept="image/*" style={{display:'none'}} ref={imgRef} onChange={handleUploadImg} />
                 <button type="button" className="btn-upload" style={{width:'100%'}} onClick={()=>imgRef.current?.click()} disabled={uploadingImg}>
@@ -466,13 +431,11 @@ function PublicidadPage() {
               </div>
             </div>
           </div>
-
           <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:16,padding:24,textAlign:'center'}}>
             <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:8}}>Precio</p>
             <p style={{fontSize:32,fontWeight:900,color:'#C9A84C',marginBottom:4}}>$3.99 <span style={{fontSize:16,fontWeight:400}}>USD/mes</span></p>
-            <p style={{fontSize:13,color:'#555'}}>Tu anuncio aparece en CutConnect en la ciudad de {form.ciudad||'tu ciudad'}</p>
+            <p style={{fontSize:13,color:'#555'}}>Tu anuncio aparece en {form.ciudad||'tu ciudad'}</p>
           </div>
-
           <button className="btn-primary" style={{padding:16,fontSize:14,width:'100%'}} onClick={handleEnviar} disabled={loading}>
             {loading ? 'Enviando...' : 'Enviar solicitud de publicidad'}
           </button>
@@ -510,9 +473,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
   const [ciudadActiva, setCiudadActiva] = useState('')
 
   useEffect(() => {
-    fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{
-      if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo))
-    }).catch(()=>{})
+    fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
 
   useEffect(() => {
@@ -528,19 +489,14 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
 
   const getBannersParaCiudad = (ciudad: string) => {
     if (!ciudad) return AD_BANNER_DEFAULT
-    const filtrados = adBanners.filter((a:any) =>
-      !a.ciudad || a.ciudad.toLowerCase().includes(ciudad.toLowerCase()) || ciudad.toLowerCase().includes(a.ciudad.toLowerCase())
-    )
+    const filtrados = adBanners.filter((a:any) => !a.ciudad || a.ciudad.toLowerCase().includes(ciudad.toLowerCase()) || ciudad.toLowerCase().includes(a.ciudad.toLowerCase()))
     return filtrados.length > 0 ? filtrados : AD_BANNER_DEFAULT
   }
 
   const buscarPorGPS = () => {
     if (!navigator.geolocation) return
     setBuscando(true)
-    navigator.geolocation.getCurrentPosition(
-      pos => { setBuscando(false); cargarBarberias(pos.coords.latitude, pos.coords.longitude) },
-      () => setBuscando(false)
-    )
+    navigator.geolocation.getCurrentPosition(pos => { setBuscando(false); cargarBarberias(pos.coords.latitude, pos.coords.longitude) }, () => setBuscando(false))
   }
 
   const cargarBarberias = async (lat?: number, lon?: number, ciudad?: string, tipo?: string) => {
@@ -557,16 +513,12 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
     } catch {}
   }
 
-  const buscarPorCiudad = () => {
-    if (searchCiudad.trim()) { setCiudadActiva(searchCiudad); cargarBarberias(undefined, undefined, searchCiudad, tipoFiltro) }
-  }
-
+  const buscarPorCiudad = () => { if (searchCiudad.trim()) { setCiudadActiva(searchCiudad); cargarBarberias(undefined, undefined, searchCiudad, tipoFiltro) } }
   const bannersActivos = getBannersParaCiudad(ciudadActiva)
 
   return (
     <div className="public-page">
       {modalCal && <ModalCalificacion {...modalCal} onClose={() => setModalCal(null)} onDone={() => {}} />}
-
       {showLoginPrompt && (
         <div className="modal-overlay" onClick={() => setShowLoginPrompt(false)}>
           <div className="modal-box" style={{ position:'relative', textAlign:'center' }}>
@@ -580,7 +532,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
           </div>
         </div>
       )}
-
       <nav className={`public-nav ${scrolled?'scrolled':''}`}>
         <div className="public-nav-logo">Cut<span>Connect</span></div>
         <div className="public-nav-actions">
@@ -588,12 +539,9 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
           <button className="btn-nav-register" onClick={onRegister}>Registrarse</button>
         </div>
       </nav>
-
       <div className="hero">
         <div className="hero-slides">
-          {HERO_SLIDES.map((src, i) => (
-            <div key={i} className={`hero-slide ${i===slideIndex?'active':''}`} style={{ backgroundImage:`url(${src})` }} />
-          ))}
+          {HERO_SLIDES.map((src, i) => (<div key={i} className={`hero-slide ${i===slideIndex?'active':''}`} style={{ backgroundImage:`url(${src})` }} />))}
         </div>
         <div className="hero-overlay" />
         <div className="hero-content">
@@ -615,7 +563,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
           <div className="hero-stat"><div className="hero-stat-number">2</div><div className="hero-stat-label">Países</div></div>
         </div>
       </div>
-
       <div className="services-strip">
         {[
           { key:'todos', name:'Todos', icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
@@ -633,36 +580,28 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
           </div>
         ))}
       </div>
-
       <div className="public-section">
         <div className="section-header">
-          <div>
-            <div className="section-eyebrow">Disponibles ahora</div>
-            <h2 className="section-title">Barberías cerca de ti</h2>
-          </div>
+          <div><div className="section-eyebrow">Disponibles ahora</div><h2 className="section-title">Barberías cerca de ti</h2></div>
           <div style={{ display:'flex', gap:8 }}>
             {['todos','barberia','peluqueria'].map(t => (
-              <button key={t} className={`tipo-btn ${tipoFiltro===t?'active':''}`}
-                onClick={() => { setTipoFiltro(t); cargarBarberias(undefined,undefined,searchCiudad||undefined,t) }}>
+              <button key={t} className={`tipo-btn ${tipoFiltro===t?'active':''}`} onClick={() => { setTipoFiltro(t); cargarBarberias(undefined,undefined,searchCiudad||undefined,t) }}>
                 {t==='todos'?'Todos':t==='barberia'?'Barberías':'Peluquerías'}
               </button>
             ))}
           </div>
         </div>
-
         {barberias.length === 0 && (
           <div style={{ textAlign:'center', padding:'60px 0' }}>
             <p style={{ color:'#333', fontSize:15, marginBottom:16 }}>Busca una ciudad para ver los negocios disponibles</p>
             <button className="btn-primary" onClick={buscarPorGPS}>{buscando?'Buscando...':'Usar mi ubicación'}</button>
           </div>
         )}
-
         <div className="barberias-grid">
           {barberias.map((b: any) => (
             <div key={b.id} className="barberia-card" onClick={() => { setSelectedBarberia(b); setShowLoginPrompt(true) }}>
               <div className="barberia-card-banner">
-                <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre}
-                  onError={(e:any) => { e.target.src = b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA }} />
+                <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any) => { e.target.src = b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA }} />
                 <div className="barberia-card-banner-overlay" />
                 <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
               </div>
@@ -670,30 +609,18 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
                 <div className="barberia-nombre">{b.nombre}</div>
                 <div className="barberia-ciudad">{b.ciudad}, {b.pais}</div>
                 {b.distancia !== undefined && <div className="barberia-distancia">{b.distancia.toFixed(1)} km</div>}
-                {b.calificacion_promedio > 0 && (
-                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                    <StarRating value={Math.round(b.calificacion_promedio)} />
-                    <span style={{ fontSize:12, color:'#777' }}>{Number(b.calificacion_promedio).toFixed(1)}</span>
-                  </div>
-                )}
+                {b.calificacion_promedio > 0 && <div style={{ display:'flex', alignItems:'center', gap:6 }}><StarRating value={Math.round(b.calificacion_promedio)} /><span style={{ fontSize:12, color:'#777' }}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
                 {b.descripcion && <p className="barberia-descripcion">{b.descripcion}</p>}
                 <div style={{ display:'flex', gap:8, marginTop:6 }}>
                   <button className="btn-elegir" onClick={e => { e.stopPropagation(); setSelectedBarberia(b); setShowLoginPrompt(true) }}>Reservar</button>
-                  <button style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'#555', fontSize:11, padding:'8px 12px', cursor:'pointer', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }}
-                    onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id:b.id, barberiaId:b.id, usuarioId:0, nombre:b.nombre }) }}>
-                    Calificar
-                  </button>
+                  <button style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'#555', fontSize:11, padding:'8px 12px', cursor:'pointer', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }} onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id:b.id, barberiaId:b.id, usuarioId:0, nombre:b.nombre }) }}>Calificar</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
-
-        <div style={{ marginTop:40 }}>
-          <AdBanner banners={bannersActivos} />
-        </div>
+        <div style={{ marginTop:40 }}><AdBanner banners={bannersActivos} /></div>
       </div>
-
       <div style={{ borderTop:'1px solid rgba(255,255,255,0.04)', padding:'40px 48px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
         <div style={{ fontFamily:'Playfair Display,serif', fontSize:20, fontWeight:800 }}>Cut<span style={{ color:'#C9A84C' }}>Connect</span></div>
         <p style={{ color:'#333', fontSize:12 }}>© 2025 CutConnect · Colombia · Venezuela</p>
@@ -784,6 +711,7 @@ function App() {
       setBarberias(d1.data||[]); setServicios(d2.data||[]); setCitas(d3.data||[])
     } catch {}
   }
+
   const cargarCitasDueno = async () => { try { const r=await fetch(`${API}/api/citas/barberia/${userData?.barberia_id}`); const d=await r.json(); setCitas(d.data||[]) } catch { setCitas([]) } }
   const cargarCitasBarbero = async () => { try { const r=await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d=await r.json(); setCitas(d.data||[]) } catch { setCitas([]) } }
   const cargarBarberosBarberia = async (id: any) => { try { const r=await fetch(`${API}/api/barberos/${id}`); const d=await r.json(); setBarberosList(d.data||[]) } catch { setBarberosList([]) } }
@@ -793,6 +721,14 @@ function App() {
   const cargarDisponibilidad = async (barberoId: any, fecha: string) => { try { const r=await fetch(`${API}/api/disponibilidad/${barberoId}/${fecha}`); const d=await r.json(); setHorasDisponibles(d.data||[]) } catch { setHorasDisponibles([]) } }
   const buscarPorGPS = () => { if (!navigator.geolocation) return; setBuscando(true); navigator.geolocation.getCurrentPosition(pos => { setGpsUsado(true); setBuscando(false); cargarDatos(pos.coords.latitude, pos.coords.longitude, undefined, tipoNegocioFiltro) }, () => setBuscando(false)) }
   const buscarPorCiudad = () => { if (!searchCiudad.trim()) return; setGpsUsado(false); cargarDatos(undefined, undefined, searchCiudad, tipoNegocioFiltro) }
+
+  const completarCita = async (id: number) => {
+    try { await fetch(`${API}/api/citas/completar/${id}`, { method:'POST' }); cargarCitasDueno(); cargarCitasBarbero() } catch {}
+  }
+  const cancelarCita = async (id: number) => {
+    if (!confirm('¿Cancelar esta cita?')) return
+    try { await fetch(`${API}/api/citas/cancelar/${id}`, { method:'POST' }); cargarCitasDueno(); cargarCitasBarbero() } catch {}
+  }
 
   const handleLogin = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
@@ -890,11 +826,8 @@ function App() {
   }
   const guardarAnuncio = async () => {
     try {
-      if (editAnuncio) {
-        await fetch(`${API}/api/admin/anuncios/${editAnuncio.id}`, { method:'PUT', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}, body:JSON.stringify(formAnuncio) })
-      } else {
-        await fetch(`${API}/api/admin/anuncios`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}, body:JSON.stringify(formAnuncio) })
-      }
+      if (editAnuncio) await fetch(`${API}/api/admin/anuncios/${editAnuncio.id}`, { method:'PUT', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}, body:JSON.stringify(formAnuncio) })
+      else await fetch(`${API}/api/admin/anuncios`, { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}, body:JSON.stringify(formAnuncio) })
       setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',ciudad:'',pais:'',activo:true})
       setEditAnuncio(null); cargarAdminData()
       setAdminMsg('Anuncio guardado'); setTimeout(()=>setAdminMsg(''),3000)
@@ -927,9 +860,7 @@ function App() {
             <button className="btn-admin btn-rechazar" onClick={()=>setAdminPage('pendientes')} style={{fontWeight:adminPage==='pendientes'?900:400}}>Pendientes</button>
             <button className="btn-admin btn-rechazar" onClick={()=>setAdminPage('todos')} style={{fontWeight:adminPage==='todos'?900:400}}>Todos</button>
             <button className="btn-admin btn-activar" onClick={()=>setAdminPage('anuncios')} style={{fontWeight:adminPage==='anuncios'?900:400}}>Anuncios</button>
-            <button className="btn-admin btn-aprobar" onClick={()=>setAdminPage('publicidad')} style={{fontWeight:adminPage==='publicidad'?900:400}}>
-              Publicidad {solPendientes.length > 0 && `(${solPendientes.length})`}
-            </button>
+            <button className="btn-admin btn-aprobar" onClick={()=>setAdminPage('publicidad')} style={{fontWeight:adminPage==='publicidad'?900:400}}>Publicidad {solPendientes.length > 0 && `(${solPendientes.length})`}</button>
             <button className="btn-admin btn-suspender" onClick={()=>setAdminLoggedIn(false)}>Salir</button>
           </div>
         </div>
@@ -965,19 +896,15 @@ function App() {
                     <div className="negocio-nombre">{s.titulo}</div>
                     <div className="negocio-meta">{s.anunciante_nombre} · {s.ciudad}, {s.pais}</div>
                     <div className="negocio-email">{s.anunciante_email} · {s.anunciante_telefono}</div>
-                    {s.fecha_vencimiento && <div style={{fontSize:12,color: new Date(s.fecha_vencimiento) < new Date(Date.now()+3*24*60*60*1000) ? '#FF6B6B' : '#C9A84C',marginTop:3}}>
-                      Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}
-                    </div>}
+                    {s.fecha_vencimiento && <div style={{fontSize:12,color:new Date(s.fecha_vencimiento)<new Date(Date.now()+3*24*60*60*1000)?'#FF6B6B':'#C9A84C',marginTop:3}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</div>}
                   </div>
-                  <span className={`status-badge ${s.estado==='activo'?'status-activo':s.estado==='pendiente'?'status-pendiente':'status-suspendido'}`}>
-                    {s.estado==='activo'?'Activo':s.estado==='pendiente'?'Pendiente':'Inactivo'}
-                  </span>
+                  <span className={`status-badge ${s.estado==='activo'?'status-activo':s.estado==='pendiente'?'status-pendiente':'status-suspendido'}`}>{s.estado==='activo'?'Activo':s.estado==='pendiente'?'Pendiente':'Inactivo'}</span>
                   <div className="admin-actions">
                     {s.estado==='pendiente' && (
                       <button className="btn-admin btn-aprobar" onClick={async()=>{
                         const fechaVenc = new Date(); fechaVenc.setDate(fechaVenc.getDate()+30)
                         await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:true,estado:'activo',fecha_vencimiento:fechaVenc.toISOString()})})
-                        setAdminMsg('Anuncio aprobado y activado'); cargarAdminData(); setTimeout(()=>setAdminMsg(''),3000)
+                        setAdminMsg('Aprobado'); cargarAdminData(); setTimeout(()=>setAdminMsg(''),3000)
                       }}>Aprobar</button>
                     )}
                     <button className="btn-admin btn-suspender" onClick={async()=>{
@@ -1022,8 +949,8 @@ function App() {
                   <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={formAnuncio.boton_url} onChange={e=>setFormAnuncio({...formAnuncio,boton_url:e.target.value})} /></div>
                 </div>
                 <div className="form-row" style={{marginBottom:12}}>
-                  <div className="form-group"><label>Ciudad (opcional)</label><input type="text" placeholder="Medellín" value={formAnuncio.ciudad} onChange={e=>setFormAnuncio({...formAnuncio,ciudad:e.target.value})} /></div>
-                  <div className="form-group"><label>País (opcional)</label><input type="text" placeholder="Colombia" value={formAnuncio.pais} onChange={e=>setFormAnuncio({...formAnuncio,pais:e.target.value})} /></div>
+                  <div className="form-group"><label>Ciudad</label><input type="text" placeholder="Medellín" value={formAnuncio.ciudad} onChange={e=>setFormAnuncio({...formAnuncio,ciudad:e.target.value})} /></div>
+                  <div className="form-group"><label>País</label><input type="text" placeholder="Colombia" value={formAnuncio.pais} onChange={e=>setFormAnuncio({...formAnuncio,pais:e.target.value})} /></div>
                 </div>
                 <div style={{display:'flex',gap:10,marginTop:16}}>
                   <button className="btn-primary" onClick={guardarAnuncio}>{editAnuncio?'Actualizar':'Publicar anuncio'}</button>
@@ -1041,9 +968,7 @@ function App() {
                   <span className={`status-badge ${a.activo?'status-activo':'status-suspendido'}`}>{a.activo?'Activo':'Inactivo'}</span>
                   <div className="admin-actions">
                     <button className="btn-admin btn-activar" onClick={()=>{setEditAnuncio(a);setFormAnuncio({titulo:a.titulo,subtitulo:a.subtitulo||'',imagen_url:a.imagen_url||'',boton_texto:a.boton_texto||'Ver más',boton_url:a.boton_url||'',ciudad:a.ciudad||'',pais:a.pais||'',activo:a.activo})}}>Editar</button>
-                    <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${a.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...a,activo:!a.activo})}); cargarAdminData()}}>
-                      {a.activo?'Desactivar':'Activar'}
-                    </button>
+                    <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${a.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...a,activo:!a.activo})}); cargarAdminData()}}>{a.activo?'Desactivar':'Activar'}</button>
                   </div>
                 </div>
               ))}
@@ -1064,11 +989,7 @@ function App() {
                     {n.estado_verificacion==='trial'&&n.diasTrial!==null&&<div style={{color:'#C9A84C',fontSize:12,marginTop:3}}>{n.diasTrial} días restantes</div>}
                   </div>
                   <span className={`status-badge status-${n.estado_verificacion}`}>
-                    {n.estado_verificacion==='pendiente'&&'Pendiente'}
-                    {n.estado_verificacion==='trial'&&'Trial'}
-                    {n.estado_verificacion==='activo'&&'Activo'}
-                    {n.estado_verificacion==='suspendido'&&'Suspendido'}
-                    {n.estado_verificacion==='rechazado'&&'Rechazado'}
+                    {n.estado_verificacion==='pendiente'&&'Pendiente'}{n.estado_verificacion==='trial'&&'Trial'}{n.estado_verificacion==='activo'&&'Activo'}{n.estado_verificacion==='suspendido'&&'Suspendido'}{n.estado_verificacion==='rechazado'&&'Rechazado'}
                   </span>
                   <div className="admin-actions">
                     {n.estado_verificacion==='pendiente'&&<><button className="btn-admin btn-aprobar" onClick={()=>accionAdmin('aprobar',n.id)}>Aprobar</button><button className="btn-admin btn-rechazar" onClick={()=>accionAdmin('rechazar',n.id)}>Rechazar</button></>}
@@ -1238,7 +1159,7 @@ function App() {
             <div className="welcome-card">
               <p><strong>País:</strong> {userData?.pais}</p>
               <p><strong>Email:</strong> {userData?.email}</p>
-              <p><strong>Citas agendadas:</strong> {citas.length}</p>
+              <p><strong>Citas pendientes:</strong> {citas.length}</p>
             </div>
             <div style={{display:'flex',gap:12}}>
               <div style={{flex:1,borderRadius:16,overflow:'hidden',position:'relative',minHeight:140,cursor:'pointer'}} onClick={()=>{setTipoNegocioFiltro('barberia');setCurrentPage('agendar');cargarDatos()}}>
@@ -1281,7 +1202,6 @@ function App() {
                 <button className="btn-search" onClick={buscarPorCiudad}>Buscar</button>
               </div>
             </div>
-
             {barberias.length > 0 && (
               <>
                 <h3>{gpsUsado?'Cerca de ti':'Resultados'} — {barberias.length} negocios</h3>
@@ -1303,9 +1223,7 @@ function App() {
                           <button className={`btn-elegir ${selectedBarberia?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarberia(b);setSelectedBarbero(null);setBarberosList([]);setFormData({...formData,barberia_id:b.id,barbero_id:'',hora:''});cargarBarberosBarberia(b.id)}}>
                             {selectedBarberia?.id===b.id?'Seleccionada':'Elegir'}
                           </button>
-                          <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barberia',id:b.id,barberiaId:b.id,usuarioId:userData.id,nombre:b.nombre})}>
-                            Calificar
-                          </button>
+                          <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barberia',id:b.id,barberiaId:b.id,usuarioId:userData.id,nombre:b.nombre})}>Calificar</button>
                         </div>
                       </div>
                     </div>
@@ -1313,9 +1231,7 @@ function App() {
                 </div>
               </>
             )}
-
             {barberias.length===0&&!buscando&&<div className="empty-state"><div className="empty-icon">—</div><p>Usa el GPS o busca por ciudad para ver negocios disponibles</p></div>}
-
             {selectedBarberia && (
               <>
                 <h3>Profesionales en {selectedBarberia.nombre}</h3>
@@ -1341,9 +1257,7 @@ function App() {
                               <button className={`btn-elegir ${selectedBarbero?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarbero(b);setFormData({...formData,barbero_id:b.id,hora:''})}}>
                                 {selectedBarbero?.id===b.id?'Seleccionado':'Elegir'}
                               </button>
-                              <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barbero',id:b.id,barberiaId:selectedBarberia.id,usuarioId:userData.id,nombre:b.nombre})}>
-                                Calificar
-                              </button>
+                              <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barbero',id:b.id,barberiaId:selectedBarberia.id,usuarioId:userData.id,nombre:b.nombre})}>Calificar</button>
                             </div>
                           </div>
                         </div>
@@ -1352,7 +1266,6 @@ function App() {
                 }
               </>
             )}
-
             {selectedBarbero && (
               <>
                 <h3>Reservar con {selectedBarbero.nombre}</h3>
@@ -1391,10 +1304,10 @@ function App() {
 
         {currentPage==='citas' && (
           <div className="page">
-            <h2>Mis citas</h2>
+            <h2>Mis citas pendientes</h2>
             {selectedBarberia && <FidelizacionCard barberiaId={selectedBarberia.id} usuarioId={userData.id} />}
             {citas.length===0
-              ? <div className="empty-state"><div className="empty-icon">—</div><p>Aún no tienes citas agendadas</p><button onClick={()=>setCurrentPage('agendar')} className="btn-primary">Agendar mi primera cita</button></div>
+              ? <div className="empty-state"><div className="empty-icon">—</div><p>No tienes citas pendientes</p><button onClick={()=>setCurrentPage('agendar')} className="btn-primary">Agendar una cita</button></div>
               : <div className="citas-grid">
                   {citas.map((c:any)=>(
                     <div key={c.id} className="cita-card">
@@ -1438,7 +1351,7 @@ function App() {
                 <div><h2 style={{margin:0}}>Hola, {userData?.nombre}</h2><p style={{color:'#555',fontSize:14,marginTop:4}}>{perfilBarbero?.especialidad||'Profesional'}</p></div>
               </div>
               <div className="stats-grid">
-                <div className="stat-card"><h4>Citas totales</h4><p className="stat-number">{citas.length}</p></div>
+                <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.length}</p></div>
                 <div className="stat-card"><h4>Hoy</h4><p className="stat-number">{citasHoy.length}</p></div>
                 {perfilBarbero?.calificacion_promedio>0&&<div className="stat-card"><h4>Calificación</h4><p className="stat-number">{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</p></div>}
               </div>
@@ -1468,20 +1381,14 @@ function App() {
                     </div>
                     <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.05)',borderLeft:'2px solid #C9A84C',borderRadius:14,padding:24}}>
                       <h3 style={{marginTop:0,marginBottom:20}}>Editar mi información</h3>
-                      <div className="form-group" style={{marginBottom:14}}><label>Especialidad</label>
-                        <input type="text" placeholder="Fades, barba clásica..." value={perfilBarbero.especialidad||''} onChange={e=>setPerfilBarbero({...perfilBarbero,especialidad:e.target.value})} />
-                      </div>
+                      <div className="form-group" style={{marginBottom:14}}><label>Especialidad</label><input type="text" placeholder="Fades, barba clásica..." value={perfilBarbero.especialidad||''} onChange={e=>setPerfilBarbero({...perfilBarbero,especialidad:e.target.value})} /></div>
                       <div className="form-group" style={{marginBottom:14}}><label>Descripción</label>
                         <textarea placeholder="Cuéntales quién eres..." value={perfilBarbero.descripcion||''} onChange={e=>setPerfilBarbero({...perfilBarbero,descripcion:e.target.value})}
                           style={{width:'100%',minHeight:80,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px 14px',color:'#fff',fontSize:13,resize:'vertical',boxSizing:'border-box',fontFamily:'Inter,sans-serif',outline:'none'}} />
                       </div>
                       <div className="form-group" style={{marginBottom:14}}><label>WhatsApp</label>
-                        <input type="tel" placeholder="+57 300 000 0000" value={perfilBarbero.whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,whatsapp:e.target.value})} />
-                        <p style={{fontSize:11,color:'#555',marginTop:6}}>Para recibir notificaciones de nuevas citas</p>
-                      </div>
-                      <div className="form-group" style={{marginBottom:20}}><label>API Key de CallMeBot</label>
-                        <input type="text" placeholder="123456" value={perfilBarbero.apikey_whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,apikey_whatsapp:e.target.value})} />
-                        <p style={{fontSize:11,color:'#555',marginTop:6}}>Envía "I allow callmebot to send me messages" al +34 644 33 42 61 por WhatsApp para obtener tu clave</p>
+                        <input type="tel" placeholder="573001234567 (sin +)" value={perfilBarbero.whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,whatsapp:e.target.value})} />
+                        <p style={{fontSize:11,color:'#555',marginTop:6}}>Número con código de país, sin + ni espacios. Ej: 573001234567</p>
                       </div>
                       <p style={{color:'#555',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:14}}>Horario de trabajo</p>
                       {DIAS.map(dia=>{
@@ -1517,9 +1424,9 @@ function App() {
           )}
           {currentPage==='citas' && (
             <div className="page">
-              <h2>Mis citas — {citas.length}</h2>
+              <h2>Mis citas pendientes — {citas.length}</h2>
               {citas.length===0
-                ? <div className="empty-state"><p>No tienes citas asignadas aún</p></div>
+                ? <div className="empty-state"><p>No tienes citas pendientes</p></div>
                 : <div className="citas-grid">
                     {citas.map((c:any)=>(
                       <div key={c.id} className="cita-card">
@@ -1529,6 +1436,10 @@ function App() {
                         <p><strong>Hora:</strong> {c.hora}</p>
                         <p><strong>Tel:</strong> {c.cliente?.telefono||'—'}</p>
                         <span className="badge-agendada">Confirmada</span>
+                        <div className="cita-actions" style={{marginTop:10}}>
+                          <button className="btn-confirm" onClick={()=>completarCita(c.id)}>✓ Completar</button>
+                          <button className="btn-reject" onClick={()=>cancelarCita(c.id)}>✗ Cancelar</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1582,9 +1493,7 @@ function App() {
               <div style={{background:'#141414',border:'1px solid #635BFF',borderRadius:16,padding:24}}>
                 <h3 style={{margin:'0 0 6px',color:'#635BFF',fontSize:16}}>Pago con tarjeta</h3>
                 <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Visa, Mastercard, débito — procesado por Stripe</p>
-                <button className="btn-primary" style={{width:'100%',background:'#635BFF',padding:14,fontSize:13}} onClick={async()=>{try{const res=await fetch(`${API}/api/pagos/stripe/crear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({barberia_id:userData?.barberia_id,email:userData?.email})});const data=await res.json();if(data.success)window.location.href=data.url;else alert('Error: '+data.error)}catch{alert('Error de conexión')}}}>
-                  Pagar $3.99 USD
-                </button>
+                <button className="btn-primary" style={{width:'100%',background:'#635BFF',padding:14,fontSize:13}} onClick={async()=>{try{const res=await fetch(`${API}/api/pagos/stripe/crear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({barberia_id:userData?.barberia_id,email:userData?.email})});const data=await res.json();if(data.success)window.location.href=data.url;else alert('Error: '+data.error)}catch{alert('Error de conexión')}}}>Pagar $3.99 USD</button>
               </div>
               <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24}}>
                 <h3 style={{margin:'0 0 6px',color:'#C9A84C',fontSize:16}}>Pago con Binance Pay</h3>
@@ -1596,7 +1505,7 @@ function App() {
                   <p style={{fontSize:10,color:'#555',marginBottom:4,textTransform:'uppercase',letterSpacing:2}}>Pay ID</p>
                   <p style={{fontSize:22,fontWeight:900,letterSpacing:6,color:'#C9A84C'}}>176779028</p>
                 </div>
-                <a href="https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20CutConnect%20por%20Binance%20Pay." target="_blank" rel="noreferrer"
+              <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20por%20Binance%20Pay."
                   style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:8,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
                   Enviar comprobante por WhatsApp
                 </a>
@@ -1645,12 +1554,11 @@ function App() {
                 <p>{userData?.email}</p>
               </div>
               <div className="stats-grid">
-                <div className="stat-card"><h4>Citas totales</h4><p className="stat-number">{citas.length}</p></div>
+                <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.length}</p></div>
                 <div className="stat-card"><h4>Profesionales</h4><p className="stat-number">{misBarberos.length}</p></div>
                 <div className="stat-card"><h4>Confirmadas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='agendada').length}</p></div>
                 {userData?.estado_verificacion==='trial'&&<div className="stat-card"><h4>Días trial</h4><p className="stat-number" style={{color:diasRestantes<=3?'#FF6B6B':'#fff'}}>{diasRestantes}</p></div>}
               </div>
-
               <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:16,padding:24}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
                   <div>
@@ -1660,7 +1568,6 @@ function App() {
                 </div>
                 <ProDashboard barberiaId={userData?.barberia_id} />
               </div>
-
               {rankingBarberos.length>0&&(
                 <>
                   <h3>Ranking del equipo</h3>
@@ -1803,21 +1710,26 @@ function App() {
 
           {currentPage==='citas' && (
             <div className="page">
-              <h2>Citas del negocio — {citas.length}</h2>
-              {citas.length===0?<div className="empty-state"><p>No hay citas aún</p></div>
-                :<div className="citas-grid">
-                  {citas.map((c:any)=>(
-                    <div key={c.id} className="cita-card">
-                      <h4>{c.cliente?.nombre||'Cliente'}</h4>
-                      {c.barbero&&<p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
-                      <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
-                      <p><strong>Fecha:</strong> {c.fecha}</p>
-                      <p><strong>Hora:</strong> {c.hora}</p>
-                      <p><strong>Tel:</strong> {c.cliente?.telefono||'—'}</p>
-                      <span className="badge-agendada">Confirmada</span>
-                    </div>
-                  ))}
-                </div>
+              <h2>Citas pendientes — {citas.length}</h2>
+              {citas.length===0
+                ? <div className="empty-state"><p>No hay citas pendientes</p></div>
+                : <div className="citas-grid">
+                    {citas.map((c:any)=>(
+                      <div key={c.id} className="cita-card">
+                        <h4>{c.cliente?.nombre||'Cliente'}</h4>
+                        {c.barbero&&<p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
+                        <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
+                        <p><strong>Fecha:</strong> {c.fecha}</p>
+                        <p><strong>Hora:</strong> {c.hora}</p>
+                        <p><strong>Tel:</strong> {c.cliente?.telefono||'—'}</p>
+                        <span className="badge-agendada">Confirmada</span>
+                        <div className="cita-actions" style={{marginTop:10}}>
+                          <button className="btn-confirm" onClick={()=>completarCita(c.id)}>✓ Completar</button>
+                          <button className="btn-reject" onClick={()=>cancelarCita(c.id)}>✗ Cancelar</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
               }
             </div>
           )}
