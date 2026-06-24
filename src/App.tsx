@@ -368,9 +368,9 @@ function PublicidadPage() {
           <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:8}}>Pago con Binance Pay</p>
           <p style={{fontSize:13,color:'#fff',marginBottom:12}}>Envía <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong> al Pay ID:</p>
           <p style={{fontSize:28,fontWeight:900,letterSpacing:6,color:'#C9A84C',marginBottom:12}}>176779028</p>
-          <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance" style={{width:140,height:140,borderRadius:8,border:'1px solid rgba(201,168,76,0.3)'}} />
+          <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR CutConnect" style={{width:140,height:140,borderRadius:8,border:'1px solid rgba(201,168,76,0.3)'}} />
         </div>
-       <a href="https://wa.me/+32455136804?text=Hola%20Kennedy%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20CutConnect%20por%20Binance%20Pay."
+        <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20quiero%20publicitar%20mi%20negocio.%20Mi%20empresa%3A%20${encodeURIComponent(form.anunciante_nombre)}%20en%20${encodeURIComponent(form.ciudad)}.%20Acabo%20de%20enviar%20el%20pago%20por%20Binance.`} target="_blank" rel="noreferrer"
           style={{display:'block',background:'#25D366',color:'#fff',padding:14,borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:16}}>
           Enviar comprobante por WhatsApp
         </a>
@@ -1182,7 +1182,6 @@ function App() {
             </div>
           </div>
         )}
-
         {currentPage==='agendar' && (
           <div className="page">
             <h2>Agendar cita</h2>
@@ -1301,7 +1300,6 @@ function App() {
             )}
           </div>
         )}
-
         {currentPage==='citas' && (
           <div className="page">
             <h2>Mis citas pendientes</h2>
@@ -1331,36 +1329,159 @@ function App() {
   )
 
   if (loggedIn && userData?.rol==='barbero') {
-    const citasHoy = citas.filter((c:any)=>c.fecha===new Date().toISOString().split('T')[0])
+    const hoy = new Date().toISOString().split('T')[0]
+    const citasHoy = citas.filter((c:any) => c.fecha === hoy)
+    const citasProximas = citas.filter((c:any) => c.fecha > hoy).slice(0, 3)
     return (
       <div className="dashboard-container">
         <nav className="navbar">
           <div className="navbar-left"><div className="navbar-brand"><h1>Cut<span>Connect</span></h1></div><span className="role-badge">Barbero</span></div>
           <div className="nav-links">
             <button className={currentPage==='dashboard'?'active':''} onClick={()=>setCurrentPage('dashboard')}>Inicio</button>
-            <button className={currentPage==='citas'?'active':''} onClick={()=>{setCurrentPage('citas');cargarCitasBarbero()}}>Mis citas</button>
+            <button className={currentPage==='citas'?'active':''} onClick={()=>{setCurrentPage('citas');cargarCitasBarbero()}}>
+              Citas {citas.length>0&&<span style={{background:'#C9A84C',color:'#000',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:900,marginLeft:4}}>{citas.length}</span>}
+            </button>
             <button className={currentPage==='perfil'?'active':''} onClick={()=>{setCurrentPage('perfil');cargarPerfilBarbero()}}>Mi perfil</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
         <div className="dashboard-content">
+
           {currentPage==='dashboard' && (
             <div className="page">
-              <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:8}}>
-                <BarberoAvatar foto={perfilBarbero?.foto} nombre={userData?.nombre||'B'} size={64} />
-                <div><h2 style={{margin:0}}>Hola, {userData?.nombre}</h2><p style={{color:'#555',fontSize:14,marginTop:4}}>{perfilBarbero?.especialidad||'Profesional'}</p></div>
+              {/* HEADER */}
+              <div style={{background:'linear-gradient(135deg,#141414,#1a1a1a)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:20,padding:28,marginBottom:20,display:'flex',alignItems:'center',gap:20}}>
+                <div style={{position:'relative'}}>
+                  <BarberoAvatar foto={perfilBarbero?.foto} nombre={userData?.nombre||'B'} size={80} />
+                  <div style={{position:'absolute',bottom:2,right:2,width:14,height:14,borderRadius:'50%',background:'#2ECC71',border:'2px solid #141414'}}></div>
+                </div>
+                <div style={{flex:1}}>
+                  <p style={{fontSize:11,color:'#555',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Bienvenido de vuelta</p>
+                  <h2 style={{margin:0,fontSize:22,fontWeight:800}}>{userData?.nombre}</h2>
+                  <p style={{color:'#C9A84C',fontSize:13,marginTop:4,fontWeight:600}}>{perfilBarbero?.especialidad||'Profesional'}</p>
+                  {perfilBarbero?.calificacion_promedio>0&&(
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginTop:6}}>
+                      <StarRating value={Math.round(perfilBarbero.calificacion_promedio)} />
+                      <span style={{color:'#777',fontSize:12}}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="stats-grid">
-                <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.length}</p></div>
-                <div className="stat-card"><h4>Hoy</h4><p className="stat-number">{citasHoy.length}</p></div>
-                {perfilBarbero?.calificacion_promedio>0&&<div className="stat-card"><h4>Calificación</h4><p className="stat-number">{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</p></div>}
+
+              {/* STATS */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:20}}>
+                <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:14,padding:'18px 14px',textAlign:'center'}}>
+                  <p style={{fontSize:32,fontWeight:900,color:'#C9A84C',margin:0}}>{citasHoy.length}</p>
+                  <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Hoy</p>
+                </div>
+                <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'18px 14px',textAlign:'center'}}>
+                  <p style={{fontSize:32,fontWeight:900,color:'#fff',margin:0}}>{citas.length}</p>
+                  <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Pendientes</p>
+                </div>
+                <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'18px 14px',textAlign:'center'}}>
+                  <p style={{fontSize:32,fontWeight:900,color:'#2ECC71',margin:0}}>{perfilBarbero?.calificacion_promedio>0?Number(perfilBarbero.calificacion_promedio).toFixed(1):'—'}</p>
+                  <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Rating</p>
+                </div>
               </div>
-              <div className="action-buttons">
-                <button onClick={()=>{setCurrentPage('citas');cargarCitasBarbero()}} className="btn-primary">Ver mis citas</button>
-                <button onClick={()=>{setCurrentPage('perfil');cargarPerfilBarbero()}} className="btn-secondary">Mi perfil</button>
-              </div>
+
+              {/* CITAS DE HOY */}
+              {citasHoy.length > 0 && (
+                <div style={{marginBottom:20}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                    <div style={{width:8,height:8,borderRadius:'50%',background:'#C9A84C'}}></div>
+                    <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Citas de hoy</p>
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    {citasHoy.map((c:any)=>(
+                      <div key={c.id} style={{background:'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:14,padding:16}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+                          <div>
+                            <p style={{fontWeight:700,fontSize:15,color:'#fff',marginBottom:2}}>{c.cliente?.nombre||'Cliente'}</p>
+                            <p style={{fontSize:12,color:'#777'}}>{c.servicio?.nombre}</p>
+                          </div>
+                          <div style={{background:'rgba(201,168,76,0.15)',borderRadius:8,padding:'6px 12px',textAlign:'center'}}>
+                            <p style={{fontSize:16,fontWeight:900,color:'#C9A84C'}}>{c.hora}</p>
+                          </div>
+                        </div>
+                        {c.cliente?.telefono&&<p style={{fontSize:11,color:'#555',marginBottom:12}}>📞 {c.cliente.telefono}</p>}
+                        <div style={{display:'flex',gap:8}}>
+                          <button onClick={()=>completarCita(c.id)} style={{flex:1,background:'rgba(46,204,113,0.12)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:10,color:'#2ECC71',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✓ Servicio realizado</button>
+                          <button onClick={()=>cancelarCita(c.id)} style={{background:'rgba(231,76,60,0.08)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:10,color:'#FF6B6B',padding:'11px 16px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✗</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {citasHoy.length === 0 && (
+                <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:24,textAlign:'center',marginBottom:20}}>
+                  <p style={{fontSize:28,marginBottom:8}}>✂️</p>
+                  <p style={{color:'#555',fontSize:14}}>Sin citas para hoy</p>
+                </div>
+              )}
+
+              {/* PRÓXIMAS */}
+              {citasProximas.length > 0 && (
+                <div style={{marginBottom:20}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                    <div style={{width:8,height:8,borderRadius:'50%',background:'#555'}}></div>
+                    <p style={{fontSize:11,color:'#777',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Próximas citas</p>
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {citasProximas.map((c:any)=>(
+                      <div key={c.id} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'12px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <div>
+                          <p style={{fontWeight:600,fontSize:14,color:'#fff',marginBottom:2}}>{c.cliente?.nombre||'Cliente'}</p>
+                          <p style={{fontSize:12,color:'#555'}}>{c.servicio?.nombre}</p>
+                        </div>
+                        <div style={{textAlign:'right'}}>
+                          <p style={{fontSize:13,fontWeight:700,color:'#777'}}>{c.fecha}</p>
+                          <p style={{fontSize:12,color:'#555'}}>{c.hora}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button onClick={()=>{setCurrentPage('citas');cargarCitasBarbero()}} className="btn-primary" style={{width:'100%',padding:14}}>Ver todas las citas</button>
             </div>
           )}
+
+          {currentPage==='citas' && (
+            <div className="page">
+              <h2>Mis citas — {citas.length}</h2>
+              {citas.length===0
+                ? <div className="empty-state"><p style={{fontSize:32,marginBottom:8}}>✂️</p><p>No tienes citas pendientes</p></div>
+                : <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                    {citas.map((c:any)=>(
+                      <div key={c.id} style={{background:c.fecha===hoy?'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))':'rgba(255,255,255,0.02)',border:c.fecha===hoy?'1px solid rgba(201,168,76,0.2)':'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:18}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+                          <div>
+                            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                              <p style={{fontWeight:700,fontSize:15,color:'#fff'}}>{c.cliente?.nombre||'Cliente'}</p>
+                              {c.fecha===hoy&&<span style={{background:'rgba(201,168,76,0.2)',color:'#C9A84C',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:6,textTransform:'uppercase',letterSpacing:1}}>Hoy</span>}
+                            </div>
+                            <p style={{fontSize:13,color:'#777'}}>{c.servicio?.nombre}</p>
+                            {c.cliente?.telefono&&<p style={{fontSize:12,color:'#555',marginTop:4}}>📞 {c.cliente.telefono}</p>}
+                          </div>
+                          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px 14px',textAlign:'center'}}>
+                            <p style={{fontSize:15,fontWeight:900,color:c.fecha===hoy?'#C9A84C':'#fff'}}>{c.hora}</p>
+                            <p style={{fontSize:10,color:'#555',marginTop:2}}>{c.fecha}</p>
+                          </div>
+                        </div>
+                        <div style={{display:'flex',gap:8}}>
+                          <button onClick={()=>completarCita(c.id)} style={{flex:1,background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.25)',borderRadius:10,color:'#2ECC71',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✓ Servicio realizado</button>
+                          <button onClick={()=>cancelarCita(c.id)} style={{background:'rgba(231,76,60,0.08)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:10,color:'#FF6B6B',padding:'11px 16px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✗ Cancelar</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+              }
+            </div>
+          )}
+
           {currentPage==='perfil' && (
             <div className="page">
               <h2>Mi Perfil</h2>
@@ -1386,7 +1507,7 @@ function App() {
                         <textarea placeholder="Cuéntales quién eres..." value={perfilBarbero.descripcion||''} onChange={e=>setPerfilBarbero({...perfilBarbero,descripcion:e.target.value})}
                           style={{width:'100%',minHeight:80,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px 14px',color:'#fff',fontSize:13,resize:'vertical',boxSizing:'border-box',fontFamily:'Inter,sans-serif',outline:'none'}} />
                       </div>
-                      <div className="form-group" style={{marginBottom:14}}><label>WhatsApp</label>
+                      <div className="form-group" style={{marginBottom:20}}><label>WhatsApp</label>
                         <input type="tel" placeholder="573001234567 (sin +)" value={perfilBarbero.whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,whatsapp:e.target.value})} />
                         <p style={{fontSize:11,color:'#555',marginTop:6}}>Número con código de país, sin + ni espacios. Ej: 573001234567</p>
                       </div>
@@ -1419,30 +1540,6 @@ function App() {
                     </div>
                   </div>
                 )
-              }
-            </div>
-          )}
-          {currentPage==='citas' && (
-            <div className="page">
-              <h2>Mis citas pendientes — {citas.length}</h2>
-              {citas.length===0
-                ? <div className="empty-state"><p>No tienes citas pendientes</p></div>
-                : <div className="citas-grid">
-                    {citas.map((c:any)=>(
-                      <div key={c.id} className="cita-card">
-                        <h4>{c.cliente?.nombre||'Cliente'}</h4>
-                        <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
-                        <p><strong>Fecha:</strong> {c.fecha}</p>
-                        <p><strong>Hora:</strong> {c.hora}</p>
-                        <p><strong>Tel:</strong> {c.cliente?.telefono||'—'}</p>
-                        <span className="badge-agendada">Confirmada</span>
-                        <div className="cita-actions" style={{marginTop:10}}>
-                          <button className="btn-confirm" onClick={()=>completarCita(c.id)}>✓ Completar</button>
-                          <button className="btn-reject" onClick={()=>cancelarCita(c.id)}>✗ Cancelar</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
               }
             </div>
           )}
@@ -1490,22 +1587,17 @@ function App() {
             <h2>Tu período de prueba ha vencido</h2>
             <p style={{color:'#555',maxWidth:460,lineHeight:1.7}}>Para continuar usando CutConnect activa tu cuenta por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong>.</p>
             <div style={{display:'flex',flexDirection:'column',gap:14,maxWidth:480}}>
-              <div style={{background:'#141414',border:'1px solid #635BFF',borderRadius:16,padding:24}}>
-                <h3 style={{margin:'0 0 6px',color:'#635BFF',fontSize:16}}>Pago con tarjeta</h3>
-                <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Visa, Mastercard, débito — procesado por Stripe</p>
-                <button className="btn-primary" style={{width:'100%',background:'#635BFF',padding:14,fontSize:13}} onClick={async()=>{try{const res=await fetch(`${API}/api/pagos/stripe/crear`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({barberia_id:userData?.barberia_id,email:userData?.email})});const data=await res.json();if(data.success)window.location.href=data.url;else alert('Error: '+data.error)}catch{alert('Error de conexión')}}}>Pagar $3.99 USD</button>
-              </div>
               <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24}}>
                 <h3 style={{margin:'0 0 6px',color:'#C9A84C',fontSize:16}}>Pago con Binance Pay</h3>
                 <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Envía exactamente <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong></p>
                 <div style={{textAlign:'center',marginBottom:16}}>
-                  <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)'}} />
+                  <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR CutConnect" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)'}} />
                 </div>
                 <div style={{background:'rgba(255,255,255,0.03)',borderRadius:8,padding:'10px 14px',marginBottom:12}}>
                   <p style={{fontSize:10,color:'#555',marginBottom:4,textTransform:'uppercase',letterSpacing:2}}>Pay ID</p>
                   <p style={{fontSize:22,fontWeight:900,letterSpacing:6,color:'#C9A84C'}}>176779028</p>
                 </div>
-              <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20por%20Binance%20Pay."
+                <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20por%20Binance%20Pay."
                   style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:8,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
                   Enviar comprobante por WhatsApp
                 </a>
