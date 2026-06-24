@@ -189,22 +189,99 @@ function AdBanner({ banners }: { banners: any[] }) {
   )
 }
 
+function AnimatedNumber({ value, prefix = '', decimals = 0 }: { value: number, prefix?: string, decimals?: number }) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    if (!value) return
+    let start = 0
+    const duration = 1200; const step = 16
+    const increment = value / (duration / step)
+    const timer = setInterval(() => {
+      start += increment
+      if (start >= value) { setDisplay(value); clearInterval(timer) }
+      else setDisplay(start)
+    }, step)
+    return () => clearInterval(timer)
+  }, [value])
+  return <span>{prefix}{decimals > 0 ? display.toFixed(decimals) : Math.floor(display).toLocaleString()}</span>
+}
+
+function BarChart({ data, colorKey }: { data: any[], colorKey: string }) {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => { setTimeout(() => setVisible(true), 100) }, [])
+  const max = Math.max(...data.map(d => d[colorKey]), 1)
+  return (
+    <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:80, marginTop:8 }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+          <div style={{ width:'100%', background:'rgba(255,255,255,0.04)', borderRadius:6, height:64, display:'flex', alignItems:'flex-end', overflow:'hidden' }}>
+            <div style={{ width:'100%', background: colorKey==='ingresos' ? 'linear-gradient(to top,#C9A84C,#FFD700)' : 'linear-gradient(to top,#00D4FF,#0099CC)', borderRadius:6, height: visible ? `${(d[colorKey]/max)*100}%` : '0%', transition:`height ${0.4 + i*0.07}s cubic-bezier(0.34,1.56,0.64,1)`, boxShadow: colorKey==='ingresos' ? '0 0 8px rgba(201,168,76,0.5)' : '0 0 8px rgba(0,212,255,0.5)' }} />
+          </div>
+          <p style={{ fontSize:9, color:'#555', textTransform:'uppercase', letterSpacing:0.5 }}>{d.dia||d.semana}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function LineChart({ data }: { data: any[] }) {
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    let p = 0
+    const timer = setInterval(() => { p += 2; setProgress(Math.min(p, 100)); if (p >= 100) clearInterval(timer) }, 16)
+    return () => clearInterval(timer)
+  }, [])
+  const max = Math.max(...data.map(d => d.citas), 1)
+  const w = 280; const h = 60; const pad = 10
+  const points = data.map((d, i) => ({ x: pad + (i / Math.max(data.length-1,1)) * (w - pad*2), y: h - pad - ((d.citas/max) * (h - pad*2)) }))
+  const pathD = points.reduce((acc, p, i) => i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '')
+  const totalLength = 400
+  return (
+    <div style={{ marginTop:8, overflowX:'auto' }}>
+      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ overflow:'visible' }}>
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#2ECC71"/>
+            <stop offset="100%" stopColor="#00FF88"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path d={pathD} fill="none" stroke="rgba(46,204,113,0.15)" strokeWidth="1"/>
+        <path d={pathD} fill="none" stroke="url(#lineGrad)" strokeWidth="2.5" filter="url(#glow)"
+          strokeDasharray={totalLength} strokeDashoffset={totalLength * (1 - progress/100)}
+          style={{ transition:'stroke-dashoffset 0.05s linear' }} />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#2ECC71" filter="url(#glow)"
+            style={{ opacity: progress > (i/points.length)*100 ? 1 : 0, transition:'opacity 0.3s' }} />
+        ))}
+      </svg>
+    </div>
+  )
+}
+
 function ProDashboard({ barberiaId }: { barberiaId: number }) {
   const [stats, setStats] = useState<any>(null)
+  const [graficas, setGraficas] = useState<any>(null)
   const [precios, setPrecios] = useState<any[]>([])
   const [servicios, setServicios] = useState<any[]>([])
   const [editando, setEditando] = useState(false)
   const [preciosEdit, setPreciosEdit] = useState<any>({})
   const [loading, setLoading] = useState(false)
+  const [tabGrafica, setTabGrafica] = useState<'ingresos'|'citas'|'semanas'>('ingresos')
 
   useEffect(() => {
     if (!barberiaId) return
     Promise.all([
       fetch(`${API}/api/stats/ingresos/${barberiaId}`).then(r=>r.json()),
+      fetch(`${API}/api/stats/graficas/${barberiaId}`).then(r=>r.json()),
       fetch(`${API}/api/precios/${barberiaId}`).then(r=>r.json()),
       fetch(`${API}/api/servicios`).then(r=>r.json())
-    ]).then(([s, p, sv]) => {
+    ]).then(([s, g, p, sv]) => {
       if (s.success) setStats(s.data)
+      if (g.success) setGraficas(g.data)
       if (p.success) setPrecios(p.data)
       if (sv.success) setServicios(sv.data)
     }).catch(()=>{})
@@ -231,65 +308,113 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
     } catch { alert('Error al guardar') } finally { setLoading(false) }
   }
 
-  const statBox = (label: string, value: string, color = '#C9A84C') => (
-    <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'16px 14px'}}>
-      <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>{label}</p>
-      <p style={{fontSize:24,fontWeight:900,color}}>{value}</p>
-    </div>
-  )
+  if (!stats) return <p style={{color:'#555',fontSize:13}}>Cargando estadísticas...</p>
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:16}}>
-      {stats ? (
-        <>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:10}}>
-            {statBox('Hoy', `$${stats.ingresos_hoy?.toFixed(0)||0}`)}
-            {statBox('Semana', `$${stats.ingresos_semana?.toFixed(0)||0}`)}
-            {statBox('Mes', `$${stats.ingresos_mes?.toFixed(0)||0}`)}
-            {statBox('Citas mes', String(stats.citas_mes||0), '#fff')}
-            {stats.ingreso_promedio > 0 && statBox('Promedio/cita', `$${stats.ingreso_promedio?.toFixed(0)}`)}
-            {stats.proyeccion_mes > 0 && statBox('Proyección', `$${stats.proyeccion_mes?.toFixed(0)}`, '#2ECC71')}
-          </div>
-          {stats.servicio_mas_vendido && stats.servicio_mas_vendido !== '—' && (
-            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div><p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Servicio más vendido</p><p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.servicio_mas_vendido}</p></div>
-              <p style={{fontSize:22,fontWeight:900,color:'#C9A84C'}}>{stats.servicio_mas_vendido_count}x</p>
-            </div>
-          )}
-          {stats.servicio_mas_rentable && stats.servicio_mas_rentable !== '—' && (
-            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div><p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Servicio más rentable</p><p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.servicio_mas_rentable}</p></div>
-              <p style={{fontSize:22,fontWeight:900,color:'#2ECC71'}}>${stats.ingreso_servicio_top?.toFixed(0)}</p>
-            </div>
-          )}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px'}}>
-              <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Clientes nuevos</p>
-              <p style={{fontSize:22,fontWeight:900,color:'#fff'}}>{stats.clientes_nuevos}</p>
-              <p style={{fontSize:11,color:'#555',marginTop:2}}>este mes</p>
-            </div>
-            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px'}}>
-              <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Recurrentes</p>
-              <p style={{fontSize:22,fontWeight:900,color:'#C9A84C'}}>{stats.clientes_recurrentes}</p>
-              <p style={{fontSize:11,color:'#555',marginTop:2}}>más de 2 citas</p>
-            </div>
-          </div>
-          {stats.hora_pico && (
-            <div style={{background:'rgba(0,0,0,0.3)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div><p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Hora pico</p><p style={{fontSize:16,fontWeight:700,color:'#fff'}}>{stats.hora_pico}</p></div>
-              <p style={{fontSize:13,color:'#777'}}>{stats.citas_hora_pico} citas</p>
-            </div>
-          )}
-          {(stats.alertas_barberos_sin_citas > 0 || stats.dias_sin_citas > 0) && (
-            <div style={{background:'rgba(231,76,60,0.06)',border:'1px solid rgba(231,76,60,0.15)',borderRadius:12,padding:'14px 16px'}}>
-              <p style={{fontSize:10,color:'#FF6B6B',textTransform:'uppercase',letterSpacing:2,marginBottom:8,fontWeight:700}}>Alertas</p>
-              {stats.alertas_barberos_sin_citas > 0 && <p style={{fontSize:13,color:'#FF6B6B',marginBottom:4}}>{stats.alertas_barberos_sin_citas} barbero(s) sin citas en 7 días</p>}
-              {stats.dias_sin_citas > 0 && <p style={{fontSize:13,color:'#FF6B6B'}}>{stats.dias_sin_citas} día(s) sin citas esta semana</p>}
-            </div>
-          )}
-        </>
-      ) : <p style={{color:'#555',fontSize:13}}>Cargando estadísticas...</p>}
+      {/* STAT CARDS NEÓN */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.03))',border:'1px solid rgba(201,168,76,0.3)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(201,168,76,0.06)'}}></div>
+          <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Hoy</p>
+          <p style={{fontSize:28,fontWeight:900,color:'#FFD700',textShadow:'0 0 20px rgba(201,168,76,0.5)'}}><AnimatedNumber value={stats.ingresos_hoy||0} prefix="$" /></p>
+        </div>
+        <div style={{background:'linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,255,0.02))',border:'1px solid rgba(0,212,255,0.2)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(0,212,255,0.04)'}}></div>
+          <p style={{fontSize:10,color:'#00D4FF',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Semana</p>
+          <p style={{fontSize:28,fontWeight:900,color:'#00D4FF',textShadow:'0 0 20px rgba(0,212,255,0.4)'}}><AnimatedNumber value={stats.ingresos_semana||0} prefix="$" /></p>
+        </div>
+        <div style={{background:'linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.02))',border:'1px solid rgba(46,204,113,0.2)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(46,204,113,0.04)'}}></div>
+          <p style={{fontSize:10,color:'#2ECC71',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Mes</p>
+          <p style={{fontSize:28,fontWeight:900,color:'#2ECC71',textShadow:'0 0 20px rgba(46,204,113,0.4)'}}><AnimatedNumber value={stats.ingresos_mes||0} prefix="$" /></p>
+        </div>
+        <div style={{background:'linear-gradient(135deg,rgba(155,89,182,0.08),rgba(155,89,182,0.02))',border:'1px solid rgba(155,89,182,0.2)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(155,89,182,0.04)'}}></div>
+          <p style={{fontSize:10,color:'#BB8FCE',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Proyección</p>
+          <p style={{fontSize:28,fontWeight:900,color:'#BB8FCE',textShadow:'0 0 20px rgba(155,89,182,0.4)'}}><AnimatedNumber value={stats.proyeccion_mes||0} prefix="$" /></p>
+        </div>
+      </div>
 
+      {/* CITAS */}
+      <div style={{background:'rgba(0,0,0,0.3)',borderRadius:14,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Citas este mes</p>
+          <p style={{fontSize:32,fontWeight:900,color:'#fff'}}><AnimatedNumber value={stats.citas_mes||0} /></p>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Promedio/cita</p>
+          <p style={{fontSize:22,fontWeight:700,color:'#C9A84C'}}><AnimatedNumber value={stats.ingreso_promedio||0} prefix="$" /></p>
+        </div>
+      </div>
+
+      {/* GRÁFICAS */}
+      {graficas && (
+        <div style={{background:'rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:16,padding:20}}>
+          <div style={{display:'flex',gap:6,marginBottom:16}}>
+            {[{key:'ingresos',label:'Ingresos'},{key:'citas',label:'Citas'},{key:'semanas',label:'Semanas'}].map(t=>(
+              <button key={t.key} onClick={()=>setTabGrafica(t.key as any)} style={{flex:1,padding:'6px 4px',borderRadius:8,border:'1px solid',borderColor:tabGrafica===t.key?'rgba(201,168,76,0.4)':'rgba(255,255,255,0.06)',background:tabGrafica===t.key?'rgba(201,168,76,0.1)':'transparent',color:tabGrafica===t.key?'#C9A84C':'#555',fontSize:11,fontWeight:700,cursor:'pointer',textTransform:'uppercase',letterSpacing:1}}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {tabGrafica === 'ingresos' && (<><p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Ingresos por día</p><BarChart data={graficas.por_dia} colorKey="ingresos" /></>)}
+          {tabGrafica === 'citas' && (<><p style={{fontSize:10,color:'#00D4FF',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Citas por día</p><BarChart data={graficas.por_dia} colorKey="citas" /></>)}
+          {tabGrafica === 'semanas' && (<><p style={{fontSize:10,color:'#2ECC71',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Citas por semana</p><LineChart data={graficas.por_semana} /></>)}
+        </div>
+      )}
+
+      {/* SERVICIOS TOP */}
+      {stats.servicio_mas_vendido && stats.servicio_mas_vendido !== '—' && (
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,padding:'14px 16px'}}>
+            <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Más vendido</p>
+            <p style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>{stats.servicio_mas_vendido}</p>
+            <p style={{fontSize:20,fontWeight:900,color:'#C9A84C'}}>{stats.servicio_mas_vendido_count}x</p>
+          </div>
+          <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(46,204,113,0.15)',borderRadius:12,padding:'14px 16px'}}>
+            <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Más rentable</p>
+            <p style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>{stats.servicio_mas_rentable}</p>
+            <p style={{fontSize:20,fontWeight:900,color:'#2ECC71'}}>${stats.ingreso_servicio_top?.toFixed(0)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* CLIENTES */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(0,212,255,0.12)',borderRadius:12,padding:'14px 16px'}}>
+          <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Nuevos</p>
+          <p style={{fontSize:26,fontWeight:900,color:'#00D4FF',textShadow:'0 0 15px rgba(0,212,255,0.3)'}}>{stats.clientes_nuevos}</p>
+          <p style={{fontSize:10,color:'#444',marginTop:2}}>este mes</p>
+        </div>
+        <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(201,168,76,0.12)',borderRadius:12,padding:'14px 16px'}}>
+          <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Recurrentes</p>
+          <p style={{fontSize:26,fontWeight:900,color:'#C9A84C',textShadow:'0 0 15px rgba(201,168,76,0.3)'}}>{stats.clientes_recurrentes}</p>
+          <p style={{fontSize:10,color:'#444',marginTop:2}}>más de 2 citas</p>
+        </div>
+      </div>
+
+      {/* HORA PICO */}
+      {stats.hora_pico && (
+        <div style={{background:'linear-gradient(135deg,rgba(155,89,182,0.08),rgba(0,0,0,0.3))',border:'1px solid rgba(155,89,182,0.15)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Hora pico</p>
+            <p style={{fontSize:20,fontWeight:800,color:'#BB8FCE'}}>{stats.hora_pico}</p>
+          </div>
+          <p style={{fontSize:13,color:'#555'}}>{stats.citas_hora_pico} citas</p>
+        </div>
+      )}
+
+      {/* ALERTAS */}
+      {(stats.alertas_barberos_sin_citas > 0 || stats.dias_sin_citas > 0) && (
+        <div style={{background:'rgba(231,76,60,0.06)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:12,padding:'14px 16px'}}>
+          <p style={{fontSize:10,color:'#FF6B6B',textTransform:'uppercase',letterSpacing:2,marginBottom:8,fontWeight:700}}>⚠ Alertas</p>
+          {stats.alertas_barberos_sin_citas > 0 && <p style={{fontSize:13,color:'#FF6B6B',marginBottom:4}}>{stats.alertas_barberos_sin_citas} barbero(s) sin citas en 7 días</p>}
+          {stats.dias_sin_citas > 0 && <p style={{fontSize:13,color:'#FF6B6B'}}>{stats.dias_sin_citas} día(s) sin citas esta semana</p>}
+        </div>
+      )}
+
+      {/* PRECIOS */}
       <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:16}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Mis precios</p>
@@ -1346,10 +1471,8 @@ function App() {
           </div>
         </nav>
         <div className="dashboard-content">
-
           {currentPage==='dashboard' && (
             <div className="page">
-              {/* HEADER */}
               <div style={{background:'linear-gradient(135deg,#141414,#1a1a1a)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:20,padding:28,marginBottom:20,display:'flex',alignItems:'center',gap:20}}>
                 <div style={{position:'relative'}}>
                   <BarberoAvatar foto={perfilBarbero?.foto} nombre={userData?.nombre||'B'} size={80} />
@@ -1359,16 +1482,9 @@ function App() {
                   <p style={{fontSize:11,color:'#555',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Bienvenido de vuelta</p>
                   <h2 style={{margin:0,fontSize:22,fontWeight:800}}>{userData?.nombre}</h2>
                   <p style={{color:'#C9A84C',fontSize:13,marginTop:4,fontWeight:600}}>{perfilBarbero?.especialidad||'Profesional'}</p>
-                  {perfilBarbero?.calificacion_promedio>0&&(
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginTop:6}}>
-                      <StarRating value={Math.round(perfilBarbero.calificacion_promedio)} />
-                      <span style={{color:'#777',fontSize:12}}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span>
-                    </div>
-                  )}
+                  {perfilBarbero?.calificacion_promedio>0&&(<div style={{display:'flex',alignItems:'center',gap:6,marginTop:6}}><StarRating value={Math.round(perfilBarbero.calificacion_promedio)} /><span style={{color:'#777',fontSize:12}}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span></div>)}
                 </div>
               </div>
-
-              {/* STATS */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:20}}>
                 <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:14,padding:'18px 14px',textAlign:'center'}}>
                   <p style={{fontSize:32,fontWeight:900,color:'#C9A84C',margin:0}}>{citasHoy.length}</p>
@@ -1383,8 +1499,6 @@ function App() {
                   <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Rating</p>
                 </div>
               </div>
-
-              {/* CITAS DE HOY */}
               {citasHoy.length > 0 && (
                 <div style={{marginBottom:20}}>
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
@@ -1413,15 +1527,12 @@ function App() {
                   </div>
                 </div>
               )}
-
               {citasHoy.length === 0 && (
                 <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:24,textAlign:'center',marginBottom:20}}>
                   <p style={{fontSize:28,marginBottom:8}}>✂️</p>
                   <p style={{color:'#555',fontSize:14}}>Sin citas para hoy</p>
                 </div>
               )}
-
-              {/* PRÓXIMAS */}
               {citasProximas.length > 0 && (
                 <div style={{marginBottom:20}}>
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
@@ -1444,11 +1555,9 @@ function App() {
                   </div>
                 </div>
               )}
-
               <button onClick={()=>{setCurrentPage('citas');cargarCitasBarbero()}} className="btn-primary" style={{width:'100%',padding:14}}>Ver todas las citas</button>
             </div>
           )}
-
           {currentPage==='citas' && (
             <div className="page">
               <h2>Mis citas — {citas.length}</h2>
@@ -1481,7 +1590,6 @@ function App() {
               }
             </div>
           )}
-
           {currentPage==='perfil' && (
             <div className="page">
               <h2>Mi Perfil</h2>
@@ -1636,7 +1744,6 @@ function App() {
           {userData?.estado_verificacion==='trial' && diasRestantes>3 && (
             <div className="trial-banner"><p>Período de prueba activo — {diasRestantes} días restantes</p></div>
           )}
-
           {currentPage==='dashboard' && (
             <div className="page">
               <h2>Panel de Control</h2>
@@ -1681,7 +1788,6 @@ function App() {
               </div>
             </div>
           )}
-
           {currentPage==='negocio' && (
             <div className="page">
               <h2>Mi Negocio</h2>
@@ -1729,7 +1835,6 @@ function App() {
               }
             </div>
           )}
-
           {currentPage==='equipo' && (
             <div className="page">
               <h2>Mi Equipo</h2>
@@ -1799,7 +1904,6 @@ function App() {
               </div>
             </div>
           )}
-
           {currentPage==='citas' && (
             <div className="page">
               <h2>Citas pendientes — {citas.length}</h2>
