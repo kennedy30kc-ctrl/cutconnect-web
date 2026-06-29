@@ -1933,6 +1933,53 @@ function App() {
       </div>
     )
   }
+if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='suspendido') return (
+    <div className="dashboard-container">
+      <nav className="navbar">
+        <div className="navbar-left"><div className="navbar-brand"><h1>Cut<span>Connect</span></h1></div><span className="role-badge pending">Suspendido</span></div>
+        <div className="nav-links"><button className="btn-logout" onClick={handleLogout}>Salir</button></div>
+      </nav>
+      <div className="dashboard-content">
+        <div className="page">
+          <h2>Cuenta suspendida</h2>
+          <div className="pending-card">
+            <div className="pending-icon">⚠</div>
+            <h3>Tu negocio ha sido suspendido</h3>
+            <p>Para reactivar tu cuenta contáctanos por WhatsApp.</p>
+            <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20quiero%20reactivar%20mi%20cuenta." target="_blank" rel="noreferrer"
+              style={{display:'block',background:'#25D366',color:'#fff',padding:14,borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:16,textAlign:'center'}}>
+              Contactar por WhatsApp
+            </a>
+            <button onClick={handleLogout} className="btn-secondary">Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='rechazado') return (
+    <div className="dashboard-container">
+      <nav className="navbar">
+        <div className="navbar-left"><div className="navbar-brand"><h1>Cut<span>Connect</span></h1></div><span className="role-badge pending">Rechazado</span></div>
+        <div className="nav-links"><button className="btn-logout" onClick={handleLogout}>Salir</button></div>
+      </nav>
+      <div className="dashboard-content">
+        <div className="page">
+          <h2>Solicitud rechazada</h2>
+          <div className="pending-card">
+            <div className="pending-icon">✗</div>
+            <h3>Tu solicitud no fue aprobada</h3>
+            <p>Si crees que es un error contáctanos por WhatsApp.</p>
+            <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20mi%20solicitud%20fue%20rechazada%20y%20quisiera%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noreferrer"
+              style={{display:'block',background:'#25D366',color:'#fff',padding:14,borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:16,textAlign:'center'}}>
+              Contactar por WhatsApp
+            </a>
+            <button onClick={handleLogout} className="btn-secondary">Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   return null
 }
