@@ -1,22 +1,27 @@
 {
   "name": "CutConnect",
   "short_name": "CutConnect",
-  "description": "Tu próximo corte, a un clic",
+  "description": "Reserva tu cita en barberías y peluquerías de Colombia y Venezuela",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#c9a84c",
+  "background_color": "#080808",
+  "theme_color": "#C9A84C",
   "orientation": "portrait-primary",
+  "lang": "es",
+  "categories": ["lifestyle", "beauty"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

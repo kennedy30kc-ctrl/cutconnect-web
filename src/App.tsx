@@ -30,6 +30,46 @@ function getInitials(nombre: string) {
   return nombre.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
+const TIPO_INFO: Record<string,{label:string,emoji:string}> = {
+  barberia:{label:'Barbería',emoji:'✂️'},
+  peluqueria:{label:'Peluquería',emoji:'💇'},
+  spa:{label:'Spa',emoji:'🧖'},
+  gimnasio:{label:'Gimnasio',emoji:'🏋️'},
+  manicurista:{label:'Manicure & Pedicure',emoji:'💅'},
+  estetica:{label:'Estética',emoji:'💄'},
+  masajes:{label:'Masajes',emoji:'💆'},
+  tatuajes:{label:'Tatuajes & Piercing',emoji:'🎨'},
+  cejas:{label:'Cejas & Depilación',emoji:'👁️'},
+  veterinaria:{label:'Peluquería Canina',emoji:'🐾'},
+}
+const getTipoLabel = (t:string) => TIPO_INFO[t]?.label || t
+const getTipoEmoji = (t:string) => TIPO_INFO[t]?.emoji || '🏪'
+
+function PasswordInput({ value, onChange, placeholder, required, className }: any) {
+  const [show, setShow] = useState(false)
+  return (
+    <div style={{ position:'relative' }}>
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder || '••••••••'}
+        required={required}
+        className={className}
+        style={{ paddingRight:44 }}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(s => !s)}
+        style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:18, lineHeight:1, color:'#555', padding:4 }}
+        aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+      >
+        {show ? '🙈' : '👁️'}
+      </button>
+    </div>
+  )
+}
+
 function StarRating({ value, max = 5, onSelect }: { value: number, max?: number, onSelect?: (n: number) => void }) {
   const [hover, setHover] = useState(0)
   return (
@@ -168,20 +208,21 @@ function AdBanner({ banners }: { banners: any[] }) {
     if (banner.boton_url && banner.boton_url !== '#') window.open(banner.boton_url, '_blank')
   }
   return (
-    <div className="ad-banner" style={{ position:'relative' }}>
-      <div className="ad-banner-bg" style={{ backgroundImage:`url(${banner.imagen_url})` }} />
-      <div className="ad-banner-content">
-        <div>
-          <div className="ad-banner-label">{banner.es_default ? 'Espacio publicitario' : 'Publicidad'}</div>
-          <div className="ad-banner-title">{banner.titulo}</div>
-          <div className="ad-banner-subtitle">{banner.subtitulo}</div>
+    <div style={{ position:'relative', borderRadius:16, overflow:'hidden', cursor:'pointer', marginTop:8 }} onClick={handleClick}>
+      <div style={{ position:'absolute', inset:0, backgroundImage:`url(${banner.imagen_url})`, backgroundSize:'cover', backgroundPosition:'center', transition:'transform 0.4s ease', transform:'scale(1.02)' }} />
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.6) 100%)' }} />
+      <div style={{ position:'relative', padding:'22px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, minHeight:110 }}>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:9, color:'#C9A84C', textTransform:'uppercase', letterSpacing:3, fontWeight:700, marginBottom:6 }}>{banner.es_default ? '📢 Espacio publicitario disponible' : '⭐ Publicidad'}</div>
+          <div style={{ fontSize:17, fontWeight:800, color:'#fff', marginBottom:4, lineHeight:1.3, textShadow:'0 2px 8px rgba(0,0,0,0.5)' }}>{banner.titulo}</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.7)', lineHeight:1.4 }}>{banner.subtitulo}</div>
         </div>
-        <button className="ad-banner-btn" onClick={handleClick}>{banner.boton_texto}</button>
+        <button style={{ flexShrink:0, background:'#C9A84C', color:'#000', border:'none', borderRadius:10, padding:'10px 18px', fontSize:12, fontWeight:800, cursor:'pointer', textTransform:'uppercase', letterSpacing:1, whiteSpace:'nowrap', boxShadow:'0 4px 15px rgba(201,168,76,0.4)' }} onClick={e=>{e.stopPropagation();handleClick()}}>{banner.boton_texto}</button>
       </div>
       {banners.length > 1 && (
         <div style={{ position:'absolute', bottom:10, right:14, display:'flex', gap:5 }}>
           {banners.map((_,i) => (
-            <div key={i} onClick={() => setIndex(i)} style={{ width:6, height:6, borderRadius:'50%', background: i===index ? '#C9A84C' : 'rgba(255,255,255,0.3)', cursor:'pointer', transition:'background 0.3s' }} />
+            <div key={i} onClick={e=>{e.stopPropagation();setIndex(i)}} style={{ width:7, height:7, borderRadius:'50%', background: i===index ? '#C9A84C' : 'rgba(255,255,255,0.4)', cursor:'pointer', transition:'background 0.3s', boxShadow: i===index?'0 0 6px rgba(201,168,76,0.8)':'' }} />
           ))}
         </div>
       )}
@@ -269,8 +310,18 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
   const [servicios, setServicios] = useState<any[]>([])
   const [editando, setEditando] = useState(false)
   const [preciosEdit, setPreciosEdit] = useState<any>({})
+  const [nombresEdit, setNombresEdit] = useState<any>({})
   const [loading, setLoading] = useState(false)
   const [tabGrafica, setTabGrafica] = useState<'ingresos'|'citas'|'semanas'>('ingresos')
+  const [hiddenServices, setHiddenServices] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`cc_hidden_${barberiaId}`) || '[]') } catch { return [] }
+  })
+  const [customServices, setCustomServices] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`cc_custom_${barberiaId}`) || '[]') } catch { return [] }
+  })
+  const [showAddService, setShowAddService] = useState(false)
+  const [newServiceName, setNewServiceName] = useState('')
+  const [newServicePrice, setNewServicePrice] = useState('')
 
   useEffect(() => {
     if (!barberiaId) return
@@ -290,6 +341,28 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
   const getPrecio = (servicioId: number) => {
     const custom = precios.find((p:any) => p.servicio_id === servicioId)
     return custom ? custom.precio : servicios.find((s:any) => s.id === servicioId)?.precio || 0
+  }
+
+  const toggleHide = (id: number) => {
+    const next = hiddenServices.includes(id) ? hiddenServices.filter(x=>x!==id) : [...hiddenServices, id]
+    setHiddenServices(next)
+    localStorage.setItem(`cc_hidden_${barberiaId}`, JSON.stringify(next))
+  }
+
+  const agregarServicioCustom = () => {
+    if (!newServiceName.trim() || !newServicePrice) return
+    const nuevo = { id: -(Date.now()), nombre: newServiceName.trim(), precio: parseFloat(newServicePrice) }
+    const next = [...customServices, nuevo]
+    setCustomServices(next)
+    localStorage.setItem(`cc_custom_${barberiaId}`, JSON.stringify(next))
+    setPreciosEdit({...preciosEdit, [nuevo.id]: nuevo.precio})
+    setNewServiceName(''); setNewServicePrice(''); setShowAddService(false)
+  }
+
+  const eliminarCustom = (id: number) => {
+    const next = customServices.filter(s=>s.id!==id)
+    setCustomServices(next)
+    localStorage.setItem(`cc_custom_${barberiaId}`, JSON.stringify(next))
   }
 
   const guardarPrecios = async () => {
@@ -414,29 +487,57 @@ function ProDashboard({ barberiaId }: { barberiaId: number }) {
         </div>
       )}
 
-      {/* PRECIOS */}
+      {/* SERVICIOS */}
       <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:16}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Mis precios</p>
-          {!editando
-            ? <button className="btn-secondary" style={{padding:'6px 14px',fontSize:11}} onClick={()=>{const init:any={}; servicios.forEach((s:any)=>{init[s.id]=getPrecio(s.id)}); setPreciosEdit(init); setEditando(true)}}>Editar precios</button>
-            : <div style={{display:'flex',gap:8}}>
-                <button className="btn-primary" style={{padding:'6px 14px',fontSize:11}} onClick={guardarPrecios} disabled={loading}>{loading?'Guardando...':'Guardar'}</button>
-                <button className="btn-secondary" style={{padding:'6px 14px',fontSize:11}} onClick={()=>setEditando(false)}>Cancelar</button>
-              </div>
-          }
+          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Mis servicios y precios</p>
+          <div style={{display:'flex',gap:8}}>
+            {!editando
+              ? <button className="btn-secondary" style={{padding:'6px 14px',fontSize:11}} onClick={()=>{const init:any={},ni:any={}; [...servicios,...customServices].forEach((s:any)=>{init[s.id]=getPrecio(s.id);ni[s.id]=s.nombre}); setPreciosEdit(init);setNombresEdit(ni);setEditando(true)}}>✏️ Editar</button>
+              : <>
+                  <button className="btn-primary" style={{padding:'6px 14px',fontSize:11}} onClick={guardarPrecios} disabled={loading}>{loading?'Guardando...':'Guardar'}</button>
+                  <button className="btn-secondary" style={{padding:'6px 14px',fontSize:11}} onClick={()=>setEditando(false)}>Cancelar</button>
+                </>
+            }
+            {!editando&&<button className="btn-secondary" style={{padding:'6px 14px',fontSize:11,color:'#2ECC71',borderColor:'rgba(46,204,113,0.3)'}} onClick={()=>setShowAddService(s=>!s)}>➕</button>}
+          </div>
         </div>
+        {showAddService&&!editando&&(
+          <div style={{background:'rgba(46,204,113,0.06)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:10,padding:16,marginBottom:12}}>
+            <p style={{fontSize:11,color:'#2ECC71',fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:10}}>Nuevo servicio</p>
+            <div style={{display:'flex',gap:8,marginBottom:8}}>
+              <input type="text" placeholder="Nombre del servicio" value={newServiceName} onChange={e=>setNewServiceName(e.target.value)} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',color:'#fff',fontSize:13}} />
+              <input type="number" placeholder="Precio" value={newServicePrice} onChange={e=>setNewServicePrice(e.target.value)} style={{width:90,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',color:'#C9A84C',fontSize:13,fontWeight:700}} />
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn-primary" style={{flex:1,padding:'8px',fontSize:12}} onClick={agregarServicioCustom}>Agregar</button>
+              <button className="btn-secondary" style={{padding:'8px 14px',fontSize:12}} onClick={()=>{setShowAddService(false);setNewServiceName('');setNewServicePrice('')}}>Cancelar</button>
+            </div>
+          </div>
+        )}
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {servicios.map((s:any) => (
-            <div key={s.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(0,0,0,0.2)',borderRadius:8,padding:'10px 14px'}}>
-              <p style={{fontSize:14,color:'#fff'}}>{s.nombre}</p>
+          {[...servicios.filter((s:any)=>!hiddenServices.includes(s.id)), ...customServices].map((s:any) => (
+            <div key={s.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(0,0,0,0.2)',borderRadius:8,padding:'10px 14px',gap:8}}>
               {editando
-                ? <input type="number" value={preciosEdit[s.id]||''} onChange={e=>setPreciosEdit({...preciosEdit,[s.id]:e.target.value})}
-                    style={{width:80,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(201,168,76,0.4)',borderRadius:6,padding:'4px 8px',color:'#C9A84C',fontSize:14,fontWeight:700,textAlign:'right'}} />
-                : <p style={{fontSize:14,fontWeight:700,color:'#C9A84C'}}>${getPrecio(s.id)}</p>
+                ? <input type="text" value={nombresEdit[s.id]||s.nombre} onChange={e=>setNombresEdit({...nombresEdit,[s.id]:e.target.value})} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,padding:'4px 8px',color:'#fff',fontSize:13}} />
+                : <p style={{fontSize:14,color:'#fff',flex:1,margin:0}}>{s.nombre}</p>
               }
+              {editando
+                ? <input type="number" value={preciosEdit[s.id]||''} onChange={e=>setPreciosEdit({...preciosEdit,[s.id]:e.target.value})} style={{width:80,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(201,168,76,0.4)',borderRadius:6,padding:'4px 8px',color:'#C9A84C',fontSize:14,fontWeight:700,textAlign:'right'}} />
+                : <p style={{fontSize:14,fontWeight:700,color:'#C9A84C',margin:0}}>${getPrecio(s.id)}</p>
+              }
+              {!editando&&(
+                s.id < 0
+                  ? <button onClick={()=>eliminarCustom(s.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#FF6B6B',fontSize:16,padding:'2px 6px'}} title="Eliminar">🗑</button>
+                  : <button onClick={()=>toggleHide(s.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#555',fontSize:13,padding:'2px 6px'}} title="Ocultar">🙈</button>
+              )}
             </div>
           ))}
+          {hiddenServices.length>0&&!editando&&(
+            <button onClick={()=>{setHiddenServices([]);localStorage.removeItem(`cc_hidden_${barberiaId}`)}} style={{background:'none',border:'1px dashed rgba(255,255,255,0.1)',borderRadius:8,padding:'8px',color:'#555',fontSize:11,cursor:'pointer'}}>
+              + Mostrar {hiddenServices.length} servicio(s) oculto(s)
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -527,10 +628,28 @@ function PublicidadPage() {
               </div>
               <div className="form-row">
                 <div className="form-group"><label>País</label>
-                  <div className="pais-selector">
-                    <button type="button" className={`pais-btn ${form.pais==='Colombia'?'active':''}`} onClick={()=>setForm({...form,pais:'Colombia'})}>Colombia</button>
-                    <button type="button" className={`pais-btn ${form.pais==='Venezuela'?'active':''}`} onClick={()=>setForm({...form,pais:'Venezuela'})}>Venezuela</button>
-                  </div>
+                  <select value={form.pais} onChange={e=>setForm({...form,pais:e.target.value})}
+                    style={{width:'100%',background:'#1a1a1a',color:'#fff',border:'1px solid rgba(201,168,76,0.3)',borderRadius:10,padding:'10px 14px',fontSize:14,appearance:'none',cursor:'pointer'}}>
+                  <option value="Argentina">Argentina</option>
+                  <option value="Bolivia">Bolivia</option>
+                  <option value="Chile">Chile</option>
+                  <option value="Colombia">Colombia</option>
+                  <option value="Costa Rica">Costa Rica</option>
+                  <option value="Cuba">Cuba</option>
+                  <option value="Ecuador">Ecuador</option>
+                  <option value="El Salvador">El Salvador</option>
+                  <option value="Guatemala">Guatemala</option>
+                  <option value="Honduras">Honduras</option>
+                  <option value="México">México</option>
+                  <option value="Nicaragua">Nicaragua</option>
+                  <option value="Panamá">Panamá</option>
+                  <option value="Paraguay">Paraguay</option>
+                  <option value="Perú">Perú</option>
+                  <option value="Puerto Rico">Puerto Rico</option>
+                  <option value="República Dominicana">República Dominicana</option>
+                  <option value="Uruguay">Uruguay</option>
+                  <option value="Venezuela">Venezuela</option>
+                  </select>
                 </div>
                 <div className="form-group"><label>Ciudad *</label><input type="text" placeholder="Medellín" value={form.ciudad} onChange={e=>setForm({...form,ciudad:e.target.value})} /></div>
               </div>
@@ -547,7 +666,12 @@ function PublicidadPage() {
                 <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={form.boton_url} onChange={e=>setForm({...form,boton_url:e.target.value})} /></div>
               </div>
               <div className="form-group">
-                <label>Imagen del banner * <span style={{color:'#555',fontWeight:400}}>(1200×300px)</span></label>
+                <label>Imagen del banner * <span style={{color:'#555',fontWeight:400}}>(1200×300px recomendado)</span></label>
+                <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:8,padding:'10px 14px',marginBottom:10,fontSize:11,color:'#888',lineHeight:1.7}}>
+                  📐 <strong style={{color:'#C9A84C'}}>Tamaño ideal: 1200 × 300 px</strong> (proporción 4:1)<br/>
+                  📁 Formatos: JPG, PNG, WebP — Máximo 5 MB<br/>
+                  💡 Tip: crea el banner gratis en <strong style={{color:'#C9A84C'}}>Canva.com</strong> con ese tamaño exacto
+                </div>
                 {form.imagen_url && <img src={form.imagen_url} alt="preview" style={{width:'100%',height:100,objectFit:'cover',borderRadius:8,marginBottom:8}} />}
                 <input type="file" accept="image/*" style={{display:'none'}} ref={imgRef} onChange={handleUploadImg} />
                 <button type="button" className="btn-upload" style={{width:'100%'}} onClick={()=>imgRef.current?.click()} disabled={uploadingImg}>
@@ -576,9 +700,9 @@ function SplashScreen({ onDone }: { onDone:()=>void }) {
     <div className="splash-screen">
       <div className="splash-logo">
         <div className="splash-title">Cut<span>Connect</span></div>
-        <div className="splash-subtitle">Barberías y peluquerías</div>
+        <div className="splash-subtitle">Belleza · Bienestar · Latinoamérica</div>
         <div className="splash-bar"><div className="splash-bar-fill"></div></div>
-        <div className="splash-countries">🇨🇴 🇻🇪</div>
+        <div className="splash-countries" style={{fontSize:22,letterSpacing:6}}>🌎</div>
       </div>
     </div>
   )
@@ -670,7 +794,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
         </div>
         <div className="hero-overlay" />
         <div className="hero-content">
-          <div className="hero-eyebrow">Colombia · Venezuela</div>
+          <div className="hero-eyebrow">🌎 Toda Latinoamérica</div>
           <h1 className="hero-title">Tu próximo corte,<br/><em>a un clic</em></h1>
           <p className="hero-subtitle">Encuentra las mejores barberías y peluquerías cerca de ti. Reserva en segundos, sin llamadas.</p>
           <div className="hero-search">
@@ -683,7 +807,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
           </button>
         </div>
         <div className="hero-stats">
-          <div className="hero-stat"><div className="hero-stat-number">500+</div><div className="hero-stat-label">Barberías</div></div>
+          <div className="hero-stat"><div className="hero-stat-number">500+</div><div className="hero-stat-label">Negocios</div></div>
           <div className="hero-stat"><div className="hero-stat-number">2K+</div><div className="hero-stat-label">Clientes</div></div>
           <div className="hero-stat"><div className="hero-stat-number">2</div><div className="hero-stat-label">Países</div></div>
         </div>
@@ -707,13 +831,19 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
       </div>
       <div className="public-section">
         <div className="section-header">
-          <div><div className="section-eyebrow">Disponibles ahora</div><h2 className="section-title">Barberías cerca de ti</h2></div>
-          <div style={{ display:'flex', gap:8 }}>
-            {['todos','barberia','peluqueria'].map(t => (
-              <button key={t} className={`tipo-btn ${tipoFiltro===t?'active':''}`} onClick={() => { setTipoFiltro(t); cargarBarberias(undefined,undefined,searchCiudad||undefined,t) }}>
-                {t==='todos'?'Todos':t==='barberia'?'Barberías':'Peluquerías'}
-              </button>
-            ))}
+          <div><div className="section-eyebrow">Disponibles ahora</div><h2 className="section-title">Negocios cerca de ti</h2></div>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:8 }}>
+              <button key='todos' className={`tipo-btn ${tipoFiltro==='todos'?'active':''}`} onClick={()=>{setTipoFiltro('todos');cargarBarberias(undefined,undefined,searchCiudad||undefined,'todos')}}>Todos</button>
+              <button key='barberia' className={`tipo-btn ${tipoFiltro==='barberia'?'active':''}`} onClick={()=>{setTipoFiltro('barberia');cargarBarberias(undefined,undefined,searchCiudad||undefined,'barberia')}}>✂️ Barberías</button>
+              <button key='peluqueria' className={`tipo-btn ${tipoFiltro==='peluqueria'?'active':''}`} onClick={()=>{setTipoFiltro('peluqueria');cargarBarberias(undefined,undefined,searchCiudad||undefined,'peluqueria')}}>💇 Peluquerías</button>
+              <button key='spa' className={`tipo-btn ${tipoFiltro==='spa'?'active':''}`} onClick={()=>{setTipoFiltro('spa');cargarBarberias(undefined,undefined,searchCiudad||undefined,'spa')}}>🧖 Spa</button>
+              <button key='gimnasio' className={`tipo-btn ${tipoFiltro==='gimnasio'?'active':''}`} onClick={()=>{setTipoFiltro('gimnasio');cargarBarberias(undefined,undefined,searchCiudad||undefined,'gimnasio')}}>🏋️ Gimnasio</button>
+              <button key='manicurista' className={`tipo-btn ${tipoFiltro==='manicurista'?'active':''}`} onClick={()=>{setTipoFiltro('manicurista');cargarBarberias(undefined,undefined,searchCiudad||undefined,'manicurista')}}>💅 Manicure</button>
+              <button key='estetica' className={`tipo-btn ${tipoFiltro==='estetica'?'active':''}`} onClick={()=>{setTipoFiltro('estetica');cargarBarberias(undefined,undefined,searchCiudad||undefined,'estetica')}}>💄 Estética</button>
+              <button key='masajes' className={`tipo-btn ${tipoFiltro==='masajes'?'active':''}`} onClick={()=>{setTipoFiltro('masajes');cargarBarberias(undefined,undefined,searchCiudad||undefined,'masajes')}}>💆 Masajes</button>
+              <button key='tatuajes' className={`tipo-btn ${tipoFiltro==='tatuajes'?'active':''}`} onClick={()=>{setTipoFiltro('tatuajes');cargarBarberias(undefined,undefined,searchCiudad||undefined,'tatuajes')}}>🎨 Tatuajes</button>
+              <button key='cejas' className={`tipo-btn ${tipoFiltro==='cejas'?'active':''}`} onClick={()=>{setTipoFiltro('cejas');cargarBarberias(undefined,undefined,searchCiudad||undefined,'cejas')}}>👁️ Cejas</button>
+              <button key='veterinaria' className={`tipo-btn ${tipoFiltro==='veterinaria'?'active':''}`} onClick={()=>{setTipoFiltro('veterinaria');cargarBarberias(undefined,undefined,searchCiudad||undefined,'veterinaria')}}>🐾 Pet</button>
           </div>
         </div>
         {barberias.length === 0 && (
@@ -726,9 +856,9 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
           {barberias.map((b: any) => (
             <div key={b.id} className="barberia-card" onClick={() => { setSelectedBarberia(b); setShowLoginPrompt(true) }}>
               <div className="barberia-card-banner">
-                <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any) => { e.target.src = b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA }} />
+                <img src={b.logo || (b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any)=>{ e.target.src=b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA }} />
                 <div className="barberia-card-banner-overlay" />
-                <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
+                <div className="barberia-card-banner-tipo">{getTipoEmoji(b.tipo_negocio)} {getTipoLabel(b.tipo_negocio)}</div>
               </div>
               <div className="barberia-card-body">
                 <div className="barberia-nombre">{b.nombre}</div>
@@ -748,7 +878,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
       </div>
       <div style={{ borderTop:'1px solid rgba(255,255,255,0.04)', padding:'40px 48px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
         <div style={{ fontFamily:'Playfair Display,serif', fontSize:20, fontWeight:800 }}>Cut<span style={{ color:'#C9A84C' }}>Connect</span></div>
-        <p style={{ color:'#333', fontSize:12 }}>© 2025 CutConnect · Colombia · Venezuela</p>
+        <p style={{ color:'#333', fontSize:12 }}>© 2025 CutConnect · Toda Latinoamérica</p>
         <div style={{ display:'flex', gap:16 }}>
           <button className="btn-nav-login" onClick={onLogin}>Iniciar sesión</button>
           <button className="btn-nav-register" onClick={onRegister}>Registrarse</button>
@@ -780,9 +910,9 @@ function App() {
   const [tipoNegocioFiltro, setTipoNegocioFiltro] = useState('todos')
   const [codigoInvitacion, setCodigoInvitacion] = useState('')
   const [usarCodigo, setUsarCodigo] = useState(false)
-  const [ownerData, setOwnerData] = useState({ negocio_nombre:'', pais:'Colombia', estado:'', municipio:'', ciudad:'', negocio_telefono:'', negocio_logo:'', negocio_descripcion:'', direccion:'', latitud:'', longitud:'', tipo_negocio:'barberia' })
+  const [ownerData, setOwnerData] = useState({ negocio_nombre:'', pais:'Colombia', estado:'', municipio:'', ciudad:'', negocio_telefono:'', negocio_logo:'', negocio_descripcion:'', direccion:'', latitud:'', longitud:'', tipo_negocio:'barberia', instagram:'', facebook:'', web:'' })
   const [editNegocio, setEditNegocio] = useState(false)
-  const [editNegocioData, setEditNegocioData] = useState({ nombre:'', descripcion:'', telefono:'', logo:'', tipo_negocio:'barberia', fidelizacion_citas:10, fidelizacion_beneficio:'' })
+  const [editNegocioData, setEditNegocioData] = useState({ nombre:'', descripcion:'', telefono:'', logo:'', tipo_negocio:'barberia', fidelizacion_citas:10, fidelizacion_beneficio:'', instagram:'', facebook:'', web:'' })
   const [formData, setFormData] = useState({ barberia_id:'', barbero_id:'', servicio_id:'', fecha:'', hora:'' })
   const [selectedBarberia, setSelectedBarberia] = useState<any>(null)
   const [selectedBarbero, setSelectedBarbero] = useState<any>(null)
@@ -795,7 +925,12 @@ function App() {
   const [adminNegocios, setAdminNegocios] = useState<any[]>([])
   const [adminStats, setAdminStats] = useState<any>(null)
   const [adminMsg, setAdminMsg] = useState('')
-  const [adminPage, setAdminPage] = useState<'pendientes'|'todos'|'anuncios'|'publicidad'>('pendientes')
+  const [adminPage, setAdminPage] = useState<'pendientes'|'todos'|'clientes'|'anuncios'|'publicidad'>('pendientes')
+  const [adminSearch, setAdminSearch] = useState('')
+  const [adminFiltroPais, setAdminFiltroPais] = useState('')
+  const [adminFiltroTipo, setAdminFiltroTipo] = useState('')
+  const [adminDetalle, setAdminDetalle] = useState<any>(null)
+  const [adminClientes, setAdminClientes] = useState<any[]>([])
   const [anuncios, setAnuncios] = useState<any[]>([])
   const [solicitudesPublicidad, setSolicitudesPublicidad] = useState<any[]>([])
   const [formAnuncio, setFormAnuncio] = useState({ titulo:'', subtitulo:'', imagen_url:'', boton_texto:'Ver más', boton_url:'', ciudad:'', pais:'', activo:true })
@@ -855,6 +990,14 @@ function App() {
     try { await fetch(`${API}/api/citas/cancelar/${id}`, { method:'POST' }); cargarCitasDueno(); cargarCitasBarbero() } catch {}
   }
 
+  const esCitaVigente = (c: any) => {
+    try {
+      const [h, m] = (c.hora || '00:00').split(':').map(Number)
+      const dt = new Date(`${c.fecha}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`)
+      return Date.now() - dt.getTime() < 2 * 60 * 60 * 1000
+    } catch { return true }
+  }
+
   const handleLogin = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
@@ -905,7 +1048,7 @@ function App() {
   const handleGuardarNegocio = async (e: any) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
-      const res = await fetch(`${API}/api/barberias/${userData?.barberia_id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(editNegocioData) })
+      const res = await fetch(`${API}/api/barberias/${userData?.barberia_id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...editNegocioData}) })
       const data = await res.json()
       if (data.success) { setEditNegocio(false); alert('Negocio actualizado') } else setError(data.error||'Error')
     } catch { setError('Error de conexión') } finally { setLoading(false) }
@@ -935,14 +1078,16 @@ function App() {
   }
   const cargarAdminData = async () => {
     try {
-      const [r1,r2,r3,r4] = await Promise.all([
+      const [r1,r2,r3,r4,r5] = await Promise.all([
         fetch(`${API}/api/admin/negocios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/stats`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/anuncios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
-        fetch(`${API}/api/admin/solicitudes-publicidad`,{headers:{'x-admin-token':'admin_token_cutconnect'}})
+        fetch(`${API}/api/admin/solicitudes-publicidad`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
+        fetch(`${API}/api/admin/usuarios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}).catch(()=>null)
       ])
       const d1=await r1.json(); const d2=await r2.json(); const d3=await r3.json(); const d4=await r4.json()
       setAdminNegocios(d1.data||[]); setAdminStats(d2.data||null); setAnuncios(d3.data||[]); setSolicitudesPublicidad(d4.data||[])
+      if (r5) { try { const d5=await r5.json(); setAdminClientes((d5.data||[]).filter((u:any)=>u.rol==='cliente')) } catch {} }
     } catch { setAdminMsg('Error cargando datos') }
   }
   const accionAdmin = async (endpoint: string, id: number) => {
@@ -964,110 +1109,324 @@ function App() {
 
   if (isAdminRoute) {
     if (!adminLoggedIn) return (
-      <div className="login-container">
-        <div className="login-box">
-          <div className="logo-section"><h1>Cut<span>Connect</span></h1><p className="subtitle">Panel Administrador</p></div>
-          <form onSubmit={handleAdminLogin} className="auth-form">
-            <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} required /></div>
+      <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#050508,#0d0d1a)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+        <div style={{width:'100%',maxWidth:380,background:'rgba(14,14,26,0.95)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24,padding:'44px 36px',backdropFilter:'blur(20px)',boxShadow:'0 20px 60px rgba(0,0,0,0.6)'}}>
+          <div style={{textAlign:'center',marginBottom:36}}>
+            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1,marginBottom:6}}>Cut<span style={{color:'#C9A84C'}}>Connect</span></div>
+            <div style={{fontSize:11,color:'#555',textTransform:'uppercase',letterSpacing:4,fontWeight:700}}>Panel Administrador</div>
+          </div>
+          <form onSubmit={handleAdminLogin}>
+            <div className="form-group" style={{marginBottom:20}}><label style={{fontSize:11,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Contraseña</label><PasswordInput value={adminPassword} onChange={(e:any)=>setAdminPassword(e.target.value)} required /></div>
             {error && <p className="error">{error}</p>}
-            <button type="submit" className="btn-submit" disabled={loading}>{loading?'Verificando...':'Entrar'}</button>
+            <button type="submit" style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:12,padding:'14px',fontSize:14,fontWeight:800,cursor:'pointer',letterSpacing:1,textTransform:'uppercase',boxShadow:'0 8px 25px rgba(201,168,76,0.3)'}} disabled={loading}>{loading?'Verificando...':'Entrar'}</button>
           </form>
         </div>
       </div>
     )
-    const negociosFiltrados = adminPage==='pendientes' ? adminNegocios.filter(n=>n.estado_verificacion==='pendiente') : adminNegocios
-    const solPendientes = solicitudesPublicidad.filter((s:any) => s.estado === 'pendiente')
+    const negociosFiltrados = adminNegocios.filter(n => {
+      const q = adminSearch.toLowerCase()
+      const matchSearch = !adminSearch || n.nombre?.toLowerCase().includes(q) || n.email_dueno?.toLowerCase().includes(q) || n.ciudad?.toLowerCase().includes(q)
+      const matchEstado = adminPage==='pendientes' ? n.estado_verificacion==='pendiente' : true
+      const matchPais = !adminFiltroPais || n.pais===adminFiltroPais
+      const matchTipo = !adminFiltroTipo || n.tipo_negocio===adminFiltroTipo
+      return matchSearch && matchEstado && matchPais && matchTipo
+    })
+    const solPendientes = solicitudesPublicidad.filter((s:any) => s.estado==='pendiente')
+    const trialUrgente = adminNegocios.filter(n => n.estado_verificacion==='trial' && n.diasTrial!==null && n.diasTrial<=3)
+    const paisesUnicos = [...new Set(adminNegocios.map(n=>n.pais).filter(Boolean))] as string[]
+    const clientesFiltrados = adminClientes.filter(c => {
+      const q = adminSearch.toLowerCase()
+      return !adminSearch || c.nombre?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
+    })
     return (
-      <div className="admin-container">
-        <div className="admin-navbar">
-          <div><h1>Cut<span style={{color:'#C9A84C'}}>Connect</span> Admin</h1><p className="admin-subtitle">Panel de control</p></div>
-          <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-            <button className="btn-admin btn-rechazar" onClick={()=>setAdminPage('pendientes')} style={{fontWeight:adminPage==='pendientes'?900:400}}>Pendientes</button>
-            <button className="btn-admin btn-rechazar" onClick={()=>setAdminPage('todos')} style={{fontWeight:adminPage==='todos'?900:400}}>Todos</button>
-            <button className="btn-admin btn-activar" onClick={()=>setAdminPage('anuncios')} style={{fontWeight:adminPage==='anuncios'?900:400}}>Anuncios</button>
-            <button className="btn-admin btn-aprobar" onClick={()=>setAdminPage('publicidad')} style={{fontWeight:adminPage==='publicidad'?900:400}}>Publicidad {solPendientes.length > 0 && `(${solPendientes.length})`}</button>
-            <button className="btn-admin btn-suspender" onClick={()=>setAdminLoggedIn(false)}>Salir</button>
+      <div style={{minHeight:'100vh',background:'#050508',display:'flex',flexDirection:'column'}}>
+        {/* HEADER */}
+        <div style={{background:'linear-gradient(135deg,rgba(13,13,26,0.98),rgba(17,17,39,0.98))',borderBottom:'1px solid rgba(201,168,76,0.12)',padding:'14px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:100,backdropFilter:'blur(20px)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:22,fontWeight:900}}>Cut<span style={{color:'#C9A84C'}}>Connect</span></span>
+            <span style={{background:'rgba(201,168,76,0.12)',border:'1px solid rgba(201,168,76,0.25)',color:'#C9A84C',padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:800,letterSpacing:2}}>ADMIN</span>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:24}}>
+            {adminStats && (
+              <div style={{display:'flex',gap:20}}>
+                {[
+                  {v:adminStats.activos,l:'Activos',c:'#4ade80'},
+                  {v:adminStats.pendientes,l:'Pendientes',c:'#FFA500'},
+                  {v:adminStats.trial,l:'Trial',c:'#BB8FCE'},
+                  {v:adminStats.total_clientes,l:'Clientes',c:'#00D4FF'},
+                ].map((s,i)=>(
+                  <div key={i} style={{textAlign:'center'}}>
+                    <div style={{fontSize:18,fontWeight:800,color:s.c,lineHeight:1}}>{s.v}</div>
+                    <div style={{fontSize:9,color:'#444',textTransform:'uppercase',letterSpacing:1,marginTop:2}}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={()=>setAdminLoggedIn(false)} style={{background:'rgba(255,107,107,0.08)',color:'#FF6B6B',border:'1px solid rgba(255,107,107,0.2)',borderRadius:10,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Salir</button>
           </div>
         </div>
-        <div className="admin-content">
-          {adminStats && adminPage !== 'anuncios' && adminPage !== 'publicidad' && (
-            <div className="admin-stats">
-              <div className="admin-stat"><span className="admin-stat-num gold">{adminStats.total}</span><span className="admin-stat-label">Total</span></div>
-              <div className="admin-stat"><span className="admin-stat-num warn">{adminStats.pendientes}</span><span className="admin-stat-label">Pendientes</span></div>
-              <div className="admin-stat"><span className="admin-stat-num trial">{adminStats.trial}</span><span className="admin-stat-label">Trial</span></div>
-              <div className="admin-stat"><span className="admin-stat-num success">{adminStats.activos}</span><span className="admin-stat-label">Activos</span></div>
-              <div className="admin-stat"><span className="admin-stat-num danger">{adminStats.suspendidos}</span><span className="admin-stat-label">Suspendidos</span></div>
-              <div className="admin-stat"><span className="admin-stat-num gold">{adminStats.barberias}</span><span className="admin-stat-label">Barberías</span></div>
-              <div className="admin-stat"><span className="admin-stat-num gold">{adminStats.peluquerias}</span><span className="admin-stat-label">Peluquerías</span></div>
-              <div className="admin-stat"><span className="admin-stat-num gold">{adminStats.total_clientes}</span><span className="admin-stat-label">Clientes</span></div>
+
+        {/* ALERTA TRIAL URGENTE */}
+        {trialUrgente.length>0 && (
+          <div style={{background:'linear-gradient(90deg,rgba(255,107,107,0.08),transparent)',borderBottom:'1px solid rgba(255,107,107,0.15)',padding:'10px 28px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            <span>⚠️</span>
+            <span style={{color:'#FF6B6B',fontSize:13,fontWeight:700}}>{trialUrgente.length} negocio(s) con trial a punto de vencer (≤3 días):</span>
+            <span style={{color:'#FF9090',fontSize:12}}>{trialUrgente.map((n:any)=>n.nombre).join(' · ')}</span>
+          </div>
+        )}
+
+        {/* STAT CARDS */}
+        {adminStats && adminPage!=='anuncios' && adminPage!=='publicidad' && adminPage!=='clientes' && (
+          <div style={{padding:'20px 28px 0'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:10}}>
+              {[
+                {label:'Total negocios',value:adminStats.total,color:'#C9A84C',glow:'rgba(201,168,76,0.15)',icon:'🏪'},
+                {label:'Pendientes',value:adminStats.pendientes,color:'#FFA500',glow:'rgba(255,165,0,0.15)',icon:'⏳'},
+                {label:'Activos',value:adminStats.activos,color:'#4ade80',glow:'rgba(74,222,128,0.15)',icon:'✅'},
+                {label:'Suspendidos',value:adminStats.suspendidos,color:'#FF6B6B',glow:'rgba(255,107,107,0.15)',icon:'🚫'},
+                {label:'En trial',value:adminStats.trial,color:'#BB8FCE',glow:'rgba(187,143,206,0.15)',icon:'⏰'},
+                {label:'Clientes',value:adminStats.total_clientes,color:'#00D4FF',glow:'rgba(0,212,255,0.15)',icon:'👥'},
+              ].map((s,i)=>(
+                <div key={i} style={{background:'linear-gradient(135deg,rgba(18,18,32,0.95),rgba(10,10,20,0.95))',border:`1px solid ${s.glow}`,borderRadius:14,padding:'16px 12px',textAlign:'center',boxShadow:`0 4px 20px ${s.glow}`}}>
+                  <div style={{fontSize:22,marginBottom:6}}>{s.icon}</div>
+                  <div style={{fontSize:28,fontWeight:900,color:s.color,lineHeight:1,textShadow:`0 0 20px ${s.glow}`}}>{s.value}</div>
+                  <div style={{fontSize:9,color:'#555',marginTop:5,textTransform:'uppercase',letterSpacing:1}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TABS */}
+        <div style={{padding:'16px 28px 0',display:'flex',gap:4,flexWrap:'wrap',borderBottom:'1px solid rgba(255,255,255,0.04)',marginTop:8}}>
+          {[
+            {key:'pendientes',label:'Pendientes',icon:'📋',badge:adminNegocios.filter(n=>n.estado_verificacion==='pendiente').length},
+            {key:'todos',label:'Negocios',icon:'🏪',badge:0},
+            {key:'clientes',label:'Clientes',icon:'👥',badge:0},
+            {key:'anuncios',label:'Anuncios',icon:'📢',badge:0},
+            {key:'publicidad',label:'Publicidad',icon:'📬',badge:solPendientes.length},
+          ].map(tab=>(
+            <button key={tab.key} onClick={()=>{setAdminPage(tab.key as any);setAdminSearch('');setAdminFiltroPais('');setAdminFiltroTipo('')}} style={{background:adminPage===tab.key?'rgba(201,168,76,0.08)':'transparent',color:adminPage===tab.key?'#C9A84C':'#555',border:'none',borderBottom:adminPage===tab.key?'2px solid #C9A84C':'2px solid transparent',padding:'10px 18px',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,letterSpacing:0.5,transition:'all 0.2s',borderRadius:'6px 6px 0 0'}}>
+              {tab.icon} {tab.label}
+              {tab.badge>0&&<span style={{background:'#FF6B6B',color:'#fff',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:800,lineHeight:1.4}}>{tab.badge}</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* CONTENT */}
+        <div style={{flex:1,padding:'24px 28px',maxWidth:1200,width:'100%',margin:'0 auto',boxSizing:'border-box' as any}}>
+          {adminMsg && <div style={{background:'rgba(74,222,128,0.08)',border:'1px solid rgba(74,222,128,0.25)',borderRadius:10,padding:'12px 16px',marginBottom:16,color:'#4ade80',fontSize:13,fontWeight:600}}>{adminMsg}</div>}
+
+          {/* NEGOCIOS: pendientes + todos */}
+          {(adminPage==='pendientes'||adminPage==='todos') && (
+            <div>
+              <div style={{display:'flex',gap:10,marginBottom:20,flexWrap:'wrap',alignItems:'center'}}>
+                <input type="text" placeholder="🔍  Buscar por nombre, email o ciudad..." value={adminSearch} onChange={e=>setAdminSearch(e.target.value)}
+                  style={{flex:1,minWidth:200,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 16px',color:'#fff',fontSize:13,outline:'none'}} />
+                <select value={adminFiltroPais} onChange={e=>setAdminFiltroPais(e.target.value)}
+                  style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',color:adminFiltroPais?'#C9A84C':'#555',fontSize:13,cursor:'pointer',minWidth:120,outline:'none'}}>
+                  <option value="">🌎 País</option>
+                  {paisesUnicos.map(p=><option key={p} value={p}>{p}</option>)}
+                </select>
+                <select value={adminFiltroTipo} onChange={e=>setAdminFiltroTipo(e.target.value)}
+                  style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',color:adminFiltroTipo?'#C9A84C':'#555',fontSize:13,cursor:'pointer',minWidth:130,outline:'none'}}>
+                  <option value="">🏪 Tipo</option>
+                  {Object.entries(TIPO_INFO).map(([k,v])=><option key={k} value={k}>{v.emoji} {v.label}</option>)}
+                </select>
+                {(adminSearch||adminFiltroPais||adminFiltroTipo)&&(
+                  <button onClick={()=>{setAdminSearch('');setAdminFiltroPais('');setAdminFiltroTipo('')}} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:10,padding:'10px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>✕ Limpiar</button>
+                )}
+                <span style={{color:'#444',fontSize:12,marginLeft:'auto'}}>{negociosFiltrados.length} resultado(s)</span>
+              </div>
+
+              {negociosFiltrados.length===0 && (
+                <div style={{textAlign:'center',padding:'60px 20px'}}>
+                  <div style={{fontSize:48,marginBottom:12,opacity:0.3}}>🔍</div>
+                  <p style={{color:'#444',fontSize:15}}>No hay negocios con ese filtro</p>
+                </div>
+              )}
+
+              {negociosFiltrados.map((n:any) => {
+                const esUrgente = n.estado_verificacion==='trial' && n.diasTrial!==null && n.diasTrial<=3
+                const isExpanded = adminDetalle?.id===n.id
+                const estadoColor = n.estado_verificacion==='activo'?'#4ade80':n.estado_verificacion==='pendiente'?'#FFA500':n.estado_verificacion==='trial'?'#BB8FCE':'#FF6B6B'
+                const estadoGlow = n.estado_verificacion==='activo'?'rgba(74,222,128,0.15)':n.estado_verificacion==='pendiente'?'rgba(255,165,0,0.15)':n.estado_verificacion==='trial'?'rgba(187,143,206,0.15)':'rgba(255,107,107,0.15)'
+                const estadoLabel = n.estado_verificacion==='pendiente'?'Pendiente':n.estado_verificacion==='trial'?'Trial':n.estado_verificacion==='activo'?'Activo':n.estado_verificacion==='suspendido'?'Suspendido':'Rechazado'
+                return (
+                  <div key={n.id} style={{background:esUrgente?'linear-gradient(135deg,rgba(255,107,107,0.04),rgba(14,14,26,0.95))':'rgba(12,12,22,0.9)',border:`1px solid ${esUrgente?'rgba(255,107,107,0.25)':isExpanded?'rgba(201,168,76,0.3)':'rgba(255,255,255,0.05)'}`,borderRadius:16,marginBottom:8,overflow:'hidden',transition:'border-color 0.2s',boxShadow:isExpanded?'0 4px 30px rgba(201,168,76,0.08)':'none'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:14,padding:'14px 18px',cursor:'pointer'}} onClick={()=>setAdminDetalle(isExpanded?null:n)}>
+                      {n.logo
+                        ?<img src={n.logo} alt={n.nombre} style={{width:46,height:46,borderRadius:10,objectFit:'cover',flexShrink:0,border:'1px solid rgba(255,255,255,0.06)'}}/>
+                        :<div style={{width:46,height:46,borderRadius:10,background:'linear-gradient(135deg,#1a1a35,#0d0d20)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:'#C9A84C',border:'1px solid rgba(201,168,76,0.12)',flexShrink:0}}>{getInitials(n.nombre)}</div>
+                      }
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:15,fontWeight:700,color:'#fff',marginBottom:2}}>{getTipoEmoji(n.tipo_negocio)} {n.nombre}</div>
+                        <div style={{fontSize:12,color:'#555'}}>{n.ciudad}, {n.estado}, {n.pais}</div>
+                        <div style={{fontSize:11,color:'#3a3a4a'}}>{n.email_dueno} · {n.telefono}</div>
+                        {esUrgente&&<div style={{fontSize:11,color:'#FF6B6B',fontWeight:700,marginTop:2}}>🔴 Solo {n.diasTrial} día(s) de trial</div>}
+                        {n.estado_verificacion==='trial'&&!esUrgente&&n.diasTrial!==null&&<div style={{fontSize:11,color:'#C9A84C',fontWeight:600,marginTop:2}}>⏰ {n.diasTrial} días de trial</div>}
+                      </div>
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8,flexShrink:0}}>
+                        <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:estadoGlow,color:estadoColor,border:`1px solid ${estadoGlow}`}}>{estadoLabel}</span>
+                        <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'flex-end'}}>
+                          {n.estado_verificacion==='pendiente'&&<><button className="btn-admin btn-aprobar" onClick={e=>{e.stopPropagation();accionAdmin('aprobar',n.id)}}>✓ Aprobar</button><button className="btn-admin btn-rechazar" onClick={e=>{e.stopPropagation();accionAdmin('rechazar',n.id)}}>✗ Rechazar</button></>}
+                          {(n.estado_verificacion==='trial'||n.estado_verificacion==='suspendido'||n.estado_verificacion==='rechazado')&&<button className="btn-admin btn-activar" onClick={e=>{e.stopPropagation();accionAdmin('activar',n.id)}}>Activar</button>}
+                          {(n.estado_verificacion==='activo'||n.estado_verificacion==='trial')&&<button className="btn-admin btn-suspender" onClick={e=>{e.stopPropagation();accionAdmin('suspender',n.id)}}>Suspender</button>}
+                        </div>
+                        <span style={{fontSize:10,color:'#333'}}>{isExpanded?'▲ cerrar':'▼ detalle'}</span>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',padding:'20px 18px',background:'rgba(0,0,0,0.25)',display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:20}}>
+                        <div>
+                          <p style={{fontSize:9,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:800,marginBottom:10}}>Info del negocio</p>
+                          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                            <span style={{fontSize:12,color:'#666'}}>📋 Tipo: <span style={{color:'#ccc'}}>{getTipoLabel(n.tipo_negocio)}</span></span>
+                            <span style={{fontSize:12,color:'#666'}}>📍 Ubicación: <span style={{color:'#ccc'}}>{n.ciudad}, {n.estado}</span></span>
+                            <span style={{fontSize:12,color:'#666'}}>📞 Tel: <span style={{color:'#ccc'}}>{n.telefono||'—'}</span></span>
+                            {n.instagram&&<span style={{fontSize:12,color:'#666'}}>📸 IG: <a href={`https://instagram.com/${n.instagram}`} target="_blank" rel="noreferrer" style={{color:'#C9A84C'}}>@{n.instagram}</a></span>}
+                            {n.facebook&&<span style={{fontSize:12,color:'#666'}}>📘 FB: <span style={{color:'#ccc'}}>{n.facebook}</span></span>}
+                            <span style={{fontSize:11,color:'#444'}}>ID: <span style={{fontFamily:'monospace',color:'#555'}}>{n.id}</span></span>
+                          </div>
+                        </div>
+                        <div>
+                          <p style={{fontSize:9,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:800,marginBottom:10}}>💳 Pago manual</p>
+                          <p style={{fontSize:12,color:'#555',lineHeight:1.6,marginBottom:10}}>Marcar que pagó y activar como Premium</p>
+                          <button onClick={async(e)=>{e.stopPropagation();await accionAdmin('activar',n.id);setAdminMsg(`💰 ${n.nombre} activado como pagado`);setTimeout(()=>setAdminMsg(''),4000)}}
+                            style={{width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C',borderRadius:8,padding:'9px 14px',fontSize:12,fontWeight:700,cursor:'pointer',marginBottom:8,letterSpacing:0.5}}>
+                            💰 Marcar como pagado
+                          </button>
+                          {n.telefono&&(
+                            <a href={`https://wa.me/${n.telefono.replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(n.nombre)}%2C%20te%20contactamos%20desde%20CutConnect.`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                              style={{display:'block',background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.25)',color:'#25D366',borderRadius:8,padding:'9px 14px',fontSize:12,fontWeight:700,textDecoration:'none',textAlign:'center',letterSpacing:0.5}}>
+                              📲 Contactar por WhatsApp
+                            </a>
+                          )}
+                        </div>
+                        <div>
+                          <p style={{fontSize:9,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:800,marginBottom:10}}>Cuenta dueño</p>
+                          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                            <span style={{fontSize:12,color:'#666'}}>Email: <span style={{color:'#ccc'}}>{n.email_dueno}</span></span>
+                            {n.fecha_registro&&<span style={{fontSize:12,color:'#666'}}>Registro: <span style={{color:'#ccc'}}>{new Date(n.fecha_registro).toLocaleDateString()}</span></span>}
+                            <span style={{fontSize:12,color:'#666'}}>Estado: <span style={{color:estadoColor,fontWeight:700}}>{estadoLabel}</span></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
-          {adminMsg && <p className="success-msg">{adminMsg}</p>}
 
-          {adminPage === 'publicidad' && (
+          {/* CLIENTES */}
+          {adminPage==='clientes' && (
             <div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:10,marginBottom:24}}>
-                <div className="admin-stat"><span className="admin-stat-num gold">{solicitudesPublicidad.length}</span><span className="admin-stat-label">Total</span></div>
-                <div className="admin-stat"><span className="admin-stat-num warn">{solPendientes.length}</span><span className="admin-stat-label">Pendientes</span></div>
-                <div className="admin-stat"><span className="admin-stat-num success">{solicitudesPublicidad.filter((s:any)=>s.estado==='activo').length}</span><span className="admin-stat-label">Activos</span></div>
-                <div className="admin-stat"><span className="admin-stat-num trial">{[...new Set(solicitudesPublicidad.map((s:any)=>s.ciudad))].length}</span><span className="admin-stat-label">Ciudades</span></div>
+              <div style={{display:'flex',gap:10,marginBottom:20,alignItems:'center',flexWrap:'wrap'}}>
+                <input type="text" placeholder="🔍  Buscar cliente por nombre o email..." value={adminSearch} onChange={e=>setAdminSearch(e.target.value)}
+                  style={{flex:1,minWidth:200,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 16px',color:'#fff',fontSize:13,outline:'none'}} />
+                <span style={{color:'#444',fontSize:12}}>{clientesFiltrados.length} cliente(s)</span>
               </div>
-              <p className="admin-section-title">Solicitudes de publicidad</p>
-              {solicitudesPublicidad.length === 0 && <div className="empty-state"><p>No hay solicitudes aún</p></div>}
-              {solicitudesPublicidad.map((s:any) => (
-                <div key={s.id} className="negocio-row">
-                  {s.imagen_url && <img src={s.imagen_url} alt={s.titulo} style={{width:80,height:50,borderRadius:8,objectFit:'cover',flexShrink:0}} />}
-                  <div className="negocio-info">
-                    <div className="negocio-nombre">{s.titulo}</div>
-                    <div className="negocio-meta">{s.anunciante_nombre} · {s.ciudad}, {s.pais}</div>
-                    <div className="negocio-email">{s.anunciante_email} · {s.anunciante_telefono}</div>
-                    {s.fecha_vencimiento && <div style={{fontSize:12,color:new Date(s.fecha_vencimiento)<new Date(Date.now()+3*24*60*60*1000)?'#FF6B6B':'#C9A84C',marginTop:3}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</div>}
+              {clientesFiltrados.length===0 && (
+                <div style={{textAlign:'center',padding:'60px 20px'}}>
+                  <div style={{fontSize:48,marginBottom:12,opacity:0.3}}>👥</div>
+                  <p style={{color:'#444',fontSize:15}}>No hay clientes registrados aún</p>
+                  <button onClick={cargarAdminData} style={{marginTop:12,background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C',borderRadius:8,padding:'8px 16px',fontSize:12,cursor:'pointer',fontWeight:700}}>Recargar datos</button>
+                </div>
+              )}
+              <div style={{display:'grid',gap:6}}>
+                {clientesFiltrados.map((c:any,i:number)=>(
+                  <div key={c.id||i} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'14px 18px',display:'flex',alignItems:'center',gap:14}}>
+                    <div style={{width:40,height:40,borderRadius:'50%',background:'linear-gradient(135deg,#0d1a2e,#091422)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'#00D4FF',border:'1px solid rgba(0,212,255,0.15)',flexShrink:0}}>{getInitials(c.nombre||c.email||'?')}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:14,fontWeight:600,color:'#e0e0e0'}}>{c.nombre||'Sin nombre'}</div>
+                      <div style={{fontSize:12,color:'#555'}}>{c.email}</div>
+                      {c.telefono&&<div style={{fontSize:11,color:'#3a3a4a'}}>{c.telefono}</div>}
+                    </div>
+                    <div style={{textAlign:'right',flexShrink:0}}>
+                      {c.pais&&<div style={{fontSize:12,color:'#555',marginBottom:2}}>{c.pais}</div>}
+                      {c.fecha_registro&&<div style={{fontSize:11,color:'#333'}}>{new Date(c.fecha_registro).toLocaleDateString()}</div>}
+                      {c.total_citas!==undefined&&<div style={{fontSize:13,fontWeight:700,color:'#C9A84C',marginTop:2}}>{c.total_citas} citas</div>}
+                    </div>
                   </div>
-                  <span className={`status-badge ${s.estado==='activo'?'status-activo':s.estado==='pendiente'?'status-pendiente':'status-suspendido'}`}>{s.estado==='activo'?'Activo':s.estado==='pendiente'?'Pendiente':'Inactivo'}</span>
-                  <div className="admin-actions">
-                    {s.estado==='pendiente' && (
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PUBLICIDAD */}
+          {adminPage==='publicidad' && (
+            <div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:10,marginBottom:24}}>
+                {[
+                  {label:'Total',value:solicitudesPublicidad.length,color:'#C9A84C'},
+                  {label:'Pendientes',value:solPendientes.length,color:'#FFA500'},
+                  {label:'Activos',value:solicitudesPublicidad.filter((s:any)=>s.estado==='activo').length,color:'#4ade80'},
+                  {label:'Ciudades',value:[...new Set(solicitudesPublicidad.map((s:any)=>s.ciudad))].length,color:'#BB8FCE'},
+                ].map((s,i)=>(
+                  <div key={i} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'16px 12px',textAlign:'center'}}>
+                    <div style={{fontSize:28,fontWeight:900,color:s.color,lineHeight:1}}>{s.value}</div>
+                    <div style={{fontSize:9,color:'#555',marginTop:5,textTransform:'uppercase',letterSpacing:1}}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Solicitudes de publicidad</p>
+              {solicitudesPublicidad.length===0&&<div style={{textAlign:'center',padding:'40px',color:'#333'}}><p>No hay solicitudes aún</p></div>}
+              {solicitudesPublicidad.map((s:any)=>(
+                <div key={s.id} style={{background:`rgba(12,12,22,0.9)`,border:`1px solid ${s.estado==='pendiente'?'rgba(255,165,0,0.2)':s.estado==='activo'?'rgba(74,222,128,0.12)':'rgba(255,255,255,0.05)'}`,borderRadius:14,padding:'16px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+                  {s.imagen_url&&<img src={s.imagen_url} alt={s.titulo} style={{width:90,height:56,borderRadius:10,objectFit:'cover',flexShrink:0}}/>}
+                  <div style={{flex:1,minWidth:160}}>
+                    <div style={{fontSize:15,fontWeight:700,color:'#fff',marginBottom:3}}>{s.titulo}</div>
+                    <div style={{fontSize:12,color:'#555'}}>{s.anunciante_nombre} · {s.ciudad}, {s.pais}</div>
+                    <div style={{fontSize:11,color:'#3a3a4a'}}>{s.anunciante_email} · {s.anunciante_telefono}</div>
+                    {s.fecha_vencimiento&&<div style={{fontSize:11,color:new Date(s.fecha_vencimiento)<new Date(Date.now()+3*24*60*60*1000)?'#FF6B6B':'#C9A84C',marginTop:4,fontWeight:600}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</div>}
+                  </div>
+                  <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='pendiente'?'rgba(255,165,0,0.12)':'rgba(255,107,107,0.12)',color:s.estado==='activo'?'#4ade80':s.estado==='pendiente'?'#FFA500':'#FF6B6B',border:`1px solid ${s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='pendiente'?'rgba(255,165,0,0.2)':'rgba(255,107,107,0.2)'}`}}>{s.estado==='activo'?'Activo':s.estado==='pendiente'?'Pendiente':'Inactivo'}</span>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {s.estado==='pendiente'&&(
                       <button className="btn-admin btn-aprobar" onClick={async()=>{
-                        const fechaVenc = new Date(); fechaVenc.setDate(fechaVenc.getDate()+30)
+                        const fechaVenc=new Date(); fechaVenc.setDate(fechaVenc.getDate()+30)
                         await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:true,estado:'activo',fecha_vencimiento:fechaVenc.toISOString()})})
-                        setAdminMsg('Aprobado'); cargarAdminData(); setTimeout(()=>setAdminMsg(''),3000)
+                        setAdminMsg('Aprobado ✅'); cargarAdminData(); setTimeout(()=>setAdminMsg(''),3000)
                       }}>Aprobar</button>
                     )}
                     <button className="btn-admin btn-suspender" onClick={async()=>{
                       await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:false,estado:'inactivo'})})
                       cargarAdminData()
                     }}>{s.estado==='activo'?'Desactivar':'Activar'}</button>
+                    {s.anunciante_telefono&&(
+                      <a href={`https://wa.me/${s.anunciante_telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
+                        style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,textDecoration:'none'}}>
+                        WhatsApp
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {adminPage === 'anuncios' && (
+          {/* ANUNCIOS */}
+          {adminPage==='anuncios' && (
             <div>
-              <p className="admin-section-title">Gestión de anuncios</p>
-              <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:24,marginBottom:20}}>
-                <h3 style={{marginTop:0,marginBottom:16,fontSize:13,textTransform:'uppercase',letterSpacing:2,color:'#777'}}>{editAnuncio?'Editar anuncio':'Nuevo anuncio'}</h3>
+              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:20}}>Gestión de anuncios</p>
+              <div style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:24,marginBottom:20}}>
+                <h3 style={{marginTop:0,marginBottom:16,fontSize:11,textTransform:'uppercase',letterSpacing:2,color:'#555'}}>{editAnuncio?'Editar anuncio':'Nuevo anuncio'}</h3>
                 <div className="form-group" style={{marginBottom:12}}><label>Título</label><input type="text" placeholder="Ej: Productos para Barbería" value={formAnuncio.titulo} onChange={e=>setFormAnuncio({...formAnuncio,titulo:e.target.value})} /></div>
                 <div className="form-group" style={{marginBottom:12}}><label>Subtítulo</label><input type="text" placeholder="Descripción breve..." value={formAnuncio.subtitulo} onChange={e=>setFormAnuncio({...formAnuncio,subtitulo:e.target.value})} /></div>
                 <div className="form-group" style={{marginBottom:12}}>
                   <label>Imagen de fondo</label>
-                  {formAnuncio.imagen_url && <img src={formAnuncio.imagen_url} alt="preview" style={{width:'100%',height:120,objectFit:'cover',borderRadius:10,marginBottom:10}} />}
+                  {formAnuncio.imagen_url&&<img src={formAnuncio.imagen_url} alt="preview" style={{width:'100%',height:120,objectFit:'cover',borderRadius:10,marginBottom:10}}/>}
                   <input type="file" accept="image/*" style={{display:'none'}} id="upload-anuncio"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]; if (!file) return
-                      if (file.size > 5*1024*1024) { alert('Máximo 5MB'); return }
-                      const fd = new FormData(); fd.append('imagen', file)
-                      try {
-                        const res = await fetch(`${API}/api/upload/anuncio/0`, { method:'POST', body:fd })
-                        const data = await res.json()
-                        if (data.success) setFormAnuncio({...formAnuncio, imagen_url: data.url})
-                        else alert('Error: ' + data.error)
-                      } catch { alert('Error de conexión') }
+                    onChange={async(e)=>{
+                      const file=e.target.files?.[0]; if(!file) return
+                      if(file.size>5*1024*1024){alert('Máximo 5MB');return}
+                      const fd=new FormData(); fd.append('imagen',file)
+                      try{const res=await fetch(`${API}/api/upload/anuncio/0`,{method:'POST',body:fd}); const data=await res.json(); if(data.success)setFormAnuncio({...formAnuncio,imagen_url:data.url}); else alert('Error: '+data.error)}catch{alert('Error de conexión')}
                     }}
                   />
-                  <button type="button" className="btn-upload" style={{width:'100%'}} onClick={() => document.getElementById('upload-anuncio')?.click()}>
-                    {formAnuncio.imagen_url ? 'Cambiar imagen' : 'Subir imagen'}
-                  </button>
+                  <button type="button" className="btn-upload" style={{width:'100%'}} onClick={()=>document.getElementById('upload-anuncio')?.click()}>{formAnuncio.imagen_url?'Cambiar imagen':'Subir imagen'}</button>
                 </div>
                 <div className="form-row" style={{marginBottom:12}}>
                   <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={formAnuncio.boton_texto} onChange={e=>setFormAnuncio({...formAnuncio,boton_texto:e.target.value})} /></div>
@@ -1079,51 +1438,25 @@ function App() {
                 </div>
                 <div style={{display:'flex',gap:10,marginTop:16}}>
                   <button className="btn-primary" onClick={guardarAnuncio}>{editAnuncio?'Actualizar':'Publicar anuncio'}</button>
-                  {editAnuncio && <button className="btn-secondary" onClick={()=>{setEditAnuncio(null);setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',ciudad:'',pais:'',activo:true})}}>Cancelar</button>}
+                  {editAnuncio&&<button className="btn-secondary" onClick={()=>{setEditAnuncio(null);setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',ciudad:'',pais:'',activo:true})}}>Cancelar</button>}
                 </div>
               </div>
-              {anuncios.map((a:any) => (
-                <div key={a.id} className="negocio-row">
-                  {a.imagen_url && <img src={a.imagen_url} alt={a.titulo} style={{width:60,height:44,borderRadius:8,objectFit:'cover',flexShrink:0}} />}
-                  <div className="negocio-info">
-                    <div className="negocio-nombre">{a.titulo}</div>
-                    <div className="negocio-meta">{a.subtitulo} {a.ciudad && `· ${a.ciudad}`}</div>
-                    <div className="negocio-email">{a.boton_url}</div>
+              {anuncios.map((a:any)=>(
+                <div key={a.id} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14}}>
+                  {a.imagen_url&&<img src={a.imagen_url} alt={a.titulo} style={{width:70,height:46,borderRadius:8,objectFit:'cover',flexShrink:0}}/>}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:'#e0e0e0'}}>{a.titulo}</div>
+                    <div style={{fontSize:12,color:'#555'}}>{a.subtitulo} {a.ciudad&&`· ${a.ciudad}`}</div>
+                    <div style={{fontSize:11,color:'#333'}}>{a.boton_url}</div>
                   </div>
-                  <span className={`status-badge ${a.activo?'status-activo':'status-suspendido'}`}>{a.activo?'Activo':'Inactivo'}</span>
-                  <div className="admin-actions">
+                  <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:a.activo?'rgba(74,222,128,0.12)':'rgba(255,107,107,0.12)',color:a.activo?'#4ade80':'#FF6B6B',border:`1px solid ${a.activo?'rgba(74,222,128,0.2)':'rgba(255,107,107,0.2)'}`}}>{a.activo?'Activo':'Inactivo'}</span>
+                  <div style={{display:'flex',gap:6}}>
                     <button className="btn-admin btn-activar" onClick={()=>{setEditAnuncio(a);setFormAnuncio({titulo:a.titulo,subtitulo:a.subtitulo||'',imagen_url:a.imagen_url||'',boton_texto:a.boton_texto||'Ver más',boton_url:a.boton_url||'',ciudad:a.ciudad||'',pais:a.pais||'',activo:a.activo})}}>Editar</button>
                     <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${a.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...a,activo:!a.activo})}); cargarAdminData()}}>{a.activo?'Desactivar':'Activar'}</button>
                   </div>
                 </div>
               ))}
             </div>
-          )}
-
-          {adminPage !== 'anuncios' && adminPage !== 'publicidad' && (
-            <>
-              <p className="admin-section-title">{adminPage==='pendientes'?'Solicitudes pendientes':'Todos los negocios'}</p>
-              {negociosFiltrados.length===0 && <div className="empty-state"><p>No hay registros</p></div>}
-              {negociosFiltrados.map(n => (
-                <div key={n.id} className="negocio-row">
-                  {n.logo?<img src={n.logo} alt={n.nombre} className="negocio-logo-img"/>:<div className="negocio-logo-av">{getInitials(n.nombre)}</div>}
-                  <div className="negocio-info">
-                    <div className="negocio-nombre">{n.nombre}</div>
-                    <div className="negocio-meta">{n.ciudad}, {n.estado}, {n.pais} · {n.telefono}</div>
-                    <div className="negocio-email">{n.email_dueno}</div>
-                    {n.estado_verificacion==='trial'&&n.diasTrial!==null&&<div style={{color:'#C9A84C',fontSize:12,marginTop:3}}>{n.diasTrial} días restantes</div>}
-                  </div>
-                  <span className={`status-badge status-${n.estado_verificacion}`}>
-                    {n.estado_verificacion==='pendiente'&&'Pendiente'}{n.estado_verificacion==='trial'&&'Trial'}{n.estado_verificacion==='activo'&&'Activo'}{n.estado_verificacion==='suspendido'&&'Suspendido'}{n.estado_verificacion==='rechazado'&&'Rechazado'}
-                  </span>
-                  <div className="admin-actions">
-                    {n.estado_verificacion==='pendiente'&&<><button className="btn-admin btn-aprobar" onClick={()=>accionAdmin('aprobar',n.id)}>Aprobar</button><button className="btn-admin btn-rechazar" onClick={()=>accionAdmin('rechazar',n.id)}>Rechazar</button></>}
-                    {(n.estado_verificacion==='trial'||n.estado_verificacion==='suspendido')&&<button className="btn-admin btn-activar" onClick={()=>accionAdmin('activar',n.id)}>Activar</button>}
-                    {(n.estado_verificacion==='activo'||n.estado_verificacion==='trial')&&<button className="btn-admin btn-suspender" onClick={()=>accionAdmin('suspender',n.id)}>Suspender</button>}
-                  </div>
-                </div>
-              ))}
-            </>
           )}
         </div>
       </div>
@@ -1139,7 +1472,7 @@ function App() {
         <p className="form-subtitle">Iniciar Sesión</p>
         <form onSubmit={handleLogin} className="auth-form">
           <div className="form-group"><label>Email</label><input type="email" placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
-          <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
+          <div className="form-group"><label>Contraseña</label><PasswordInput value={password} onChange={(e:any)=>setPassword(e.target.value)} required /></div>
           {error && <p className="error">{error}</p>}
           <button type="submit" className="btn-submit" disabled={loading}>{loading?'Entrando...':'Iniciar Sesión'}</button>
         </form>
@@ -1163,20 +1496,46 @@ function App() {
           <p className="form-subtitle">Registrar mi negocio</p>
           <form onSubmit={handleRegisterDueno} className="owner-form">
             <fieldset className="form-section"><legend>País</legend>
-              <div className="pais-selector">
-                <button type="button" className={`pais-btn ${ownerData.pais==='Colombia'?'active':''}`} onClick={()=>setOwnerData({...ownerData,pais:'Colombia'})}>Colombia</button>
-                <button type="button" className={`pais-btn ${ownerData.pais==='Venezuela'?'active':''}`} onClick={()=>setOwnerData({...ownerData,pais:'Venezuela'})}>Venezuela</button>
-              </div>
+              <select value={ownerData.pais} onChange={e=>setOwnerData({...ownerData,pais:e.target.value})}
+                style={{width:'100%',background:'#1a1a1a',color:'#fff',border:'1px solid rgba(201,168,76,0.3)',borderRadius:10,padding:'10px 14px',fontSize:14,appearance:'none',cursor:'pointer'}}>
+                  <option value="Argentina">Argentina</option>
+                  <option value="Bolivia">Bolivia</option>
+                  <option value="Chile">Chile</option>
+                  <option value="Colombia">Colombia</option>
+                  <option value="Costa Rica">Costa Rica</option>
+                  <option value="Cuba">Cuba</option>
+                  <option value="Ecuador">Ecuador</option>
+                  <option value="El Salvador">El Salvador</option>
+                  <option value="Guatemala">Guatemala</option>
+                  <option value="Honduras">Honduras</option>
+                  <option value="México">México</option>
+                  <option value="Nicaragua">Nicaragua</option>
+                  <option value="Panamá">Panamá</option>
+                  <option value="Paraguay">Paraguay</option>
+                  <option value="Perú">Perú</option>
+                  <option value="Puerto Rico">Puerto Rico</option>
+                  <option value="República Dominicana">República Dominicana</option>
+                  <option value="Uruguay">Uruguay</option>
+                  <option value="Venezuela">Venezuela</option>
+              </select>
             </fieldset>
             <fieldset className="form-section"><legend>Tipo de negocio</legend>
-              <div className="category-selector">
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'barberia'})}><span className="cat-icon">✂</span>Barbería</button>
+              <div className="category-selector" style={{gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'barberia'})}><span className="cat-icon">✂️</span>Barbería</button>
                 <button type="button" className={`category-btn ${ownerData.tipo_negocio==='peluqueria'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='spa'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'spa'})}><span className="cat-icon">🧖</span>Spa</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='gimnasio'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'gimnasio'})}><span className="cat-icon">🏋️</span>Gimnasio</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='manicurista'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'manicurista'})}><span className="cat-icon">💅</span>Manicure & Pedicure</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='estetica'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'estetica'})}><span className="cat-icon">💄</span>Estética</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='masajes'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'masajes'})}><span className="cat-icon">💆</span>Masajes</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='tatuajes'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'tatuajes'})}><span className="cat-icon">🎨</span>Tatuajes & Piercing</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='cejas'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'cejas'})}><span className="cat-icon">👁️</span>Cejas & Depilación</button>
+                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='veterinaria'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'veterinaria'})}><span className="cat-icon">🐾</span>Peluquería Canina</button>
               </div>
             </fieldset>
             <fieldset className="form-section"><legend>Acceso</legend>
               <div className="form-group"><label>Email</label><input type="email" placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
-              <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
+              <div className="form-group"><label>Contraseña</label><PasswordInput value={password} onChange={(e:any)=>setPassword(e.target.value)} required /></div>
             </fieldset>
             <fieldset className="form-section"><legend>Datos del negocio</legend>
               <div className="form-group"><label>Nombre del negocio</label><input type="text" placeholder="Barbería El Rey" value={ownerData.negocio_nombre} onChange={e=>setOwnerData({...ownerData,negocio_nombre:e.target.value})} required /></div>
@@ -1209,13 +1568,31 @@ function App() {
           <p className="form-subtitle">Crear cuenta</p>
           <form onSubmit={handleRegister} className="auth-form">
             <div className="form-group"><label>País</label>
-              <div className="pais-selector">
-                <button type="button" className={`pais-btn ${paisSeleccionado==='Colombia'?'active':''}`} onClick={()=>setPaisSeleccionado('Colombia')}>Colombia</button>
-                <button type="button" className={`pais-btn ${paisSeleccionado==='Venezuela'?'active':''}`} onClick={()=>setPaisSeleccionado('Venezuela')}>Venezuela</button>
-              </div>
+              <select value={paisSeleccionado} onChange={e=>setPaisSeleccionado(e.target.value)}
+                style={{width:'100%',background:'#1a1a1a',color:'#fff',border:'1px solid rgba(201,168,76,0.3)',borderRadius:10,padding:'10px 14px',fontSize:14,appearance:'none',cursor:'pointer'}}>
+                  <option value="Argentina">Argentina</option>
+                  <option value="Bolivia">Bolivia</option>
+                  <option value="Chile">Chile</option>
+                  <option value="Colombia">Colombia</option>
+                  <option value="Costa Rica">Costa Rica</option>
+                  <option value="Cuba">Cuba</option>
+                  <option value="Ecuador">Ecuador</option>
+                  <option value="El Salvador">El Salvador</option>
+                  <option value="Guatemala">Guatemala</option>
+                  <option value="Honduras">Honduras</option>
+                  <option value="México">México</option>
+                  <option value="Nicaragua">Nicaragua</option>
+                  <option value="Panamá">Panamá</option>
+                  <option value="Paraguay">Paraguay</option>
+                  <option value="Perú">Perú</option>
+                  <option value="Puerto Rico">Puerto Rico</option>
+                  <option value="República Dominicana">República Dominicana</option>
+                  <option value="Uruguay">Uruguay</option>
+                  <option value="Venezuela">Venezuela</option>
+              </select>
             </div>
             <div className="form-group"><label>Email</label><input type="email" placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
-            <div className="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
+            <div className="form-group"><label>Contraseña</label><PasswordInput value={password} onChange={(e:any)=>setPassword(e.target.value)} required /></div>
             <div className="form-group"><label>Soy</label>
               <select value={rol} onChange={e=>setRol(e.target.value)} required>
                 <option value="cliente">Cliente — Quiero agendar citas</option>
@@ -1256,7 +1633,7 @@ function App() {
         <p className="form-subtitle">Recuperar contraseña</p>
         <form onSubmit={handleRecuperarContrasena} className="auth-form">
           <div className="form-group"><label>Email registrado</label><input type="email" placeholder="tu@email.com" value={recoveryEmail} onChange={e=>setRecoveryEmail(e.target.value)} required /></div>
-          <div className="form-group"><label>Nueva contraseña</label><input type="password" placeholder="••••••••" value={recoveryPassword} onChange={e=>setRecoveryPassword(e.target.value)} required /></div>
+          <div className="form-group"><label>Nueva contraseña</label><PasswordInput value={recoveryPassword} onChange={(e:any)=>setRecoveryPassword(e.target.value)} required /></div>
           {error && <p className="error">{error}</p>}
           <button type="submit" className="btn-submit" disabled={loading}>{loading?'Procesando...':'Cambiar contraseña'}</button>
         </form>
@@ -1313,9 +1690,9 @@ function App() {
             <div className="search-section">
               <p className="search-title">Encuentra tu barbería o peluquería</p>
               <div className="tipo-filter">
-                {['todos','barberia','peluqueria'].map(t=>(
+                {['todos','barberia','peluqueria','spa','gimnasio','manicurista','estetica','masajes','tatuajes','cejas','veterinaria'].map(t=>(
                   <button key={t} className={`tipo-btn ${tipoNegocioFiltro===t?'active':''}`} onClick={()=>{setTipoNegocioFiltro(t);if(gpsUsado)buscarPorGPS()}}>
-                    {t==='todos'?'Todos':t==='barberia'?'Barberías':'Peluquerías'}
+                    {t==='todos'?'Todos':getTipoLabel(t)}
                   </button>
                 ))}
               </div>
@@ -1335,7 +1712,7 @@ function App() {
                       <div className="barberia-card-banner">
                         <img src={b.logo||(b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA)} alt={b.nombre} onError={(e:any)=>{e.target.src=b.tipo_negocio==='peluqueria'?IMAGEN_PELUQUERIA:IMAGEN_BARBERIA}} />
                         <div className="barberia-card-banner-overlay" />
-                        <div className="barberia-card-banner-tipo">{b.tipo_negocio==='peluqueria'?'Peluquería':'Barbería'}</div>
+                        <div className="barberia-card-banner-tipo">{getTipoEmoji(b.tipo_negocio)} {getTipoLabel(b.tipo_negocio)}</div>
                       </div>
                       <div className="barberia-card-body">
                         <div className="barberia-nombre">{b.nombre}</div>
@@ -1432,7 +1809,7 @@ function App() {
             {citas.length===0
               ? <div className="empty-state"><div className="empty-icon">—</div><p>No tienes citas pendientes</p><button onClick={()=>setCurrentPage('agendar')} className="btn-primary">Agendar una cita</button></div>
               : <div className="citas-grid">
-                  {citas.map((c:any)=>(
+                  {citas.filter(esCitaVigente).map((c:any)=>(
                     <div key={c.id} className="cita-card">
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
                         <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={36} />
@@ -1467,6 +1844,7 @@ function App() {
               Citas {citas.length>0&&<span style={{background:'#C9A84C',color:'#000',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:900,marginLeft:4}}>{citas.length}</span>}
             </button>
             <button className={currentPage==='perfil'?'active':''} onClick={()=>{setCurrentPage('perfil');cargarPerfilBarbero()}}>Mi perfil</button>
+            <button className={currentPage==='pro'?'active':''} onClick={()=>setCurrentPage('pro')} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
@@ -1561,10 +1939,10 @@ function App() {
           {currentPage==='citas' && (
             <div className="page">
               <h2>Mis citas — {citas.length}</h2>
-              {citas.length===0
+              {citas.filter(esCitaVigente).length===0
                 ? <div className="empty-state"><p style={{fontSize:32,marginBottom:8}}>✂️</p><p>No tienes citas pendientes</p></div>
                 : <div style={{display:'flex',flexDirection:'column',gap:12}}>
-                    {citas.map((c:any)=>(
+                    {citas.filter(esCitaVigente).map((c:any)=>(
                       <div key={c.id} style={{background:c.fecha===hoy?'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))':'rgba(255,255,255,0.02)',border:c.fecha===hoy?'1px solid rgba(201,168,76,0.2)':'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:18}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
                           <div>
@@ -1602,6 +1980,7 @@ function App() {
                       <h3 style={{marginTop:14,fontSize:20,fontWeight:700}}>{perfilBarbero.nombre}</h3>
                       <p style={{color:'#555',marginTop:4}}>{perfilBarbero.especialidad}</p>
                       {perfilBarbero.calificacion_promedio>0&&<div style={{display:'flex',justifyContent:'center',gap:6,marginTop:8,alignItems:'center'}}><StarRating value={Math.round(perfilBarbero.calificacion_promedio)}/><span style={{color:'#555',fontSize:13}}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span></div>}
+                      {perfilBarbero.instagram&&<a href={`https://instagram.com/${perfilBarbero.instagram}`} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:6,marginTop:10,background:'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',color:'#fff',borderRadius:20,padding:'6px 16px',fontSize:12,fontWeight:700,textDecoration:'none'}}>📸 @{perfilBarbero.instagram}</a>}
                     </div>
                     <div>
                       <h3 style={{marginBottom:12}}>Foto de perfil</h3>
@@ -1615,9 +1994,13 @@ function App() {
                         <textarea placeholder="Cuéntales quién eres..." value={perfilBarbero.descripcion||''} onChange={e=>setPerfilBarbero({...perfilBarbero,descripcion:e.target.value})}
                           style={{width:'100%',minHeight:80,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'12px 14px',color:'#fff',fontSize:13,resize:'vertical',boxSizing:'border-box',fontFamily:'Inter,sans-serif',outline:'none'}} />
                       </div>
-                      <div className="form-group" style={{marginBottom:20}}><label>WhatsApp</label>
+                      <div className="form-group" style={{marginBottom:14}}><label>WhatsApp</label>
                         <input type="tel" placeholder="573001234567 (sin +)" value={perfilBarbero.whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,whatsapp:e.target.value})} />
                         <p style={{fontSize:11,color:'#555',marginTop:6}}>Número con código de país, sin + ni espacios. Ej: 573001234567</p>
+                      </div>
+                      <div className="form-group" style={{marginBottom:20}}><label>📸 Instagram (usuario sin @, opcional)</label>
+                        <input type="text" placeholder="tunombre" value={perfilBarbero.instagram||''} onChange={e=>setPerfilBarbero({...perfilBarbero,instagram:e.target.value})} />
+                        <p style={{fontSize:11,color:'#555',marginTop:6}}>Los clientes podrán seguirte desde tu perfil en la app</p>
                       </div>
                       <p style={{color:'#555',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:14}}>Horario de trabajo</p>
                       {DIAS.map(dia=>{
@@ -1638,7 +2021,7 @@ function App() {
                         )
                       })}
                       <button className="btn-primary" style={{marginTop:20,width:'100%'}} onClick={async()=>{
-                        try { await fetch(`${API}/api/barbero/perfil/${perfilBarbero.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({descripcion:perfilBarbero.descripcion,especialidad:perfilBarbero.especialidad,whatsapp:perfilBarbero.whatsapp,apikey_whatsapp:perfilBarbero.apikey_whatsapp,horario:perfilBarbero.horario})}); alert('Perfil actualizado') } catch { alert('Error de conexión') }
+                        try { await fetch(`${API}/api/barbero/perfil/${perfilBarbero.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({descripcion:perfilBarbero.descripcion,especialidad:perfilBarbero.especialidad,whatsapp:perfilBarbero.whatsapp,apikey_whatsapp:perfilBarbero.apikey_whatsapp,horario:perfilBarbero.horario,instagram:perfilBarbero.instagram})}); alert('Perfil actualizado') } catch { alert('Error de conexión') }
                       }}>Guardar cambios</button>
                     </div>
                     <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:20,textAlign:'center'}}>
@@ -1649,6 +2032,39 @@ function App() {
                   </div>
                 )
               }
+            </div>
+          )}
+          {currentPage==='pro' && (
+            <div className="page">
+              <div style={{textAlign:'center',marginBottom:32}}>
+                <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,marginBottom:12}}>Plan Pro</p>
+                <h2 style={{fontSize:26,fontWeight:800,marginBottom:8}}>Dashboard Pro Barbero</h2>
+                <p style={{color:'#555',fontSize:14,lineHeight:1.7}}>Accede a tus estadísticas, ingresos y análisis de rendimiento por solo <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong></p>
+              </div>
+              <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24,marginBottom:20}}>
+                <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,marginBottom:16,fontWeight:700}}>Vista previa — desbloqueada al activar</p>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20,opacity:0.25,filter:'blur(3px)',pointerEvents:'none',userSelect:'none'}}>
+                  {[{l:'Hoy',v:'$—',c:'#C9A84C'},{l:'Semana',v:'$—',c:'#00D4FF'},{l:'Mes',v:'$—',c:'#2ECC71'},{l:'Citas',v:'—',c:'#BB8FCE'}].map(s=>(
+                    <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
+                      <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
+                      <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:12,padding:24,textAlign:'center',marginBottom:16}}>
+                  <p style={{fontSize:32,fontWeight:900,color:'#C9A84C',marginBottom:4}}>$3.99 <span style={{fontSize:16,fontWeight:400,color:'#777'}}>USD/mes</span></p>
+                  <p style={{fontSize:13,color:'#555',marginBottom:20}}>Envía exactamente <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong> por Binance Pay</p>
+                  <div style={{background:'rgba(255,255,255,0.03)',borderRadius:8,padding:'10px 14px',marginBottom:16}}>
+                    <p style={{fontSize:10,color:'#555',marginBottom:4,textTransform:'uppercase',letterSpacing:2}}>Pay ID Binance</p>
+                    <p style={{fontSize:26,fontWeight:900,letterSpacing:6,color:'#C9A84C'}}>176779028</p>
+                  </div>
+                  <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance Pay" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)',display:'block',margin:'0 auto 16px'}} />
+                </div>
+                <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.nombre||'barbero')}%20y%20acabo%20de%20pagar%20el%20Plan%20Pro%20por%20Binance%20Pay.`}
+                  style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'14px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
+                  📱 Enviar comprobante por WhatsApp
+                </a>
+              </div>
             </div>
           )}
         </div>
@@ -1687,29 +2103,41 @@ function App() {
     if (diasRestantes<=0) return (
       <div className="dashboard-container">
         <nav className="navbar">
-          <div className="navbar-left"><div className="navbar-brand"><h1>Cut<span>Connect</span></h1></div><span className="role-badge pending">Vencido</span></div>
+          <div className="navbar-left"><div className="navbar-brand"><h1>Cut<span>Connect</span></h1></div><span className="role-badge pending">Trial vencido</span></div>
           <div className="nav-links"><button className="btn-logout" onClick={handleLogout}>Salir</button></div>
         </nav>
         <div className="dashboard-content">
+          <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))',borderBottom:'1px solid rgba(201,168,76,0.2)',padding:'16px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+            <div>
+              <p style={{fontSize:13,color:'#C9A84C',fontWeight:700,marginBottom:2}}>⏰ Tu período de prueba ha vencido</p>
+              <p style={{fontSize:12,color:'#555'}}>Activa el plan por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong> para recuperar el acceso completo</p>
+            </div>
+            <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20quiero%20activar%20mi%20plan%20mensual." style={{background:'#25D366',color:'#fff',borderRadius:10,padding:'10px 18px',fontWeight:700,textDecoration:'none',fontSize:12,whiteSpace:'nowrap'}}>💬 Activar ahora</a>
+          </div>
           <div className="page">
-            <h2>Tu período de prueba ha vencido</h2>
-            <p style={{color:'#555',maxWidth:460,lineHeight:1.7}}>Para continuar usando CutConnect activa tu cuenta por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong>.</p>
-            <div style={{display:'flex',flexDirection:'column',gap:14,maxWidth:480}}>
-              <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24}}>
-                <h3 style={{margin:'0 0 6px',color:'#C9A84C',fontSize:16}}>Pago con Binance Pay</h3>
-                <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Envía exactamente <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong></p>
-                <div style={{textAlign:'center',marginBottom:16}}>
-                  <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR CutConnect" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)'}} />
-                </div>
-                <div style={{background:'rgba(255,255,255,0.03)',borderRadius:8,padding:'10px 14px',marginBottom:12}}>
-                  <p style={{fontSize:10,color:'#555',marginBottom:4,textTransform:'uppercase',letterSpacing:2}}>Pay ID</p>
-                  <p style={{fontSize:22,fontWeight:900,letterSpacing:6,color:'#C9A84C'}}>176779028</p>
-                </div>
-                <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20por%20Binance%20Pay."
-                  style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:8,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
-                  Enviar comprobante por WhatsApp
-                </a>
+            <div className="welcome-card owner" style={{opacity:0.7}}>
+              <p><strong>{userData?.negocio_nombre}</strong></p>
+              <p>{userData?.ciudad}, {userData?.estado}</p>
+              <p style={{fontSize:11,color:'#C9A84C',marginTop:6}}>Vista de solo lectura — activa tu plan para editar</p>
+            </div>
+            <div className="stats-grid" style={{opacity:0.6,pointerEvents:'none'}}>
+              <div className="stat-card"><h4>Citas</h4><p className="stat-number">{citas.length}</p></div>
+              <div className="stat-card"><h4>Equipo</h4><p className="stat-number">{misBarberos.length}</p></div>
+              <div className="stat-card"><h4>Confirmadas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='agendada').length}</p></div>
+            </div>
+            <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24,maxWidth:480}}>
+              <h3 style={{margin:'0 0 6px',color:'#C9A84C',fontSize:16}}>Binance Pay — $3.99 USDT/mes</h3>
+              <p style={{color:'#555',fontSize:13,margin:'0 0 16px'}}>Envía exactamente <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong> y manda el comprobante</p>
+              <div style={{textAlign:'center',marginBottom:16}}>
+                <img src="https://mypcsegsvarcwyigzodc.supabase.co/storage/v1/object/public/imagenes-cutconnect/QR%20BINANCE.jpeg" alt="QR Binance" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)'}} />
               </div>
+              <div style={{background:'rgba(255,255,255,0.03)',borderRadius:8,padding:'10px 14px',marginBottom:12,textAlign:'center'}}>
+                <p style={{fontSize:10,color:'#555',marginBottom:4,textTransform:'uppercase',letterSpacing:2}}>Pay ID</p>
+                <p style={{fontSize:22,fontWeight:900,letterSpacing:6,color:'#C9A84C'}}>176779028</p>
+              </div>
+              <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20acabo%20de%20pagar%20mi%20suscripci%C3%B3n%20por%20Binance%20Pay." style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:8,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
+                📱 Enviar comprobante por WhatsApp
+              </a>
             </div>
           </div>
         </div>
@@ -1806,9 +2234,17 @@ function App() {
                 : (
                   <form onSubmit={handleGuardarNegocio} className="edit-negocio-form" style={{marginTop:16}}>
                     <div className="form-group"><label>Tipo</label>
-                      <div className="category-selector">
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'barberia'})}><span className="cat-icon">✂</span>Barbería</button>
+                      <div className="category-selector" style={{gridTemplateColumns:'repeat(2,1fr)',gap:6}}>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'barberia'})}><span className="cat-icon">✂️</span>Barbería</button>
                         <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='peluqueria'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='spa'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'spa'})}><span className="cat-icon">🧖</span>Spa</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='gimnasio'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'gimnasio'})}><span className="cat-icon">🏋️</span>Gimnasio</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='manicurista'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'manicurista'})}><span className="cat-icon">💅</span>Manicure</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='estetica'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'estetica'})}><span className="cat-icon">💄</span>Estética</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='masajes'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'masajes'})}><span className="cat-icon">💆</span>Masajes</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='tatuajes'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'tatuajes'})}><span className="cat-icon">🎨</span>Tatuajes</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='cejas'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'cejas'})}><span className="cat-icon">👁️</span>Cejas</button>
+                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='veterinaria'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'veterinaria'})}><span className="cat-icon">🐾</span>Pet Grooming</button>
                       </div>
                     </div>
                     <div className="form-group"><label>Nombre</label><input type="text" value={editNegocioData.nombre} onChange={e=>setEditNegocioData({...editNegocioData,nombre:e.target.value})} /></div>
@@ -1823,6 +2259,21 @@ function App() {
                       <div className="form-group">
                         <label>Premio</label>
                         <input type="text" placeholder="Ej: Corte gratis, 20% descuento..." value={editNegocioData.fidelizacion_beneficio} onChange={e=>setEditNegocioData({...editNegocioData,fidelizacion_beneficio:e.target.value})} />
+                      </div>
+                    </div>
+                    <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.12)',borderRadius:12,padding:18,marginTop:4}}>
+                      <h4 style={{color:'#C9A84C',marginBottom:14,fontSize:13,textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>📱 Redes sociales</h4>
+                      <div className="form-group" style={{marginBottom:12}}>
+                        <label>📸 Instagram (usuario sin @)</label>
+                        <input type="text" placeholder="tunegocio" value={editNegocioData.instagram||''} onChange={e=>setEditNegocioData({...editNegocioData,instagram:e.target.value})} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:12}}>
+                        <label>📘 Facebook (usuario o URL)</label>
+                        <input type="text" placeholder="tunegocio o https://facebook.com/..." value={editNegocioData.facebook||''} onChange={e=>setEditNegocioData({...editNegocioData,facebook:e.target.value})} />
+                      </div>
+                      <div className="form-group">
+                        <label>🌐 Página web</label>
+                        <input type="url" placeholder="https://tunegocio.com" value={editNegocioData.web||''} onChange={e=>setEditNegocioData({...editNegocioData,web:e.target.value})} />
                       </div>
                     </div>
                     {error&&<p className="error">{error}</p>}
