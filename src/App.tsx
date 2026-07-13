@@ -2230,7 +2230,7 @@ function App() {
                 <p>{userData?.negocio_telefono}</p>
               </div>
               {!editNegocio
-                ? <button className="btn-primary" style={{marginTop:16}} onClick={()=>{setEditNegocioData({nombre:userData?.negocio_nombre||'',descripcion:'',telefono:userData?.negocio_telefono||'',logo:userData?.negocio_logo||'',tipo_negocio:userData?.tipo_negocio||'barberia',fidelizacion_citas:10,fidelizacion_beneficio:''});setEditNegocio(true)}}>Editar datos</button>
+                ? <button className="btn-primary" style={{marginTop:16}} onClick={()=>{setEditNegocioData({nombre:userData?.negocio_nombre||'',descripcion:'',telefono:userData?.negocio_telefono||'',logo:userData?.negocio_logo||'',tipo_negocio:userData?.tipo_negocio||'barberia',fidelizacion_citas:10,fidelizacion_beneficio:'',instagram:'',facebook:'',web:''});setEditNegocio(true)}}>Editar datos</button>
                 : (
                   <form onSubmit={handleGuardarNegocio} className="edit-negocio-form" style={{marginTop:16}}>
                     <div className="form-group"><label>Tipo</label>
