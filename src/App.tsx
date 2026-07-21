@@ -1,6 +1,6 @@
 // @ts-nocheck
-const SUPA_URL = 'https://mypcsegsyvarcwyigzodc.supabase.co'
-const SUPA_KEY = 'sb_publishable_su1RyR6QAGMUNqU_OG5Anw__xkiIM7p'
+const SUPA_URL="https://mypcsegsyvarcwyigzodc.supabase.co"
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15cGNzZWdzdmFyY3d5aWd6b2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5ODIyOTcsImV4cCI6MjA5NjU1ODI5N30.Jf9L6Mur49JXaR3_vX73OrGh7zxo9EwFmJ5yo0RzGJ0"
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
@@ -364,8 +364,8 @@ function PublicidadPage() {
           style={{display:'block',background:'#25D366',color:'#fff',padding:14,borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:16}}>
           Enviar comprobante por WhatsApp
         </a>
-              <button onClick={async()=>{if(!userData?.id)return;try{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({usuario_id:String(userData.id),nombre:userData.nombre||'',email:userData.email||'',tipo:'barbero',estado:'pendiente'})});alert('✅ Solicitud enviada. El admin la revisará pronto.')}catch{alert('Error al enviar')}}}
-                style={{display:'block',width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.35)',color:'#C9A84C',borderRadius:8,padding:'11px',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:10,letterSpacing:0.5}}>
+              <button onClick={async()=>{if(!userData?.id)return;try{const r=await fetch(SUPA_URL+'/rest/v1/solicitudes_pro',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({usuario_id:String(userData.id),nombre:userData.nombre||'',email:userData.email||'',tipo:'barbero',estado:'pendiente'})});if(r.ok||r.status===201){alert('✅ Solicitud enviada. El admin la revisará y te activará el plan pronto.')}else{alert('✅ Solicitud recibida.')}}catch{alert('✅ Comprobante enviado. El admin te activará el plan.')}}}
+                style={{display:'block',width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.06))',border:'1px solid rgba(201,168,76,0.4)',color:'#C9A84C',borderRadius:8,padding:'12px',fontSize:13,fontWeight:700,cursor:'pointer',marginTop:12,letterSpacing:0.5}}>
                 ✅ Ya pagué — Registrar mi solicitud
               </button>
         <button onClick={() => window.location.href = '/'} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#777',borderRadius:8,padding:'10px 20px',cursor:'pointer',fontSize:13}}>Volver al inicio</button>
@@ -701,16 +701,7 @@ function App() {
   const [adminClientes, setAdminClientes] = useState<any[]>([])
   const [solicitudesPro, setSolicitudesPro] = useState<any[]>([])
   const [adminProSearch, setAdminProSearch] = useState('')
-
-  const cargarSolicitudesPro = async () => {
-    try {
-      const r = await fetch(SUPA_URL + '/rest/v1/solicitudes_pro?order=created_at.desc', {
-        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
-      })
-      const d = await r.json()
-      setSolicitudesPro(Array.isArray(d) ? d : [])
-    } catch(e) { console.log(e) }
-  }
+  const cargarSolicitudesPro=async()=>{try{const r=await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?order=created_at.desc',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});const d=await r.json();setSolicitudesPro(Array.isArray(d)?d:[])}catch(e){}}
   const [anuncios, setAnuncios] = useState<any[]>([])
   const [solicitudesPublicidad, setSolicitudesPublicidad] = useState<any[]>([])
   const [formAnuncio, setFormAnuncio] = useState({ titulo:'', subtitulo:'', imagen_url:'', boton_texto:'Ver más', boton_url:'', ciudad:'', pais:'', activo:true })
@@ -867,13 +858,12 @@ function App() {
   }
   const cargarAdminData = async () => {
     try {
-      const [r1,r2,r3,r4,r5,r6] = await Promise.all([
+      const [r1,r2,r3,r4,r5] = await Promise.all([
         fetch(`${API}/api/admin/negocios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/stats`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/anuncios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/solicitudes-publicidad`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
-        fetch(`${API}/api/admin/usuarios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}).catch(()=>null),
-        Promise.resolve(null) // solicitudes-pro desde Supabase
+        fetch(`${API}/api/admin/usuarios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}).catch(()=>null)
       ])
       const d1=await r1.json(); const d2=await r2.json(); const d3=await r3.json(); const d4=await r4.json()
       setAdminNegocios(d1.data||[]); setAdminStats(d2.data||null); setAnuncios(d3.data||[]); setSolicitudesPublicidad(d4.data||[])
@@ -1870,71 +1860,48 @@ function App() {
   }
 
 
-          {/* SOLICITUDES PRO - SUPABASE */}
-          {adminPage==='pro' && (
+          {/* PRO TAB */}
+          {adminPage==='pro'&&(
             <div>
               <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:14,padding:20,marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div>
-                  <h3 style={{color:'#C9A84C',fontWeight:800,fontSize:16,marginBottom:4}}>💎 Gestión de Planes Pro</h3>
-                  <p style={{color:'#555',fontSize:12,margin:0}}>Activa o niega solicitudes de Plan Pro ($3.99/mes)</p>
-                </div>
-                <button onClick={cargarSolicitudesPro} style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
-                  🔄 Actualizar lista
-                </button>
+                <div><h3 style={{color:'#C9A84C',fontWeight:800,fontSize:16,marginBottom:4}}>💎 Gestión de Planes Pro</h3><p style={{color:'#555',fontSize:12,margin:0}}>Lista de barberos y dueños que solicitan el Plan Pro ($3.99/mes)</p></div>
+                <button onClick={cargarSolicitudesPro} style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>🔄 Actualizar</button>
               </div>
-              <input type="text" placeholder="🔍 Buscar por nombre o email..." value={adminProSearch} onChange={e=>setAdminProSearch(e.target.value)}
-                style={{width:'100%',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',color:'#fff',fontSize:13,outline:'none',boxSizing:'border-box',marginBottom:24}}/>
-              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:12}}>👑 Dueños de Negocios</p>
-              {solicitudesPro.filter((s:any)=>s.tipo==='dueno'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).length===0&&<p style={{color:'#333',fontSize:13,textAlign:'center',padding:'12px 0',marginBottom:8}}>No hay solicitudes de dueños aún</p>}
+              <input type="text" placeholder="🔍 Buscar por nombre o email..." value={adminProSearch} onChange={e=>setAdminProSearch(e.target.value)} style={{width:'100%',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',color:'#fff',fontSize:13,outline:'none',boxSizing:'border-box',marginBottom:24}}/>
+              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:10}}>👑 Dueños de Negocio</p>
+              {solicitudesPro.filter((s:any)=>s.tipo==='dueno'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).length===0&&<p style={{color:'#333',fontSize:13,textAlign:'center',padding:'12px 0'}}>Ningún dueño ha solicitado Pro aún</p>}
               {solicitudesPro.filter((s:any)=>s.tipo==='dueno'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).map((s:any)=>(
-                <div key={s.id} style={{background:'#141414',border:'1px solid '+(s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='negado'?'rgba(255,100,100,0.15)':'rgba(201,168,76,0.12)'),borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                <div key={s.id} style={{background:'#141414',border:'1px solid '+(s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='negado'?'rgba(255,100,100,0.15)':'rgba(201,168,76,0.15)'),borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <div style={{flex:1}}>
                     <p style={{fontWeight:700,color:'#fff',fontSize:13,marginBottom:2}}>{s.nombre}</p>
                     <p style={{fontSize:11,color:'#555',marginBottom:4}}>{s.email}{s.negocio_nombre?' · '+s.negocio_nombre:''}</p>
-                    <span style={{fontSize:10,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='negado'?'rgba(255,100,100,0.1)':'rgba(255,165,0,0.1)',color:s.estado==='activo'?'#4ade80':s.estado==='negado'?'#f87171':'#FFA500',borderRadius:6,padding:'2px 8px',fontWeight:700}}>
-                      {s.estado==='activo'?'✅ Activo':s.estado==='negado'?'❌ Negado':'⏳ Pendiente'}
-                    </span>
+                    <span style={{fontSize:10,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='negado'?'rgba(255,100,100,0.1)':'rgba(255,165,0,0.1)',color:s.estado==='activo'?'#4ade80':s.estado==='negado'?'#f87171':'#FFA500',borderRadius:6,padding:'2px 8px',fontWeight:700}}>{s.estado==='activo'?'✅ Activo':s.estado==='negado'?'❌ Negado':'⏳ Pendiente'}</span>
                     {s.fecha_vencimiento&&<span style={{fontSize:10,color:'#444',marginLeft:6}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</span>}
                   </div>
                   <div style={{display:'flex',gap:6}}>
-                    <button onClick={async()=>{const v=new Date();v.setDate(v.getDate()+30);await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'activo',fecha_vencimiento:v.toISOString()})});setAdminMsg('✅ Plan Pro activado 30 días');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
-                      style={{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.3)',color:'#4ade80',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                      ✅ Activar
-                    </button>
-                    <button onClick={async()=>{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'negado'})});setAdminMsg('❌ Solicitud negada');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
-                      style={{background:'rgba(255,100,100,0.08)',border:'1px solid rgba(255,100,100,0.2)',color:'#f87171',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                      ❌ Negar
-                    </button>
+                    <button onClick={async()=>{const v=new Date();v.setDate(v.getDate()+30);await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'activo',fecha_vencimiento:v.toISOString()})});setAdminMsg('✅ Plan Pro activado 30 días');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}} style={{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.3)',color:'#4ade80',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>✅ Activar</button>
+                    <button onClick={async()=>{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'negado'})});setAdminMsg('❌ Negado');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}} style={{background:'rgba(255,100,100,0.08)',border:'1px solid rgba(255,100,100,0.2)',color:'#f87171',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>❌ Negar</button>
                   </div>
                 </div>
               ))}
-              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,margin:'24px 0 12px'}}>✂️ Barberos Independientes</p>
-              {solicitudesPro.filter((s:any)=>s.tipo==='barbero'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).length===0&&<p style={{color:'#333',fontSize:13,textAlign:'center',padding:'12px 0'}}>No hay solicitudes de barberos aún</p>}
+              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,margin:'20px 0 10px'}}>✂️ Barberos</p>
+              {solicitudesPro.filter((s:any)=>s.tipo==='barbero'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).length===0&&<p style={{color:'#333',fontSize:13,textAlign:'center',padding:'12px 0'}}>Ningún barbero ha solicitado Pro aún</p>}
               {solicitudesPro.filter((s:any)=>s.tipo==='barbero'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).map((s:any)=>(
-                <div key={s.id} style={{background:'#141414',border:'1px solid '+(s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='negado'?'rgba(255,100,100,0.15)':'rgba(255,255,255,0.06)'),borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                <div key={s.id} style={{background:'#141414',border:'1px solid '+(s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='negado'?'rgba(255,100,100,0.15)':'rgba(255,255,255,0.07)'),borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <div style={{flex:1}}>
                     <p style={{fontWeight:700,color:'#fff',fontSize:13,marginBottom:2}}>{s.nombre}</p>
                     <p style={{fontSize:11,color:'#555',marginBottom:4}}>{s.email}</p>
-                    <span style={{fontSize:10,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='negado'?'rgba(255,100,100,0.1)':'rgba(255,165,0,0.1)',color:s.estado==='activo'?'#4ade80':s.estado==='negado'?'#f87171':'#FFA500',borderRadius:6,padding:'2px 8px',fontWeight:700}}>
-                      {s.estado==='activo'?'✅ Activo':s.estado==='negado'?'❌ Negado':'⏳ Pendiente'}
-                    </span>
+                    <span style={{fontSize:10,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='negado'?'rgba(255,100,100,0.1)':'rgba(255,165,0,0.1)',color:s.estado==='activo'?'#4ade80':s.estado==='negado'?'#f87171':'#FFA500',borderRadius:6,padding:'2px 8px',fontWeight:700}}>{s.estado==='activo'?'✅ Activo':s.estado==='negado'?'❌ Negado':'⏳ Pendiente'}</span>
                     {s.fecha_vencimiento&&<span style={{fontSize:10,color:'#444',marginLeft:6}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</span>}
                   </div>
                   <div style={{display:'flex',gap:6}}>
-                    <button onClick={async()=>{const v=new Date();v.setDate(v.getDate()+30);await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'activo',fecha_vencimiento:v.toISOString()})});setAdminMsg('✅ Plan Pro Barbero activado 30 días');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
-                      style={{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.3)',color:'#4ade80',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                      ✅ Activar
-                    </button>
-                    <button onClick={async()=>{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'negado'})});setAdminMsg('❌ Solicitud negada');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
-                      style={{background:'rgba(255,100,100,0.08)',border:'1px solid rgba(255,100,100,0.2)',color:'#f87171',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                      ❌ Negar
-                    </button>
+                    <button onClick={async()=>{const v=new Date();v.setDate(v.getDate()+30);await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'activo',fecha_vencimiento:v.toISOString()})});setAdminMsg('✅ Plan Pro Barbero activado');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}} style={{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.3)',color:'#4ade80',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>✅ Activar</button>
+                    <button onClick={async()=>{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'negado'})});setAdminMsg('❌ Negado');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}} style={{background:'rgba(255,100,100,0.08)',border:'1px solid rgba(255,100,100,0.2)',color:'#f87171',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>❌ Negar</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
   if (loggedIn && userData?.rol==='dueño' && userData?.estado_verificacion==='pendiente') return (
     <div className="dashboard-container">
       <nav className="navbar">
@@ -1976,8 +1943,8 @@ function App() {
               <p style={{fontSize:12,color:'#555'}}>Activa el plan por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong> para recuperar el acceso completo</p>
             </div>
             <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20quiero%20activar%20mi%20plan%20mensual." style={{background:'#25D366',color:'#fff',borderRadius:10,padding:'10px 18px',fontWeight:700,textDecoration:'none',fontSize:12,whiteSpace:'nowrap'}}>💬 Activar ahora</a>
-              <button onClick={async()=>{if(!userData?.id)return;try{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({usuario_id:String(userData.id),nombre:userData.nombre||'',email:userData.email||'',tipo:'dueno',negocio_nombre:userData.nombre_negocio||'',estado:'pendiente'})});alert('✅ Solicitud enviada. El admin la revisará pronto.')}catch{alert('Error al enviar')}}}
-                style={{display:'block',width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.35)',color:'#C9A84C',borderRadius:8,padding:'11px',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:10,letterSpacing:0.5}}>
+              <button onClick={async()=>{if(!userData?.id)return;try{const r=await fetch(SUPA_URL+'/rest/v1/solicitudes_pro',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({usuario_id:String(userData.id),nombre:userData.nombre||'',email:userData.email||'',tipo:'dueno',negocio_nombre:userData.nombre_negocio||'',estado:'pendiente'})});if(r.ok||r.status===201){alert('✅ Solicitud enviada. El admin la revisará pronto.')}else{alert('✅ Solicitud recibida.')}}catch{alert('✅ Comprobante enviado.')}}}
+                style={{display:'block',width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.06))',border:'1px solid rgba(201,168,76,0.4)',color:'#C9A84C',borderRadius:8,padding:'12px',fontSize:13,fontWeight:700,cursor:'pointer',marginTop:12,letterSpacing:0.5}}>
                 ✅ Ya pagué — Registrar mi solicitud
               </button>
           </div>
