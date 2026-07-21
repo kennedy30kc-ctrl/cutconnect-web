@@ -303,7 +303,6 @@ function LineChart({ data }: { data: any[] }) {
   )
 }
 
-
 function PublicidadPage() {
   const [form, setForm] = useState({ titulo:'', subtitulo:'', boton_texto:'Ver más', boton_url:'', anunciante_nombre:'', anunciante_email:'', anunciante_telefono:'', ciudad:'', pais:'Colombia', imagen_url:'', latitud:'', longitud:'' })
   const [loading, setLoading] = useState(false)
@@ -742,8 +741,7 @@ function App() {
   const cargarCitasBarbero = async () => { try { const r=await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d=await r.json(); setCitas(d.data||[]) } catch { setCitas([]) } }
   const cargarBarberosBarberia = async (id: any) => { try { const r=await fetch(`${API}/api/barberos/${id}`); const d=await r.json(); setBarberosList(d.data||[]) } catch { setBarberosList([]) } }
   const cargarMisBarberos = async () => { try { const r=await fetch(`${API}/api/barberos/${userData?.barberia_id}`); const d=await r.json(); setMisBarberos(d.data||[]) } catch { setMisBarberos([]) } }
-  // @ts-ignore
-  const cargarRanking = async () => { try { const r=await fetch(`${API}/api/stats/barberos/${userData?.barberia_id}`); const d=await r.json(); setRankingBarberos(d.data||[]) } catch { setRankingBarberos([]) } }
+  const _cargarRanking = async () => { try { const r=await fetch(`${API}/api/stats/barberos/${userData?.barberia_id}`); const d=await r.json(); setRankingBarberos(d.data||[]) } catch { setRankingBarberos([]) } }
   const cargarPerfilBarbero = async () => { try { const r=await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d=await r.json(); if(d.success) setPerfilBarbero(d.data) } catch {} }
   const cargarPerfilDuenoBarbero = async () => { try { const r=await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d=await r.json(); if(d.success && d.data) { setPerfilDuenoBarbero(d.data); const rc=await fetch(`${API}/api/citas/barbero/${d.data.id}`); const dc=await rc.json(); setCitasPropias(dc.data||[]) } else { setPerfilDuenoBarbero(null) } } catch {} }
   const handleGuardarDuenoBarbero = async (e: any) => { e.preventDefault(); setLoading(true); setError(''); try { let res; if (perfilDuenoBarbero) { res=await fetch(`${API}/api/barbero/perfil/${perfilDuenoBarbero.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({descripcion:formDuenoBarbero.descripcion,especialidad:formDuenoBarbero.especialidad,horario:formDuenoBarbero.horario})}) } else { res=await fetch(`${API}/api/barberos`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:formDuenoBarbero.nombre||userData?.nombre||'',especialidad:formDuenoBarbero.especialidad,descripcion:formDuenoBarbero.descripcion,horario:formDuenoBarbero.horario,barberia_id:userData?.barberia_id,usuario_id:userData?.id})}) } const data=await res.json(); if(data.success){setShowFormActivar(false);await cargarPerfilDuenoBarbero();cargarMisBarberos();alert('¡Perfil activado! Ya apareces como profesional disponible.')}else setError(data.error||'Error') } catch { setError('Error de conexión') } finally { setLoading(false) } }
@@ -1823,7 +1821,7 @@ function App() {
               </div>
               <div style={{background:'rgba(201,168,76,0.03)',border:'1px solid rgba(201,168,76,0.25)',borderRadius:16,padding:24,marginBottom:16}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20,opacity:0.15,filter:'blur(4px)',pointerEvents:'none',userSelect:'none'}}>
-                  {[{l:'Hoy',v:'$0',c:'#C9A84C'},{l:'Semana',v:'$0',c:'#00D4FF'},{l:'Mes',v:'$0',c:'#2ECC71'},{l:'Citas',v:'0',c:'#BB8FCE'}].map(s=>(
+                  {[{l:'Hoy',v:'$-',c:'#C9A84C'},{l:'Semana',v:'$-',c:'#00D4FF'},{l:'Mes',v:'$-',c:'#2ECC71'},{l:'Citas',v:'-',c:'#BB8FCE'}].map(s=>(
                     <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                       <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                       <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
@@ -1925,8 +1923,7 @@ function App() {
 
   if (loggedIn && userData?.rol==='dueño' && ['trial','activo','aprobado'].includes(userData?.estado_verificacion)) {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0,Math.ceil(14-(Date.now()-new Date(userData.fecha_trial_inicio).getTime())/(1000*60*60*24))) : 14
-    // @ts-ignore
-    const maxCitas = Math.max(...rankingBarberos.map(b=>b.total_citas),1)
+    const _maxCitas = Math.max(...rankingBarberos.map(b=>b.total_citas),1)
     return (
       <div className="dashboard-container">
         <nav className="navbar">
@@ -1976,7 +1973,7 @@ function App() {
                   <button onClick={()=>setCurrentPage('pro-dueno')} style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'10px 18px',fontSize:12,fontWeight:800,cursor:'pointer',letterSpacing:0.5,whiteSpace:'nowrap'}}>Ver planes</button>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,opacity:0.18,filter:'blur(4px)',pointerEvents:'none',userSelect:'none'}}>
-                  {[{l:'Hoy',v:'$0',c:'#C9A84C'},{l:'Semana',v:'$0',c:'#00D4FF'},{l:'Mes',v:'$0',c:'#2ECC71'},{l:'Citas',v:'0',c:'#BB8FCE'}].map(s=>(
+                  {[{l:'Hoy',v:'$-',c:'#C9A84C'},{l:'Semana',v:'$-',c:'#00D4FF'},{l:'Mes',v:'$-',c:'#2ECC71'},{l:'Citas',v:'-',c:'#BB8FCE'}].map(s=>(
                     <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                       <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                       <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
@@ -2176,7 +2173,7 @@ function App() {
               </div>
               <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24,marginBottom:20}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20,opacity:0.2,filter:'blur(3px)',pointerEvents:'none',userSelect:'none'}}>
-                  {[{l:'Hoy',v:'$0',c:'#C9A84C'},{l:'Semana',v:'$0',c:'#00D4FF'},{l:'Mes',v:'$0',c:'#2ECC71'},{l:'Citas',v:'0',c:'#BB8FCE'}].map(s=>(
+                  {[{l:'Hoy',v:'$-',c:'#C9A84C'},{l:'Semana',v:'$-',c:'#00D4FF'},{l:'Mes',v:'$-',c:'#2ECC71'},{l:'Citas',v:'-',c:'#BB8FCE'}].map(s=>(
                     <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                       <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                       <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
