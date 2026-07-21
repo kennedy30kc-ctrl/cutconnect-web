@@ -941,6 +941,10 @@ function App() {
   const [formBarbero, setFormBarbero] = useState({ nombre:'', foto:'', especialidad:'', descripcion:'', horario:{ lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
   const [perfilBarbero, setPerfilBarbero] = useState<any>(null)
   const [modalCal, setModalCal] = useState<any>(null)
+  const [perfilDuenoBarbero, setPerfilDuenoBarbero] = useState<any>(null)
+  const [citasPropias, setCitasPropias] = useState<any[]>([])
+  const [showFormActivar, setShowFormActivar] = useState(false)
+  const [formDuenoBarbero, setFormDuenoBarbero] = useState({ nombre:'', especialidad:'', descripcion:'', horario:{ lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
   const [adBanners, setAdBanners] = useState<any[]>(AD_BANNER_DEFAULT)
 
   const isAdminRoute = window.location.pathname === ADMIN_PATH
@@ -949,6 +953,7 @@ function App() {
   useEffect(() => { if (loggedIn) cargarDatos() }, [loggedIn])
   useEffect(() => { if (formData.barbero_id && formData.fecha) cargarDisponibilidad(formData.barbero_id, formData.fecha); else setHorasDisponibles([]) }, [formData.barbero_id, formData.fecha])
   useEffect(() => { if (loggedIn && userData?.rol==='barbero') cargarPerfilBarbero() }, [loggedIn, userData?.rol])
+  useEffect(() => { if (loggedIn && userData?.rol==='dueño') cargarPerfilDuenoBarbero() }, [loggedIn, userData?.rol])
   useEffect(() => {
     fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
@@ -978,6 +983,9 @@ function App() {
   const cargarMisBarberos = async () => { try { const r=await fetch(`${API}/api/barberos/${userData?.barberia_id}`); const d=await r.json(); setMisBarberos(d.data||[]) } catch { setMisBarberos([]) } }
   const cargarRanking = async () => { try { const r=await fetch(`${API}/api/stats/barberos/${userData?.barberia_id}`); const d=await r.json(); setRankingBarberos(d.data||[]) } catch { setRankingBarberos([]) } }
   const cargarPerfilBarbero = async () => { try { const r=await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d=await r.json(); if(d.success) setPerfilBarbero(d.data) } catch {} }
+  const cargarPerfilDuenoBarbero = async () => { try { const r=await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d=await r.json(); if(d.success && d.data) { setPerfilDuenoBarbero(d.data); const rc=await fetch(`${API}/api/citas/barbero/${d.data.id}`); const dc=await rc.json(); setCitasPropias(dc.data||[]) } else { setPerfilDuenoBarbero(null) } } catch {} }
+  const handleGuardarDuenoBarbero = async (e: any) => { e.preventDefault(); setLoading(true); setError(''); try { let res; if (perfilDuenoBarbero) { res=await fetch(`${API}/api/barbero/perfil/${perfilDuenoBarbero.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({descripcion:formDuenoBarbero.descripcion,especialidad:formDuenoBarbero.especialidad,horario:formDuenoBarbero.horario})}) } else { res=await fetch(`${API}/api/barberos`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:formDuenoBarbero.nombre||userData?.nombre||'',especialidad:formDuenoBarbero.especialidad,descripcion:formDuenoBarbero.descripcion,horario:formDuenoBarbero.horario,barberia_id:userData?.barberia_id,usuario_id:userData?.id})}) } const data=await res.json(); if(data.success){setShowFormActivar(false);await cargarPerfilDuenoBarbero();cargarMisBarberos();alert('¡Perfil activado! Ya apareces como profesional disponible.')}else setError(data.error||'Error') } catch { setError('Error de conexión') } finally { setLoading(false) } }
+  const updateHorarioDueno = (dia: string, campo: string, valor: any) => { setFormDuenoBarbero({...formDuenoBarbero,horario:{...formDuenoBarbero.horario,[dia]:{...(formDuenoBarbero.horario as any)[dia],[campo]:valor}}}) }
   const cargarDisponibilidad = async (barberoId: any, fecha: string) => { try { const r=await fetch(`${API}/api/disponibilidad/${barberoId}/${fecha}`); const d=await r.json(); setHorasDisponibles(d.data||[]) } catch { setHorasDisponibles([]) } }
   const buscarPorGPS = () => { if (!navigator.geolocation) return; setBuscando(true); navigator.geolocation.getCurrentPosition(pos => { setGpsUsado(true); setBuscando(false); cargarDatos(pos.coords.latitude, pos.coords.longitude, undefined, tipoNegocioFiltro) }, () => setBuscando(false)) }
   const buscarPorCiudad = () => { if (!searchCiudad.trim()) return; setGpsUsado(false); cargarDatos(undefined, undefined, searchCiudad, tipoNegocioFiltro) }
@@ -2160,6 +2168,7 @@ function App() {
             <button className={currentPage==='equipo'?'active':''} onClick={()=>{setCurrentPage('equipo');cargarMisBarberos()}}>Equipo</button>
             <button className={currentPage==='citas'?'active':''} onClick={()=>{setCurrentPage('citas');cargarCitasDueno()}}>Citas</button>
             <button className={currentPage==='negocio'?'active':''} onClick={()=>setCurrentPage('negocio')}>Mi negocio</button>
+            <button className={currentPage==='yo-barbero'?'active':''} onClick={()=>{setCurrentPage('yo-barbero');cargarPerfilDuenoBarbero()}} style={{color: perfilDuenoBarbero ? '#2ECC71' : '#C9A84C', fontWeight:700}}>✂️ Yo corto</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
@@ -2378,6 +2387,99 @@ function App() {
                     ))}
                   </div>
               }
+            </div>
+          )}
+          {currentPage==='yo-barbero' && (
+            <div className="page">
+              <h2>✂️ Yo también corto</h2>
+              {!perfilDuenoBarbero && !showFormActivar && (
+                <div style={{textAlign:'center',padding:'40px 24px'}}>
+                  <div style={{fontSize:64,marginBottom:20}}>✂️</div>
+                  <h3 style={{fontSize:22,fontWeight:800,marginBottom:12}}>¿Tú también cortas el cabello?</h3>
+                  <p style={{color:'#888',fontSize:14,lineHeight:1.7,marginBottom:32,maxWidth:360,margin:'0 auto 32px'}}>Activa tu perfil personal como barbero para que los clientes puedan agendarte directamente a ti, igual que a cualquier miembro de tu equipo.</p>
+                  <button onClick={()=>{setFormDuenoBarbero({nombre:userData?.nombre||'',especialidad:'',descripcion:'',horario:{lunes:{activo:true,inicio:'08:00',fin:'18:00'},martes:{activo:true,inicio:'08:00',fin:'18:00'},miercoles:{activo:true,inicio:'08:00',fin:'18:00'},jueves:{activo:true,inicio:'08:00',fin:'18:00'},viernes:{activo:true,inicio:'08:00',fin:'18:00'},sabado:{activo:true,inicio:'08:00',fin:'14:00'},domingo:{activo:false,inicio:'',fin:''}}});setShowFormActivar(true)}} style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:16,padding:'18px 40px',fontSize:16,fontWeight:800,cursor:'pointer',letterSpacing:0.5,boxShadow:'0 8px 30px rgba(201,168,76,0.35)',display:'inline-flex',alignItems:'center',gap:10,transition:'transform 0.15s'}} onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.03)')} onMouseLeave={e=>(e.currentTarget.style.transform='scale(1)')}>
+                    <span style={{fontSize:22}}>✂️</span> Activar mi perfil de barbero
+                  </button>
+                  <p style={{color:'#444',fontSize:12,marginTop:20}}>Una sola cuenta · Sin configuración extra · Los clientes te ven al instante</p>
+                </div>
+              )}
+              {showFormActivar && (
+                <div style={{background:'#141414',border:'1px solid rgba(255,255,255,0.05)',borderLeft:'2px solid #C9A84C',borderRadius:14,padding:24,marginBottom:24}}>
+                  <h3 style={{marginTop:0,marginBottom:6}}>Tu perfil como barbero</h3>
+                  <p style={{color:'#666',fontSize:13,marginBottom:20}}>Esta información verán los clientes al elegirte</p>
+                  <form onSubmit={handleGuardarDuenoBarbero} className="form">
+                    <div className="form-row">
+                      <div className="form-group"><label>Tu nombre</label><input type="text" placeholder="Tu nombre" value={formDuenoBarbero.nombre} onChange={e=>setFormDuenoBarbero({...formDuenoBarbero,nombre:e.target.value})} required /></div>
+                      <div className="form-group"><label>Especialidad</label><input type="text" placeholder="Fades, barba, clásico..." value={formDuenoBarbero.especialidad} onChange={e=>setFormDuenoBarbero({...formDuenoBarbero,especialidad:e.target.value})} /></div>
+                    </div>
+                    <div className="form-group"><label>Descripción (opcional)</label><textarea placeholder="Cuéntale a los clientes tu experiencia..." value={formDuenoBarbero.descripcion} onChange={e=>setFormDuenoBarbero({...formDuenoBarbero,descripcion:e.target.value})} /></div>
+                    <div>
+                      <p style={{color:'#555',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:14}}>Días que atiendes</p>
+                      {DIAS.map(dia=>{
+                        const h=(formDuenoBarbero.horario as any)[dia]
+                        return (
+                          <div key={dia} style={{display:'flex',alignItems:'center',gap:12,marginBottom:10,flexWrap:'wrap'}}>
+                            <label style={{display:'flex',alignItems:'center',gap:8,minWidth:100,cursor:'pointer'}}>
+                              <input type="checkbox" checked={h.activo} onChange={e=>updateHorarioDueno(dia,'activo',e.target.checked)} style={{width:16,height:16,accentColor:'#C9A84C'}} />
+                              <span style={{color:'#fff',fontSize:13,fontWeight:600}}>{DIAS_LABELS[dia]}</span>
+                            </label>
+                            {h.activo&&<>
+                              <input type="time" value={h.inicio} onChange={e=>updateHorarioDueno(dia,'inicio',e.target.value)} style={{padding:'6px 10px',fontSize:13,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#fff'}} />
+                              <span style={{color:'#333'}}>—</span>
+                              <input type="time" value={h.fin} onChange={e=>updateHorarioDueno(dia,'fin',e.target.value)} style={{padding:'6px 10px',fontSize:13,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#fff'}} />
+                            </>}
+                            {!h.activo&&<span style={{color:'#333',fontSize:12}}>No trabajo este día</span>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {error&&<p className="error">{error}</p>}
+                    <div style={{display:'flex',gap:10,marginTop:8}}>
+                      <button type="submit" style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:12,padding:'14px 28px',fontSize:14,fontWeight:800,cursor:'pointer',boxShadow:'0 6px 20px rgba(201,168,76,0.3)'}} disabled={loading}>{loading?'Activando...':'🚀 Activar perfil'}</button>
+                      <button type="button" className="btn-secondary" onClick={()=>setShowFormActivar(false)}>Cancelar</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+              {perfilDuenoBarbero && !showFormActivar && (
+                <div>
+                  <div style={{background:'linear-gradient(135deg,rgba(46,204,113,0.06),rgba(46,204,113,0.02))',border:'1px solid rgba(46,204,113,0.2)',borderRadius:16,padding:24,marginBottom:24,display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+                    <BarberoAvatar foto={perfilDuenoBarbero.foto} nombre={perfilDuenoBarbero.nombre} size={64} />
+                    <div style={{flex:1}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                        <span style={{background:'rgba(46,204,113,0.15)',color:'#2ECC71',fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,textTransform:'uppercase',letterSpacing:1}}>✓ Perfil activo</span>
+                      </div>
+                      <h3 style={{margin:'4px 0',fontSize:18,fontWeight:800}}>{perfilDuenoBarbero.nombre}</h3>
+                      <p style={{margin:0,color:'#888',fontSize:13}}>{perfilDuenoBarbero.especialidad||'Sin especialidad definida'}</p>
+                    </div>
+                    <button onClick={()=>{setFormDuenoBarbero({nombre:perfilDuenoBarbero.nombre||'',especialidad:perfilDuenoBarbero.especialidad||'',descripcion:perfilDuenoBarbero.descripcion||'',horario:perfilDuenoBarbero.horario||formDuenoBarbero.horario});setShowFormActivar(true)}} className="btn-secondary" style={{fontSize:13}}>Editar perfil</button>
+                  </div>
+                  <div style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap'}}>
+                    <div className="stat-card" style={{flex:1,minWidth:120}}><h4>Mis citas</h4><p className="stat-number">{citasPropias.length}</p></div>
+                    <div className="stat-card" style={{flex:1,minWidth:120}}><h4>Días activos</h4><p className="stat-number">{perfilDuenoBarbero.horario?Object.values(perfilDuenoBarbero.horario).filter((d:any)=>d.activo).length:0}</p></div>
+                  </div>
+                  <h3 style={{marginBottom:16}}>Mis citas personales</h3>
+                  {citasPropias.length===0
+                    ? <div className="empty-state"><p>Aún no tienes citas asignadas a ti directamente</p></div>
+                    : <div className="citas-grid">
+                        {citasPropias.map((c:any)=>(
+                          <div key={c.id} className="cita-card">
+                            <h4>{c.cliente?.nombre||'Cliente'}</h4>
+                            <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
+                            <p><strong>Fecha:</strong> {c.fecha}</p>
+                            <p><strong>Hora:</strong> {c.hora}</p>
+                            <p><strong>Tel:</strong> {c.cliente?.telefono||'—'}</p>
+                            <span className="badge-agendada">Confirmada</span>
+                            <div className="cita-actions" style={{marginTop:10}}>
+                              <button className="btn-confirm" onClick={()=>completarCita(c.id)}>✓ Completar</button>
+                              <button className="btn-reject" onClick={()=>cancelarCita(c.id)}>✗ Cancelar</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                  }
+                </div>
+              )}
             </div>
           )}
         </div>
