@@ -303,246 +303,6 @@ function LineChart({ data }: { data: any[] }) {
   )
 }
 
-function ProDashboard({ barberiaId }: { barberiaId: number }) {
-  const [stats, setStats] = useState<any>(null)
-  const [graficas, setGraficas] = useState<any>(null)
-  const [precios, setPrecios] = useState<any[]>([])
-  const [servicios, setServicios] = useState<any[]>([])
-  const [editando, setEditando] = useState(false)
-  const [preciosEdit, setPreciosEdit] = useState<any>({})
-  const [nombresEdit, setNombresEdit] = useState<any>({})
-  const [loading, setLoading] = useState(false)
-  const [tabGrafica, setTabGrafica] = useState<'ingresos'|'citas'|'semanas'>('ingresos')
-  const [hiddenServices, setHiddenServices] = useState<number[]>(() => {
-    try { return JSON.parse(localStorage.getItem(`cc_hidden_${barberiaId}`) || '[]') } catch { return [] }
-  })
-  const [customServices, setCustomServices] = useState<any[]>(() => {
-    try { return JSON.parse(localStorage.getItem(`cc_custom_${barberiaId}`) || '[]') } catch { return [] }
-  })
-  const [showAddService, setShowAddService] = useState(false)
-  const [newServiceName, setNewServiceName] = useState('')
-  const [newServicePrice, setNewServicePrice] = useState('')
-
-  useEffect(() => {
-    if (!barberiaId) return
-    Promise.all([
-      fetch(`${API}/api/stats/ingresos/${barberiaId}`).then(r=>r.json()),
-      fetch(`${API}/api/stats/graficas/${barberiaId}`).then(r=>r.json()),
-      fetch(`${API}/api/precios/${barberiaId}`).then(r=>r.json()),
-      fetch(`${API}/api/servicios`).then(r=>r.json())
-    ]).then(([s, g, p, sv]) => {
-      if (s.success) setStats(s.data)
-      if (g.success) setGraficas(g.data)
-      if (p.success) setPrecios(p.data)
-      if (sv.success) setServicios(sv.data)
-    }).catch(()=>{})
-  }, [barberiaId])
-
-  const getPrecio = (servicioId: number) => {
-    const custom = precios.find((p:any) => p.servicio_id === servicioId)
-    return custom ? custom.precio : servicios.find((s:any) => s.id === servicioId)?.precio || 0
-  }
-
-  const toggleHide = (id: number) => {
-    const next = hiddenServices.includes(id) ? hiddenServices.filter(x=>x!==id) : [...hiddenServices, id]
-    setHiddenServices(next)
-    localStorage.setItem(`cc_hidden_${barberiaId}`, JSON.stringify(next))
-  }
-
-  const agregarServicioCustom = () => {
-    if (!newServiceName.trim() || !newServicePrice) return
-    const nuevo = { id: -(Date.now()), nombre: newServiceName.trim(), precio: parseFloat(newServicePrice) }
-    const next = [...customServices, nuevo]
-    setCustomServices(next)
-    localStorage.setItem(`cc_custom_${barberiaId}`, JSON.stringify(next))
-    setPreciosEdit({...preciosEdit, [nuevo.id]: nuevo.precio})
-    setNewServiceName(''); setNewServicePrice(''); setShowAddService(false)
-  }
-
-  const eliminarCustom = (id: number) => {
-    const next = customServices.filter(s=>s.id!==id)
-    setCustomServices(next)
-    localStorage.setItem(`cc_custom_${barberiaId}`, JSON.stringify(next))
-  }
-
-  const guardarPrecios = async () => {
-    setLoading(true)
-    try {
-      await Promise.all(Object.entries(preciosEdit).map(([servicioId, precio]) =>
-        fetch(`${API}/api/precios/${barberiaId}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ servicio_id: parseInt(servicioId), precio: parseFloat(precio as string) }) })
-      ))
-      const [s, p] = await Promise.all([
-        fetch(`${API}/api/stats/ingresos/${barberiaId}`).then(r=>r.json()),
-        fetch(`${API}/api/precios/${barberiaId}`).then(r=>r.json())
-      ])
-      if (s.success) setStats(s.data)
-      if (p.success) setPrecios(p.data)
-      setEditando(false); setPreciosEdit({})
-    } catch { alert('Error al guardar') } finally { setLoading(false) }
-  }
-
-  if (!stats) return <p style={{color:'#555',fontSize:13}}>Cargando estadísticas...</p>
-
-  return (
-    <div style={{display:'flex',flexDirection:'column',gap:16}}>
-      {/* STAT CARDS NEÓN */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-        <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.03))',border:'1px solid rgba(201,168,76,0.3)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
-          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(201,168,76,0.06)'}}></div>
-          <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Hoy</p>
-          <p style={{fontSize:28,fontWeight:900,color:'#FFD700',textShadow:'0 0 20px rgba(201,168,76,0.5)'}}><AnimatedNumber value={stats.ingresos_hoy||0} prefix="$" /></p>
-        </div>
-        <div style={{background:'linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,255,0.02))',border:'1px solid rgba(0,212,255,0.2)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
-          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(0,212,255,0.04)'}}></div>
-          <p style={{fontSize:10,color:'#00D4FF',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Semana</p>
-          <p style={{fontSize:28,fontWeight:900,color:'#00D4FF',textShadow:'0 0 20px rgba(0,212,255,0.4)'}}><AnimatedNumber value={stats.ingresos_semana||0} prefix="$" /></p>
-        </div>
-        <div style={{background:'linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.02))',border:'1px solid rgba(46,204,113,0.2)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
-          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(46,204,113,0.04)'}}></div>
-          <p style={{fontSize:10,color:'#2ECC71',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Mes</p>
-          <p style={{fontSize:28,fontWeight:900,color:'#2ECC71',textShadow:'0 0 20px rgba(46,204,113,0.4)'}}><AnimatedNumber value={stats.ingresos_mes||0} prefix="$" /></p>
-        </div>
-        <div style={{background:'linear-gradient(135deg,rgba(155,89,182,0.08),rgba(155,89,182,0.02))',border:'1px solid rgba(155,89,182,0.2)',borderRadius:14,padding:'16px 14px',position:'relative',overflow:'hidden'}}>
-          <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(155,89,182,0.04)'}}></div>
-          <p style={{fontSize:10,color:'#BB8FCE',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Proyección</p>
-          <p style={{fontSize:28,fontWeight:900,color:'#BB8FCE',textShadow:'0 0 20px rgba(155,89,182,0.4)'}}><AnimatedNumber value={stats.proyeccion_mes||0} prefix="$" /></p>
-        </div>
-      </div>
-
-      {/* CITAS */}
-      <div style={{background:'rgba(0,0,0,0.3)',borderRadius:14,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div>
-          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Citas este mes</p>
-          <p style={{fontSize:32,fontWeight:900,color:'#fff'}}><AnimatedNumber value={stats.citas_mes||0} /></p>
-        </div>
-        <div style={{textAlign:'right'}}>
-          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Promedio/cita</p>
-          <p style={{fontSize:22,fontWeight:700,color:'#C9A84C'}}><AnimatedNumber value={stats.ingreso_promedio||0} prefix="$" /></p>
-        </div>
-      </div>
-
-      {/* GRÁFICAS */}
-      {graficas && (
-        <div style={{background:'rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:16,padding:20}}>
-          <div style={{display:'flex',gap:6,marginBottom:16}}>
-            {[{key:'ingresos',label:'Ingresos'},{key:'citas',label:'Citas'},{key:'semanas',label:'Semanas'}].map(t=>(
-              <button key={t.key} onClick={()=>setTabGrafica(t.key as any)} style={{flex:1,padding:'6px 4px',borderRadius:8,border:'1px solid',borderColor:tabGrafica===t.key?'rgba(201,168,76,0.4)':'rgba(255,255,255,0.06)',background:tabGrafica===t.key?'rgba(201,168,76,0.1)':'transparent',color:tabGrafica===t.key?'#C9A84C':'#555',fontSize:11,fontWeight:700,cursor:'pointer',textTransform:'uppercase',letterSpacing:1}}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {tabGrafica === 'ingresos' && (<><p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Ingresos por día</p><BarChart data={graficas.por_dia} colorKey="ingresos" /></>)}
-          {tabGrafica === 'citas' && (<><p style={{fontSize:10,color:'#00D4FF',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Citas por día</p><BarChart data={graficas.por_dia} colorKey="citas" /></>)}
-          {tabGrafica === 'semanas' && (<><p style={{fontSize:10,color:'#2ECC71',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Citas por semana</p><LineChart data={graficas.por_semana} /></>)}
-        </div>
-      )}
-
-      {/* SERVICIOS TOP */}
-      {stats.servicio_mas_vendido && stats.servicio_mas_vendido !== '-' && (
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,padding:'14px 16px'}}>
-            <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Más vendido</p>
-            <p style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>{stats.servicio_mas_vendido}</p>
-            <p style={{fontSize:20,fontWeight:900,color:'#C9A84C'}}>{stats.servicio_mas_vendido_count}x</p>
-          </div>
-          <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(46,204,113,0.15)',borderRadius:12,padding:'14px 16px'}}>
-            <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:6}}>Más rentable</p>
-            <p style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>{stats.servicio_mas_rentable}</p>
-            <p style={{fontSize:20,fontWeight:900,color:'#2ECC71'}}>${stats.ingreso_servicio_top?.toFixed(0)}</p>
-          </div>
-        </div>
-      )}
-
-      {/* CLIENTES */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-        <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(0,212,255,0.12)',borderRadius:12,padding:'14px 16px'}}>
-          <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Nuevos</p>
-          <p style={{fontSize:26,fontWeight:900,color:'#00D4FF',textShadow:'0 0 15px rgba(0,212,255,0.3)'}}>{stats.clientes_nuevos}</p>
-          <p style={{fontSize:10,color:'#444',marginTop:2}}>este mes</p>
-        </div>
-        <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(201,168,76,0.12)',borderRadius:12,padding:'14px 16px'}}>
-          <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Recurrentes</p>
-          <p style={{fontSize:26,fontWeight:900,color:'#C9A84C',textShadow:'0 0 15px rgba(201,168,76,0.3)'}}>{stats.clientes_recurrentes}</p>
-          <p style={{fontSize:10,color:'#444',marginTop:2}}>más de 2 citas</p>
-        </div>
-      </div>
-
-      {/* HORA PICO */}
-      {stats.hora_pico && (
-        <div style={{background:'linear-gradient(135deg,rgba(155,89,182,0.08),rgba(0,0,0,0.3))',border:'1px solid rgba(155,89,182,0.15)',borderRadius:12,padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <div>
-            <p style={{fontSize:9,color:'#777',textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>Hora pico</p>
-            <p style={{fontSize:20,fontWeight:800,color:'#BB8FCE'}}>{stats.hora_pico}</p>
-          </div>
-          <p style={{fontSize:13,color:'#555'}}>{stats.citas_hora_pico} citas</p>
-        </div>
-      )}
-
-      {/* ALERTAS */}
-      {(stats.alertas_barberos_sin_citas > 0 || stats.dias_sin_citas > 0) && (
-        <div style={{background:'rgba(231,76,60,0.06)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:12,padding:'14px 16px'}}>
-          <p style={{fontSize:10,color:'#FF6B6B',textTransform:'uppercase',letterSpacing:2,marginBottom:8,fontWeight:700}}>⚠ Alertas</p>
-          {stats.alertas_barberos_sin_citas > 0 && <p style={{fontSize:13,color:'#FF6B6B',marginBottom:4}}>{stats.alertas_barberos_sin_citas} barbero(s) sin citas en 7 días</p>}
-          {stats.dias_sin_citas > 0 && <p style={{fontSize:13,color:'#FF6B6B'}}>{stats.dias_sin_citas} día(s) sin citas esta semana</p>}
-        </div>
-      )}
-
-      {/* SERVICIOS */}
-      <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:16}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>Mis servicios y precios</p>
-          <div style={{display:'flex',gap:8}}>
-            {!editando
-              ? <button className="btn-secondary" style={{padding:'6px 14px',fontSize:11}} onClick={()=>{const init:any={},ni:any={}; [...servicios,...customServices].forEach((s:any)=>{init[s.id]=getPrecio(s.id);ni[s.id]=s.nombre}); setPreciosEdit(init);setNombresEdit(ni);setEditando(true)}}>✏️ Editar</button>
-              : <>
-                  <button className="btn-primary" style={{padding:'6px 14px',fontSize:11}} onClick={guardarPrecios} disabled={loading}>{loading?'Guardando...':'Guardar'}</button>
-                  <button className="btn-secondary" style={{padding:'6px 14px',fontSize:11}} onClick={()=>setEditando(false)}>Cancelar</button>
-                </>
-            }
-            {!editando&&<button className="btn-secondary" style={{padding:'6px 14px',fontSize:11,color:'#2ECC71',borderColor:'rgba(46,204,113,0.3)'}} onClick={()=>setShowAddService(s=>!s)}>➕</button>}
-          </div>
-        </div>
-        {showAddService&&!editando&&(
-          <div style={{background:'rgba(46,204,113,0.06)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:10,padding:16,marginBottom:12}}>
-            <p style={{fontSize:11,color:'#2ECC71',fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:10}}>Nuevo servicio</p>
-            <div style={{display:'flex',gap:8,marginBottom:8}}>
-              <input type="text" placeholder="Nombre del servicio" value={newServiceName} onChange={e=>setNewServiceName(e.target.value)} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',color:'#fff',fontSize:13}} />
-              <input type="number" placeholder="Precio" value={newServicePrice} onChange={e=>setNewServicePrice(e.target.value)} style={{width:90,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 12px',color:'#C9A84C',fontSize:13,fontWeight:700}} />
-            </div>
-            <div style={{display:'flex',gap:8}}>
-              <button className="btn-primary" style={{flex:1,padding:'8px',fontSize:12}} onClick={agregarServicioCustom}>Agregar</button>
-              <button className="btn-secondary" style={{padding:'8px 14px',fontSize:12}} onClick={()=>{setShowAddService(false);setNewServiceName('');setNewServicePrice('')}}>Cancelar</button>
-            </div>
-          </div>
-        )}
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {[...servicios.filter((s:any)=>!hiddenServices.includes(s.id)), ...customServices].map((s:any) => (
-            <div key={s.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(0,0,0,0.2)',borderRadius:8,padding:'10px 14px',gap:8}}>
-              {editando
-                ? <input type="text" value={nombresEdit[s.id]||s.nombre} onChange={e=>setNombresEdit({...nombresEdit,[s.id]:e.target.value})} style={{flex:1,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,padding:'4px 8px',color:'#fff',fontSize:13}} />
-                : <p style={{fontSize:14,color:'#fff',flex:1,margin:0}}>{s.nombre}</p>
-              }
-              {editando
-                ? <input type="number" value={preciosEdit[s.id]||''} onChange={e=>setPreciosEdit({...preciosEdit,[s.id]:e.target.value})} style={{width:80,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(201,168,76,0.4)',borderRadius:6,padding:'4px 8px',color:'#C9A84C',fontSize:14,fontWeight:700,textAlign:'right'}} />
-                : <p style={{fontSize:14,fontWeight:700,color:'#C9A84C',margin:0}}>${getPrecio(s.id)}</p>
-              }
-              {!editando&&(
-                s.id < 0
-                  ? <button onClick={()=>eliminarCustom(s.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#FF6B6B',fontSize:16,padding:'2px 6px'}} title="Eliminar">🗑</button>
-                  : <button onClick={()=>toggleHide(s.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#555',fontSize:13,padding:'2px 6px'}} title="Ocultar">🙈</button>
-              )}
-            </div>
-          ))}
-          {hiddenServices.length>0&&!editando&&(
-            <button onClick={()=>{setHiddenServices([]);localStorage.removeItem(`cc_hidden_${barberiaId}`)}} style={{background:'none',border:'1px dashed rgba(255,255,255,0.1)',borderRadius:8,padding:'8px',color:'#555',fontSize:11,cursor:'pointer'}}>
-              + Mostrar {hiddenServices.length} servicio(s) oculto(s)
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function PublicidadPage() {
   const [form, setForm] = useState({ titulo:'', subtitulo:'', boton_texto:'Ver más', boton_url:'', anunciante_nombre:'', anunciante_email:'', anunciante_telefono:'', ciudad:'', pais:'Colombia', imagen_url:'', latitud:'', longitud:'' })
@@ -982,6 +742,7 @@ function App() {
   const cargarCitasBarbero = async () => { try { const r=await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d=await r.json(); setCitas(d.data||[]) } catch { setCitas([]) } }
   const cargarBarberosBarberia = async (id: any) => { try { const r=await fetch(`${API}/api/barberos/${id}`); const d=await r.json(); setBarberosList(d.data||[]) } catch { setBarberosList([]) } }
   const cargarMisBarberos = async () => { try { const r=await fetch(`${API}/api/barberos/${userData?.barberia_id}`); const d=await r.json(); setMisBarberos(d.data||[]) } catch { setMisBarberos([]) } }
+  // @ts-ignore
   const cargarRanking = async () => { try { const r=await fetch(`${API}/api/stats/barberos/${userData?.barberia_id}`); const d=await r.json(); setRankingBarberos(d.data||[]) } catch { setRankingBarberos([]) } }
   const cargarPerfilBarbero = async () => { try { const r=await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d=await r.json(); if(d.success) setPerfilBarbero(d.data) } catch {} }
   const cargarPerfilDuenoBarbero = async () => { try { const r=await fetch(`${API}/api/barbero/perfil/${userData?.id}`); const d=await r.json(); if(d.success && d.data) { setPerfilDuenoBarbero(d.data); const rc=await fetch(`${API}/api/citas/barbero/${d.data.id}`); const dc=await rc.json(); setCitasPropias(dc.data||[]) } else { setPerfilDuenoBarbero(null) } } catch {} }
@@ -2062,7 +1823,7 @@ function App() {
               </div>
               <div style={{background:'rgba(201,168,76,0.03)',border:'1px solid rgba(201,168,76,0.25)',borderRadius:16,padding:24,marginBottom:16}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20,opacity:0.15,filter:'blur(4px)',pointerEvents:'none',userSelect:'none'}}>
-                  {[{l:'Hoy',v:'$-',c:'#C9A84C'},{l:'Semana',v:'$-',c:'#00D4FF'},{l:'Mes',v:'$-',c:'#2ECC71'},{l:'Citas',v:'-',c:'#BB8FCE'}].map(s=>(
+                  {[{l:'Hoy',v:'$0',c:'#C9A84C'},{l:'Semana',v:'$0',c:'#00D4FF'},{l:'Mes',v:'$0',c:'#2ECC71'},{l:'Citas',v:'0',c:'#BB8FCE'}].map(s=>(
                     <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                       <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                       <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
@@ -2164,6 +1925,7 @@ function App() {
 
   if (loggedIn && userData?.rol==='dueño' && ['trial','activo','aprobado'].includes(userData?.estado_verificacion)) {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0,Math.ceil(14-(Date.now()-new Date(userData.fecha_trial_inicio).getTime())/(1000*60*60*24))) : 14
+    // @ts-ignore
     const maxCitas = Math.max(...rankingBarberos.map(b=>b.total_citas),1)
     return (
       <div className="dashboard-container">
@@ -2214,7 +1976,7 @@ function App() {
                   <button onClick={()=>setCurrentPage('pro-dueno')} style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'10px 18px',fontSize:12,fontWeight:800,cursor:'pointer',letterSpacing:0.5,whiteSpace:'nowrap'}}>Ver planes</button>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,opacity:0.18,filter:'blur(4px)',pointerEvents:'none',userSelect:'none'}}>
-                  {[{l:'Hoy',v:'$-',c:'#C9A84C'},{l:'Semana',v:'$-',c:'#00D4FF'},{l:'Mes',v:'$-',c:'#2ECC71'},{l:'Citas',v:'-',c:'#BB8FCE'}].map(s=>(
+                  {[{l:'Hoy',v:'$0',c:'#C9A84C'},{l:'Semana',v:'$0',c:'#00D4FF'},{l:'Mes',v:'$0',c:'#2ECC71'},{l:'Citas',v:'0',c:'#BB8FCE'}].map(s=>(
                     <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                       <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                       <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
@@ -2414,7 +2176,7 @@ function App() {
               </div>
               <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24,marginBottom:20}}>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20,opacity:0.2,filter:'blur(3px)',pointerEvents:'none',userSelect:'none'}}>
-                  {[{l:'Hoy',v:'$-',c:'#C9A84C'},{l:'Semana',v:'$-',c:'#00D4FF'},{l:'Mes',v:'$-',c:'#2ECC71'},{l:'Citas',v:'-',c:'#BB8FCE'}].map(s=>(
+                  {[{l:'Hoy',v:'$0',c:'#C9A84C'},{l:'Semana',v:'$0',c:'#00D4FF'},{l:'Mes',v:'$0',c:'#2ECC71'},{l:'Citas',v:'0',c:'#BB8FCE'}].map(s=>(
                     <div key={s.l} style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                       <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                       <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
