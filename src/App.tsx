@@ -1,4 +1,6 @@
 // @ts-nocheck
+const SUPA_URL = 'https://mypcsegsyvarcwyigzodc.supabase.co'
+const SUPA_KEY = 'sb_publishable_su1RyR6QAGMUNqU_OG5Anw__xkiIM7p'
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
@@ -362,6 +364,10 @@ function PublicidadPage() {
           style={{display:'block',background:'#25D366',color:'#fff',padding:14,borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:16}}>
           Enviar comprobante por WhatsApp
         </a>
+              <button onClick={async()=>{if(!userData?.id)return;try{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({usuario_id:String(userData.id),nombre:userData.nombre||'',email:userData.email||'',tipo:'barbero',estado:'pendiente'})});alert('✅ Solicitud enviada. El admin la revisará pronto.')}catch{alert('Error al enviar')}}}
+                style={{display:'block',width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.35)',color:'#C9A84C',borderRadius:8,padding:'11px',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:10,letterSpacing:0.5}}>
+                ✅ Ya pagué — Registrar mi solicitud
+              </button>
         <button onClick={() => window.location.href = '/'} style={{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#777',borderRadius:8,padding:'10px 20px',cursor:'pointer',fontSize:13}}>Volver al inicio</button>
       </div>
     </div>
@@ -695,6 +701,16 @@ function App() {
   const [adminClientes, setAdminClientes] = useState<any[]>([])
   const [solicitudesPro, setSolicitudesPro] = useState<any[]>([])
   const [adminProSearch, setAdminProSearch] = useState('')
+
+  const cargarSolicitudesPro = async () => {
+    try {
+      const r = await fetch(SUPA_URL + '/rest/v1/solicitudes_pro?order=created_at.desc', {
+        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+      })
+      const d = await r.json()
+      setSolicitudesPro(Array.isArray(d) ? d : [])
+    } catch(e) { console.log(e) }
+  }
   const [anuncios, setAnuncios] = useState<any[]>([])
   const [solicitudesPublicidad, setSolicitudesPublicidad] = useState<any[]>([])
   const [formAnuncio, setFormAnuncio] = useState({ titulo:'', subtitulo:'', imagen_url:'', boton_texto:'Ver más', boton_url:'', ciudad:'', pais:'', activo:true })
@@ -857,7 +873,7 @@ function App() {
         fetch(`${API}/api/admin/anuncios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/solicitudes-publicidad`,{headers:{'x-admin-token':'admin_token_cutconnect'}}),
         fetch(`${API}/api/admin/usuarios`,{headers:{'x-admin-token':'admin_token_cutconnect'}}).catch(()=>null),
-        fetch(`${API}/api/admin/solicitudes-pro`,{headers:{'x-admin-token':'admin_token_cutconnect'}}).catch(()=>null)
+        Promise.resolve(null) // solicitudes-pro desde Supabase
       ])
       const d1=await r1.json(); const d2=await r2.json(); const d3=await r3.json(); const d4=await r4.json()
       setAdminNegocios(d1.data||[]); setAdminStats(d2.data||null); setAnuncios(d3.data||[]); setSolicitudesPublicidad(d4.data||[])
@@ -1169,6 +1185,7 @@ function App() {
                     <button className="btn-admin btn-suspender" onClick={async()=>{
                       await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:false,estado:'inactivo'})})
                       cargarAdminData()
+    cargarSolicitudesPro()
                     }}>{s.estado==='activo'?'Desactivar':'Activar'}</button>
                     {s.anunciante_telefono&&(
                       <a href={`https://wa.me/${s.anunciante_telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
@@ -1853,60 +1870,68 @@ function App() {
   }
 
 
-          {/* SECCIÓN SOLICITUDES PRO */}
+          {/* SOLICITUDES PRO - SUPABASE */}
           {adminPage==='pro' && (
             <div>
-              <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:14,padding:20,marginBottom:20}}>
-                <h3 style={{color:'#C9A84C',fontWeight:800,fontSize:16,marginBottom:4}}>💎 Gestión de Suscripciones Pro</h3>
-                <p style={{color:'#555',fontSize:12,margin:0}}>Activa el plan Pro para dueños y barberos que pagaron $3.99</p>
+              <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:14,padding:20,marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <h3 style={{color:'#C9A84C',fontWeight:800,fontSize:16,marginBottom:4}}>💎 Gestión de Planes Pro</h3>
+                  <p style={{color:'#555',fontSize:12,margin:0}}>Activa o niega solicitudes de Plan Pro ($3.99/mes)</p>
+                </div>
+                <button onClick={cargarSolicitudesPro} style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                  🔄 Actualizar lista
+                </button>
               </div>
               <input type="text" placeholder="🔍 Buscar por nombre o email..." value={adminProSearch} onChange={e=>setAdminProSearch(e.target.value)}
-                style={{width:'100%',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',color:'#fff',fontSize:13,outline:'none',boxSizing:'border-box',marginBottom:20}}/>
-              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:12}}>👑 Dueños en Trial — activa cuando paguen</p>
-              {adminNegocios.filter((n:any)=>n.estado_verificacion==='trial'&&(!adminProSearch||n.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||n.email_dueno?.toLowerCase().includes(adminProSearch.toLowerCase()))).map((n:any)=>(
-                <div key={n.id} style={{background:'#141414',border:'1px solid rgba(201,168,76,0.12)',borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                style={{width:'100%',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',color:'#fff',fontSize:13,outline:'none',boxSizing:'border-box',marginBottom:24}}/>
+              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:12}}>👑 Dueños de Negocios</p>
+              {solicitudesPro.filter((s:any)=>s.tipo==='dueno'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).length===0&&<p style={{color:'#333',fontSize:13,textAlign:'center',padding:'12px 0',marginBottom:8}}>No hay solicitudes de dueños aún</p>}
+              {solicitudesPro.filter((s:any)=>s.tipo==='dueno'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).map((s:any)=>(
+                <div key={s.id} style={{background:'#141414',border:'1px solid '+(s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='negado'?'rgba(255,100,100,0.15)':'rgba(201,168,76,0.12)'),borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <div style={{flex:1}}>
-                    <p style={{fontWeight:700,color:'#fff',fontSize:13,marginBottom:2}}>{n.nombre}</p>
-                    <p style={{fontSize:11,color:'#555',marginBottom:4}}>{n.email_dueno} · ID: {n.id}</p>
-                    <span style={{fontSize:10,background:'rgba(187,143,206,0.12)',color:'#BB8FCE',borderRadius:6,padding:'2px 8px',fontWeight:700}}>Trial</span>
+                    <p style={{fontWeight:700,color:'#fff',fontSize:13,marginBottom:2}}>{s.nombre}</p>
+                    <p style={{fontSize:11,color:'#555',marginBottom:4}}>{s.email}{s.negocio_nombre?' · '+s.negocio_nombre:''}</p>
+                    <span style={{fontSize:10,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='negado'?'rgba(255,100,100,0.1)':'rgba(255,165,0,0.1)',color:s.estado==='activo'?'#4ade80':s.estado==='negado'?'#f87171':'#FFA500',borderRadius:6,padding:'2px 8px',fontWeight:700}}>
+                      {s.estado==='activo'?'✅ Activo':s.estado==='negado'?'❌ Negado':'⏳ Pendiente'}
+                    </span>
+                    {s.fecha_vencimiento&&<span style={{fontSize:10,color:'#444',marginLeft:6}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</span>}
                   </div>
-                  <div style={{display:'flex',flexDirection:'column',gap:6,minWidth:160}}>
-                    <button onClick={async(e:any)=>{e.stopPropagation();await accionAdmin('activar',n.id);setAdminMsg('✅ '+n.nombre+' activado como Pro');setTimeout(()=>setAdminMsg(''),4000)}}
-                      style={{background:'linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.4)',color:'#C9A84C',borderRadius:8,padding:'9px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
-                      💰 Activar Plan Pro
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={async()=>{const v=new Date();v.setDate(v.getDate()+30);await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'activo',fecha_vencimiento:v.toISOString()})});setAdminMsg('✅ Plan Pro activado 30 días');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
+                      style={{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.3)',color:'#4ade80',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                      ✅ Activar
                     </button>
-                    {n.telefono&&<a href={`https://wa.me/${n.telefono.replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(n.nombre)}%2C%20tu%20Plan%20Pro%20CutConnect%20está%20activo!%20💎`} target="_blank" rel="noreferrer"
-                      style={{display:'block',background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:8,padding:'7px 14px',fontSize:11,fontWeight:700,textDecoration:'none',textAlign:'center'}}>
-                      📲 Confirmar por WhatsApp
-                    </a>}
+                    <button onClick={async()=>{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'negado'})});setAdminMsg('❌ Solicitud negada');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
+                      style={{background:'rgba(255,100,100,0.08)',border:'1px solid rgba(255,100,100,0.2)',color:'#f87171',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                      ❌ Negar
+                    </button>
                   </div>
                 </div>
               ))}
-              {adminNegocios.filter((n:any)=>n.estado_verificacion==='trial').length===0&&<p style={{color:'#444',fontSize:13,textAlign:'center',padding:'16px 0'}}>No hay dueños en trial pendientes</p>}
-              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,margin:'24px 0 12px'}}>✂️ Barberos — activa su Plan Pro</p>
-              <div style={{background:'rgba(255,165,0,0.04)',border:'1px solid rgba(255,165,0,0.12)',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
-                <p style={{fontSize:11,color:'#777',margin:0}}>⚠️ Requiere endpoint <code style={{color:'#C9A84C',background:'rgba(201,168,76,0.1)',padding:'1px 6px',borderRadius:4}}>POST /api/admin/barberos/:id/pro</code> en Railway</p>
-              </div>
-              {adminClientes.filter((c:any)=>c.rol==='barbero'&&(!adminProSearch||c.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||c.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).map((c:any)=>(
-                <div key={c.id} style={{background:'#141414',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+              <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,margin:'24px 0 12px'}}>✂️ Barberos Independientes</p>
+              {solicitudesPro.filter((s:any)=>s.tipo==='barbero'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).length===0&&<p style={{color:'#333',fontSize:13,textAlign:'center',padding:'12px 0'}}>No hay solicitudes de barberos aún</p>}
+              {solicitudesPro.filter((s:any)=>s.tipo==='barbero'&&(!adminProSearch||s.nombre?.toLowerCase().includes(adminProSearch.toLowerCase())||s.email?.toLowerCase().includes(adminProSearch.toLowerCase()))).map((s:any)=>(
+                <div key={s.id} style={{background:'#141414',border:'1px solid '+(s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='negado'?'rgba(255,100,100,0.15)':'rgba(255,255,255,0.06)'),borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
                   <div style={{flex:1}}>
-                    <p style={{fontWeight:700,color:'#fff',fontSize:13,marginBottom:2}}>{c.nombre}</p>
-                    <p style={{fontSize:11,color:'#555',marginBottom:4}}>{c.email} · ID: {c.id}</p>
-                    <span style={{fontSize:10,background:c.suscripcion_pro?'rgba(74,222,128,0.1)':'rgba(255,255,255,0.04)',color:c.suscripcion_pro?'#4ade80':'#555',borderRadius:6,padding:'2px 8px',fontWeight:700}}>{c.suscripcion_pro?'✅ Pro activo':'Sin Pro'}</span>
+                    <p style={{fontWeight:700,color:'#fff',fontSize:13,marginBottom:2}}>{s.nombre}</p>
+                    <p style={{fontSize:11,color:'#555',marginBottom:4}}>{s.email}</p>
+                    <span style={{fontSize:10,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='negado'?'rgba(255,100,100,0.1)':'rgba(255,165,0,0.1)',color:s.estado==='activo'?'#4ade80':s.estado==='negado'?'#f87171':'#FFA500',borderRadius:6,padding:'2px 8px',fontWeight:700}}>
+                      {s.estado==='activo'?'✅ Activo':s.estado==='negado'?'❌ Negado':'⏳ Pendiente'}
+                    </span>
+                    {s.fecha_vencimiento&&<span style={{fontSize:10,color:'#444',marginLeft:6}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</span>}
                   </div>
-                  <div style={{display:'flex',flexDirection:'column',gap:6,minWidth:160}}>
-                    <button onClick={async()=>{try{const r=await fetch(`${API}/api/admin/barberos/${c.id}/pro`,{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'}});const d=await r.json();setAdminMsg(d.message||d.error||'OK');setTimeout(()=>setAdminMsg(''),4000);cargarAdminData()}catch{setAdminMsg('Error: agrega el endpoint en Railway');setTimeout(()=>setAdminMsg(''),5000)}}}
-                      style={{background:'linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.4)',color:'#C9A84C',borderRadius:8,padding:'9px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
-                      💎 Activar Pro Barbero
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={async()=>{const v=new Date();v.setDate(v.getDate()+30);await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'activo',fecha_vencimiento:v.toISOString()})});setAdminMsg('✅ Plan Pro Barbero activado 30 días');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
+                      style={{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.3)',color:'#4ade80',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                      ✅ Activar
                     </button>
-                    {c.whatsapp&&<a href={`https://wa.me/${c.whatsapp.replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(c.nombre)}%2C%20tu%20Plan%20Pro%20Barbero%20está%20activo!%20💎`} target="_blank" rel="noreferrer"
-                      style={{display:'block',background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:8,padding:'7px 14px',fontSize:11,fontWeight:700,textDecoration:'none',textAlign:'center'}}>
-                      📲 Confirmar por WhatsApp
-                    </a>}
+                    <button onClick={async()=>{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro?id=eq.'+s.id,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({estado:'negado'})});setAdminMsg('❌ Solicitud negada');setTimeout(()=>setAdminMsg(''),4000);cargarSolicitudesPro()}}
+                      style={{background:'rgba(255,100,100,0.08)',border:'1px solid rgba(255,100,100,0.2)',color:'#f87171',borderRadius:8,padding:'8px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                      ❌ Negar
+                    </button>
                   </div>
                 </div>
               ))}
-              {adminClientes.filter((c:any)=>c.rol==='barbero').length===0&&<p style={{color:'#444',fontSize:13,textAlign:'center',padding:'16px 0'}}>No hay barberos registrados aún</p>}
             </div>
           )}
 
@@ -1951,6 +1976,10 @@ function App() {
               <p style={{fontSize:12,color:'#555'}}>Activa el plan por <strong style={{color:'#C9A84C'}}>$3.99 USD/mes</strong> para recuperar el acceso completo</p>
             </div>
             <a href="https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20quiero%20activar%20mi%20plan%20mensual." style={{background:'#25D366',color:'#fff',borderRadius:10,padding:'10px 18px',fontWeight:700,textDecoration:'none',fontSize:12,whiteSpace:'nowrap'}}>💬 Activar ahora</a>
+              <button onClick={async()=>{if(!userData?.id)return;try{await fetch(SUPA_URL+'/rest/v1/solicitudes_pro',{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({usuario_id:String(userData.id),nombre:userData.nombre||'',email:userData.email||'',tipo:'dueno',negocio_nombre:userData.nombre_negocio||'',estado:'pendiente'})});alert('✅ Solicitud enviada. El admin la revisará pronto.')}catch{alert('Error al enviar')}}}
+                style={{display:'block',width:'100%',background:'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))',border:'1px solid rgba(201,168,76,0.35)',color:'#C9A84C',borderRadius:8,padding:'11px',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:10,letterSpacing:0.5}}>
+                ✅ Ya pagué — Registrar mi solicitud
+              </button>
           </div>
           <div className="page">
             <div className="welcome-card owner" style={{opacity:0.7}}>
