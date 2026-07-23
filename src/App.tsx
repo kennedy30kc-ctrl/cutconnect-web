@@ -688,8 +688,6 @@ function App() {
   const [adminStats, setAdminStats] = useState<any>(null)
   const [adminMsg, setAdminMsg] = useState('')
   const [adminPage, setAdminPage] = useState<'pendientes'|'todos'|'clientes'|'anuncios'|'publicidad'|'pro'>('pendientes')
-  const [proPendiente, setProPendiente] = useState(false)
-  const [proDuenoPendiente, setProDuenoPendiente] = useState(false)
   const [adminSearch, setAdminSearch] = useState('')
   const [adminFiltroPais, setAdminFiltroPais] = useState('')
   const [adminFiltroTipo, setAdminFiltroTipo] = useState('')
@@ -904,8 +902,10 @@ function App() {
       const matchTipo = !adminFiltroTipo || n.tipo_negocio===adminFiltroTipo
       return matchSearch && matchEstado && matchPais && matchTipo
     })
-    const solPendientes = solicitudesPublicidad.filter((s:any) => s.estado==='pendiente')
-    const solProPendientes = solicitudesPublicidad.filter((s:any) => typeof s.titulo==='string' && s.titulo.startsWith('💎 PLAN PRO') && s.estado==='pendiente')
+    const esPro = (s:any) => typeof s.titulo==='string' && s.titulo.startsWith('💎 PLAN PRO')
+    const solicitudesPub = solicitudesPublicidad.filter((s:any) => !esPro(s))
+    const solPendientes = solicitudesPub.filter((s:any) => s.estado==='pendiente')
+    const solProPendientes = solicitudesPublicidad.filter((s:any) => esPro(s) && s.estado==='pendiente')
     const trialUrgente = adminNegocios.filter(n => n.estado_verificacion==='trial' && n.diasTrial!==null && n.diasTrial<=3)
     const paisesUnicos = [...new Set(adminNegocios.map(n=>n.pais).filter(Boolean))] as string[]
     const clientesFiltrados = adminClientes.filter(c => {
@@ -1135,10 +1135,10 @@ function App() {
             <div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:10,marginBottom:24}}>
                 {[
-                  {label:'Total',value:solicitudesPublicidad.length,color:'#C9A84C'},
+                  {label:'Total',value:solicitudesPub.length,color:'#C9A84C'},
                   {label:'Pendientes',value:solPendientes.length,color:'#FFA500'},
-                  {label:'Activos',value:solicitudesPublicidad.filter((s:any)=>s.estado==='activo').length,color:'#4ade80'},
-                  {label:'Ciudades',value:[...new Set(solicitudesPublicidad.map((s:any)=>s.ciudad))].length,color:'#BB8FCE'},
+                  {label:'Activos',value:solicitudesPub.filter((s:any)=>s.estado==='activo').length,color:'#4ade80'},
+                  {label:'Ciudades',value:[...new Set(solicitudesPub.map((s:any)=>s.ciudad))].length,color:'#BB8FCE'},
                 ].map((s,i)=>(
                   <div key={i} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'16px 12px',textAlign:'center'}}>
                     <div style={{fontSize:28,fontWeight:900,color:s.color,lineHeight:1}}>{s.value}</div>
@@ -1147,8 +1147,8 @@ function App() {
                 ))}
               </div>
               <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Solicitudes de publicidad</p>
-              {solicitudesPublicidad.length===0&&<div style={{textAlign:'center',padding:'40px',color:'#333'}}><p>No hay solicitudes aún</p></div>}
-              {solicitudesPublicidad.map((s:any)=>(
+              {solicitudesPub.length===0&&<div style={{textAlign:'center',padding:'40px',color:'#333'}}><p>No hay solicitudes aún</p></div>}
+              {solicitudesPub.map((s:any)=>(
                 <div key={s.id} style={{background:`rgba(12,12,22,0.9)`,border:`1px solid ${s.estado==='pendiente'?'rgba(255,165,0,0.2)':s.estado==='activo'?'rgba(74,222,128,0.12)':'rgba(255,255,255,0.05)'}`,borderRadius:14,padding:'16px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
                   {s.imagen_url&&<img src={s.imagen_url} alt={s.titulo} style={{width:90,height:56,borderRadius:10,objectFit:'cover',flexShrink:0}}/>}
                   <div style={{flex:1,minWidth:160}}>
@@ -1182,12 +1182,12 @@ function App() {
             </div>
           )}
 
-          {/* PRO SOLICITUDES - usa solicitudesPublicidad con titulo que empieza en PLAN PRO */}
+          {/* PRO SOLICITUDES */}
           {adminPage==='pro' && (
             <div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:10,marginBottom:24}}>
                 {[
-                  {label:'Total',value:solProPendientes.length+solicitudesPublicidad.filter((s:any)=>typeof s.titulo==='string'&&s.titulo.startsWith('💎 PLAN PRO')&&s.estado!=='pendiente').length,color:'#C9A84C'},
+                  {label:'Total',value:solicitudesPublicidad.filter((s:any)=>typeof s.titulo==='string'&&s.titulo.startsWith('💎 PLAN PRO')).length,color:'#C9A84C'},
                   {label:'Pendientes',value:solProPendientes.length,color:'#FFA500'},
                   {label:'Activos',value:solicitudesPublicidad.filter((s:any)=>typeof s.titulo==='string'&&s.titulo.startsWith('💎 PLAN PRO')&&s.estado==='activo').length,color:'#4ade80'},
                 ].map((s,ix)=>(
@@ -1197,8 +1197,8 @@ function App() {
                   </div>
                 ))}
               </div>
-              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Solicitudes Plan Pro — $3.99 USDT/mes via Binance Pay ID 176779028</p>
-              {solProPendientes.length===0&&solicitudesPublicidad.filter((s:any)=>typeof s.titulo==='string'&&s.titulo.startsWith('💎 PLAN PRO')).length===0&&(
+              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Solicitudes Plan Pro — $3.99 USDT/mes · Binance Pay ID 176779028</p>
+              {solicitudesPublicidad.filter((s:any)=>typeof s.titulo==='string'&&s.titulo.startsWith('💎 PLAN PRO')).length===0&&(
                 <div style={{textAlign:'center',padding:'40px',color:'#333'}}>
                   <p style={{fontSize:44,margin:'0 0 12px'}}>💎</p>
                   <p style={{fontSize:15,color:'#444'}}>No hay solicitudes aún</p>
@@ -1209,10 +1209,10 @@ function App() {
                 <div key={s.id} style={{background:'rgba(12,12,22,0.9)',border:`1px solid ${s.estado==='pendiente'?'rgba(255,165,0,0.25)':s.estado==='activo'?'rgba(74,222,128,0.15)':'rgba(255,255,255,0.05)'}`,borderRadius:14,padding:'16px 18px',marginBottom:8}}>
                   <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:10,marginBottom:10}}>
                     <div>
-                      <div style={{fontSize:15,fontWeight:700,color:'#C9A84C',marginBottom:3}}>{s.titulo}</div>
-                      <div style={{fontSize:13,fontWeight:600,color:'#fff',marginBottom:2}}>👤 {s.anunciante_nombre||s.subtitulo||'-'}</div>
+                      <div style={{fontSize:14,fontWeight:700,color:'#C9A84C',marginBottom:3}}>{s.titulo}</div>
+                      <div style={{fontSize:14,fontWeight:700,color:'#fff',marginBottom:2}}>👤 {s.anunciante_nombre||'-'}</div>
                       <div style={{fontSize:12,color:'#555',marginBottom:2}}>📧 {s.anunciante_email||'-'}</div>
-                      {(s.anunciante_telefono||s.telefono)&&<div style={{fontSize:12,color:'#555',marginBottom:2}}>📱 {s.anunciante_telefono||s.telefono}</div>}
+                      {(s.anunciante_telefono)&&<div style={{fontSize:12,color:'#555',marginBottom:2}}>📱 {s.anunciante_telefono}</div>}
                       {s.ciudad&&<div style={{fontSize:11,color:'#444'}}>📍 {s.ciudad}{s.pais?`, ${s.pais}`:''}</div>}
                     </div>
                     <span style={{padding:'5px 12px',borderRadius:20,fontSize:11,fontWeight:700,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='pendiente'?'rgba(255,165,0,0.12)':'rgba(255,107,107,0.12)',color:s.estado==='activo'?'#4ade80':s.estado==='pendiente'?'#FFA500':'#FF6B6B',border:`1px solid ${s.estado==='activo'?'rgba(74,222,128,0.25)':s.estado==='pendiente'?'rgba(255,165,0,0.25)':'rgba(255,107,107,0.25)'}`}}>{s.estado==='activo'?'✅ Activo':s.estado==='pendiente'?'⏳ Pendiente':'❌ Inactivo'}</span>
@@ -1237,14 +1237,14 @@ function App() {
                         setAdminMsg('❌ Rechazado'); cargarAdminData(); setTimeout(()=>setAdminMsg(''),4000)
                       }}>❌ Rechazar</button>
                     )}
-                    {(s.anunciante_telefono||s.telefono)&&(
-                      <a href={`https://wa.me/${(s.anunciante_telefono||s.telefono||'').replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(s.anunciante_nombre||'')}%2C%20soy%20CutConnect.%20${s.estado==='activo'?'Tu%20Plan%20Pro%20est%C3%A1%20activado%20%F0%9F%8E%89':'Revisamos%20tu%20solicitud%20del%20Plan%20Pro.'}`} target="_blank" rel="noreferrer"
+                    {s.anunciante_telefono&&(
+                      <a href={`https://wa.me/${(s.anunciante_telefono||'').replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(s.anunciante_nombre||'')}%2C%20soy%20CutConnect.%20${s.estado==='activo'?'Tu%20Plan%20Pro%20est%C3%A1%20activo%20%F0%9F%8E%89':'Revisamos%20tu%20solicitud.'}`} target="_blank" rel="noreferrer"
                         style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:6,padding:'5px 12px',fontSize:11,fontWeight:700,textDecoration:'none'}}>
                         💬 WhatsApp
                       </a>
                     )}
                     {s.anunciante_email&&(
-                      <a href={`mailto:${s.anunciante_email}?subject=Tu%20Plan%20Pro%20CutConnect&body=Hola%20${encodeURIComponent(s.anunciante_nombre||'')}%2C%20`} target="_blank" rel="noreferrer"
+                      <a href={`mailto:${s.anunciante_email}?subject=Tu%20Plan%20Pro%20CutConnect`} target="_blank" rel="noreferrer"
                         style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C',borderRadius:6,padding:'5px 12px',fontSize:11,fontWeight:700,textDecoration:'none'}}>
                         📧 Email
                       </a>
@@ -1921,20 +1921,41 @@ function App() {
                   <p style={{fontSize:10,color:'#555',marginBottom:4,textTransform:'uppercase',letterSpacing:2}}>Pay ID Binance</p>
                   <p style={{fontSize:22,fontWeight:900,letterSpacing:6,color:'#C9A84C',margin:0}}>176779028</p>
                 </div>
-                <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.nombre||'barbero')}%20(Barbero)%20y%20acabo%20de%20pagar%20el%20Plan%20Pro%20por%20Binance%20Pay.%20Pay%20ID%3A%20176779028.%20Por%20favor%20activen%20mi%20cuenta.`} target="_blank" rel="noreferrer" style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:8,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>
+                <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.nombre||'un barbero')}%20(Barbero)%20y%20acabo%20de%20pagar%20el%20Plan%20Pro%20por%20Binance%20Pay.%20Pay%20ID%3A%20176779028.%20Por%20favor%20activen%20mi%20cuenta.`} target="_blank" rel="noreferrer" style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:8,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>
                   📱 Enviar comprobante por WhatsApp
                 </a>
-                {proPendiente ? (
-                  <div style={{background:'rgba(74,222,128,0.08)',border:'1px solid rgba(74,222,128,0.2)',borderRadius:10,padding:'14px 16px',textAlign:'center'}}>
-                    <p style={{color:'#4ade80',fontSize:14,fontWeight:700,margin:'0 0 4px'}}>✅ Solicitud registrada</p>
-                    <p style={{color:'#555',fontSize:12,margin:0}}>Revisaremos tu pago y te activaremos. También envía el comprobante por WhatsApp.</p>
+                {localStorage.getItem('pro_activo_b_'+userData?.id)==='1' ? (
+                  <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04))',border:'1px solid rgba(201,168,76,0.3)',borderRadius:12,padding:'18px 16px',textAlign:'center'}}>
+                    <p style={{fontSize:32,margin:'0 0 6px'}}>💎</p>
+                    <p style={{color:'#C9A84C',fontSize:16,fontWeight:900,margin:'0 0 4px'}}>¡Plan Pro activo!</p>
+                    <p style={{color:'#555',fontSize:12,margin:0}}>Todas las funciones Pro están desbloqueadas en tu perfil.</p>
+                  </div>
+                ) : localStorage.getItem('pro_b_'+userData?.id)==='1' ? (
+                  <div style={{background:'rgba(255,165,0,0.06)',border:'1px solid rgba(255,165,0,0.2)',borderRadius:10,padding:'14px 16px',textAlign:'center'}}>
+                    <p style={{color:'#FFA500',fontSize:14,fontWeight:700,margin:'0 0 4px'}}>⏳ Solicitud en revisión</p>
+                    <p style={{color:'#555',fontSize:12,margin:'0 0 12px'}}>Estamos revisando tu comprobante. Te avisaremos por WhatsApp cuando esté activo.</p>
+                    <button onClick={async()=>{
+                      try {
+                        const r = await fetch(`${API}/api/anuncios`)
+                        const d = await r.json()
+                        const email = userData?.email||''
+                        const activo = (d.data||[]).find((a:any)=>a.titulo&&a.titulo.startsWith('💎 PLAN PRO - Barbero')&&a.anunciante_email===email&&a.activo===true)
+                        if (activo) { localStorage.setItem('pro_activo_b_'+userData?.id,'1'); window.location.reload() }
+                        else { alert('Tu Plan Pro aún está en revisión. Te avisaremos por WhatsApp en cuanto lo activemos.') }
+                      } catch { alert('Error de conexión. Intenta de nuevo.') }
+                    }} style={{background:'rgba(255,165,0,0.12)',border:'1px solid rgba(255,165,0,0.3)',color:'#FFA500',borderRadius:8,padding:'9px 18px',fontSize:12,fontWeight:700,cursor:'pointer',letterSpacing:0.5}}>
+                      🔄 Verificar activación
+                    </button>
                   </div>
                 ) : (
                   <button onClick={async()=>{
-                    try {
-                      await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo:'💎 PLAN PRO - Barbero',subtitulo:userData?.nombre||'',anunciante_nombre:userData?.nombre||'',anunciante_email:userData?.email||'',anunciante_telefono:userData?.telefono||'',ciudad:userData?.ciudad||'',pais:userData?.pais||'',activo:false,estado:'pendiente'})})
-                    } catch {}
-                    setProPendiente(true)
+                    const nombre = userData?.nombre || 'Barbero'
+                    const email = userData?.email || ''
+                    const tel = userData?.telefono || perfilBarbero?.telefono || ''
+                    const payload = {titulo:'💎 PLAN PRO - Barbero',subtitulo:nombre,anunciante_nombre:nombre,anunciante_email:email,anunciante_telefono:tel,ciudad:userData?.ciudad||'',pais:userData?.pais||'',boton_texto:'',boton_url:'',imagen_url:'',latitud:'',longitud:'',activo:false,estado:'pendiente'}
+                    try { await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}) } catch(e) { console.error('Pro fetch error:',e) }
+                    localStorage.setItem('pro_b_'+userData?.id,'1')
+                    window.location.reload()
                   }} style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'13px',fontSize:13,fontWeight:800,cursor:'pointer',letterSpacing:0.5,textTransform:'uppercase',boxShadow:'0 4px 16px rgba(201,168,76,0.25)'}}>
                     💎 Ya pagué — Activar Pro
                   </button>
@@ -2298,18 +2319,39 @@ function App() {
                   style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'14px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
                   📱 Enviar comprobante por WhatsApp
                 </a>
-                {proDuenoPendiente ? (
-                  <div style={{background:'rgba(74,222,128,0.08)',border:'1px solid rgba(74,222,128,0.2)',borderRadius:10,padding:'14px 16px',textAlign:'center',marginTop:10}}>
-                    <p style={{color:'#4ade80',fontSize:14,fontWeight:700,margin:'0 0 4px'}}>✅ Solicitud registrada</p>
-                    <p style={{color:'#555',fontSize:12,margin:0}}>Revisaremos tu pago y te activaremos. También envía el comprobante por WhatsApp.</p>
+                {localStorage.getItem('pro_activo_d_'+userData?.id)==='1' ? (
+                  <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04))',border:'1px solid rgba(201,168,76,0.3)',borderRadius:12,padding:'18px 16px',textAlign:'center',marginTop:12}}>
+                    <p style={{fontSize:32,margin:'0 0 6px'}}>💎</p>
+                    <p style={{color:'#C9A84C',fontSize:16,fontWeight:900,margin:'0 0 4px'}}>¡Plan Pro activo!</p>
+                    <p style={{color:'#555',fontSize:12,margin:0}}>Todas las funciones Pro están desbloqueadas en tu negocio.</p>
+                  </div>
+                ) : localStorage.getItem('pro_d_'+userData?.id)==='1' ? (
+                  <div style={{background:'rgba(255,165,0,0.06)',border:'1px solid rgba(255,165,0,0.2)',borderRadius:10,padding:'14px 16px',textAlign:'center',marginTop:12}}>
+                    <p style={{color:'#FFA500',fontSize:14,fontWeight:700,margin:'0 0 4px'}}>⏳ Solicitud en revisión</p>
+                    <p style={{color:'#555',fontSize:12,margin:'0 0 12px'}}>Estamos revisando tu comprobante. Te avisaremos por WhatsApp cuando esté activo.</p>
+                    <button onClick={async()=>{
+                      try {
+                        const r = await fetch(`${API}/api/anuncios`)
+                        const d = await r.json()
+                        const email = userData?.email||''
+                        const activo = (d.data||[]).find((a:any)=>a.titulo&&a.titulo.startsWith('💎 PLAN PRO - Negocio')&&a.anunciante_email===email&&a.activo===true)
+                        if (activo) { localStorage.setItem('pro_activo_d_'+userData?.id,'1'); window.location.reload() }
+                        else { alert('Tu Plan Pro aún está en revisión. Te avisaremos por WhatsApp en cuanto lo activemos.') }
+                      } catch { alert('Error de conexión. Intenta de nuevo.') }
+                    }} style={{background:'rgba(255,165,0,0.12)',border:'1px solid rgba(255,165,0,0.3)',color:'#FFA500',borderRadius:8,padding:'9px 18px',fontSize:12,fontWeight:700,cursor:'pointer',letterSpacing:0.5}}>
+                      🔄 Verificar activación
+                    </button>
                   </div>
                 ) : (
                   <button onClick={async()=>{
-                    try {
-                      await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo:'💎 PLAN PRO - Negocio',subtitulo:userData?.negocio_nombre||userData?.nombre||'',anunciante_nombre:userData?.negocio_nombre||userData?.nombre||'',anunciante_email:userData?.email||'',anunciante_telefono:userData?.negocio_telefono||userData?.telefono||'',ciudad:userData?.ciudad||'',pais:userData?.pais||'',activo:false,estado:'pendiente'})})
-                    } catch {}
-                    setProDuenoPendiente(true)
-                  }} style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'14px',fontSize:13,fontWeight:800,cursor:'pointer',letterSpacing:0.5,textTransform:'uppercase',marginTop:10,boxShadow:'0 4px 16px rgba(201,168,76,0.25)'}}>
+                    const nombre = userData?.negocio_nombre||userData?.nombre||'Negocio'
+                    const email = userData?.email||''
+                    const tel = userData?.negocio_telefono||userData?.telefono||''
+                    const payload = {titulo:'💎 PLAN PRO - Negocio',subtitulo:nombre,anunciante_nombre:nombre,anunciante_email:email,anunciante_telefono:tel,ciudad:userData?.ciudad||'',pais:userData?.pais||'',boton_texto:'',boton_url:'',imagen_url:'',latitud:'',longitud:'',activo:false,estado:'pendiente'}
+                    try { await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}) } catch(e) { console.error('Pro dueño fetch error:',e) }
+                    localStorage.setItem('pro_d_'+userData?.id,'1')
+                    window.location.reload()
+                  }} style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'14px',fontSize:13,fontWeight:800,cursor:'pointer',letterSpacing:0.5,textTransform:'uppercase',marginTop:12,boxShadow:'0 4px 16px rgba(201,168,76,0.25)'}}>
                     💎 Ya pagué — Activar Pro
                   </button>
                 )}
