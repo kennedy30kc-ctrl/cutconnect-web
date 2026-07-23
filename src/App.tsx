@@ -1652,26 +1652,51 @@ function App() {
         )}
         {currentPage==='citas' && (
           <div className="page">
-            <h2>Mis citas pendientes</h2>
+            <h2>Mis citas</h2>
             {selectedBarberia && <FidelizacionCard barberiaId={selectedBarberia.id} usuarioId={userData.id} />}
-            {citas.length===0
+            {citas.filter(esCitaVigente).length===0
               ? <div className="empty-state"><div className="empty-icon">-</div><p>No tienes citas pendientes</p><button onClick={()=>setCurrentPage('agendar')} className="btn-primary">Agendar una cita</button></div>
-              : <div className="citas-grid">
-                  {citas.filter(esCitaVigente).map((c:any)=>(
-                    <div key={c.id} className="cita-card">
+              : <>
+                  <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:12}}>Próximas</p>
+                  <div className="citas-grid">
+                    {citas.filter(esCitaVigente).map((c:any)=>(
+                      <div key={c.id} className="cita-card">
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                          <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={36} />
+                          <h4>{c.barberia?.nombre}</h4>
+                        </div>
+                        {c.barbero&&<p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
+                        <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
+                        <p><strong>Fecha:</strong> {c.fecha}</p>
+                        <p><strong>Hora:</strong> {c.hora}</p>
+                        <span className="badge-agendada">Confirmada</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+            }
+            {citas.filter((c:any)=>!esCitaVigente(c)).length>0&&(
+              <div style={{marginTop:32}}>
+                <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:14}}>Historial</p>
+                <div className="citas-grid">
+                  {citas.filter((c:any)=>!esCitaVigente(c)).slice(0,10).map((c:any)=>(
+                    <div key={c.id} className="cita-card" style={{opacity:0.85}}>
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
                         <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={36} />
                         <h4>{c.barberia?.nombre}</h4>
                       </div>
                       {c.barbero&&<p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
                       <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
-                      <p><strong>Fecha:</strong> {c.fecha}</p>
-                      <p><strong>Hora:</strong> {c.hora}</p>
-                      <span className="badge-agendada">Confirmada</span>
+                      <p><strong>Fecha:</strong> {c.fecha} · {c.hora}</p>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:10,gap:8}}>
+                        <span style={{fontSize:11,color:c.estado==='completada'?'#2ECC71':'#555',fontWeight:700}}>{c.estado==='completada'?'✅ Completada':'Finalizada'}</span>
+                        {c.barbero&&<button style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',letterSpacing:0.3}} onClick={()=>setModalCal({tipo:'barbero',id:c.barbero.id,barberiaId:c.barberia?.id,usuarioId:userData.id,nombre:c.barbero.nombre})}>⭐ Calificar</button>}
+                      </div>
                     </div>
                   ))}
                 </div>
-            }
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1682,6 +1707,13 @@ function App() {
     const hoy = new Date().toISOString().split('T')[0]
     const citasHoy = citas.filter((c:any) => c.fecha === hoy)
     const citasProximas = citas.filter((c:any) => c.fecha > hoy).slice(0, 3)
+    const isProB = localStorage.getItem('pro_activo_b_'+userData?.id)==='1'
+    const semanaStartB = new Date(Date.now()-6*24*60*60*1000).toISOString().split('T')[0]
+    const mesB = hoy.substring(0,7)
+    const citasCompB = citas.filter((c:any)=>c.estado==='completada')
+    const ingrHoyB = citasCompB.filter((c:any)=>c.fecha===hoy).reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+    const ingrSemB = citasCompB.filter((c:any)=>c.fecha>=semanaStartB&&c.fecha<=hoy).reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+    const ingrMesB = citasCompB.filter((c:any)=>c.fecha.startsWith(mesB)).reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
     return (
       <div className="dashboard-container">
         <nav className="navbar">
@@ -1692,7 +1724,7 @@ function App() {
               Citas {citas.length>0&&<span style={{background:'#C9A84C',color:'#000',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:900,marginLeft:4}}>{citas.length}</span>}
             </button>
             <button className={currentPage==='perfil'?'active':''} onClick={()=>{setCurrentPage('perfil');cargarPerfilBarbero()}}>Mi perfil</button>
-            <button className={currentPage==='pro'?'active':''} onClick={()=>setCurrentPage('pro')} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro</button>
+            <button className={currentPage==='pro'?'active':''} onClick={()=>{setCurrentPage('pro');cargarCitasBarbero();cargarPerfilBarbero()}} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
@@ -1883,6 +1915,55 @@ function App() {
             </div>
           )}
           {currentPage==='pro' && (
+            isProB ? (
+              <div className="page" style={{background:'linear-gradient(180deg,#0e0b00 0%,#0a0a0a 100%)',minHeight:'80vh',borderTop:'2px solid rgba(201,168,76,0.35)'}}>
+                <div style={{textAlign:'center',marginBottom:24}}>
+                  <div style={{display:'inline-flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.06))',border:'1px solid rgba(201,168,76,0.5)',borderRadius:100,padding:'8px 22px',marginBottom:14,boxShadow:'0 0 24px rgba(201,168,76,0.12)'}}>
+                    <span style={{fontSize:18}}>💎</span>
+                    <span style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,fontWeight:700}}>PRO ACTIVO</span>
+                  </div>
+                  <h2 style={{fontSize:22,fontWeight:900,margin:'0 0 4px'}}>{perfilBarbero?.nombre||userData?.nombre}</h2>
+                  <p style={{color:'#C9A84C',fontSize:13,fontWeight:600,margin:'0 0 8px'}}>{perfilBarbero?.especialidad||'Profesional'}</p>
+                  {perfilBarbero?.calificacion_promedio>0&&<div style={{display:'flex',justifyContent:'center',gap:6,alignItems:'center'}}><StarRating value={Math.round(perfilBarbero.calificacion_promedio)}/><span style={{color:'#C9A84C',fontSize:14,fontWeight:700}}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</span><span style={{color:'#555',fontSize:12}}> / 5</span></div>}
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+                  {([{l:'Hoy',v:ingrHoyB,c:'#C9A84C',n:false},{l:'Esta semana',v:ingrSemB,c:'#00D4FF',n:false},{l:'Este mes',v:ingrMesB,c:'#2ECC71',n:false},{l:'Citas',v:citas.length,c:'#BB8FCE',n:true}] as any[]).map((s:any)=>(
+                    <div key={s.l} style={{background:'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:14,padding:'18px 12px',textAlign:'center',boxShadow:'0 2px 16px rgba(201,168,76,0.07)'}}>
+                      <p style={{fontSize:s.n?26:20,fontWeight:900,color:s.c,margin:0}}>{s.n?s.v:`$${s.v}`}</p>
+                      <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:6}}>{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                {citas.length>0&&(
+                  <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 16px',marginBottom:20}}>
+                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:12}}>Citas recientes</p>
+                    {citas.slice(0,5).map((c:any)=>(
+                      <div key={c.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
+                        <div>
+                          <p style={{margin:0,fontSize:13,fontWeight:700}}>{c.usuario?.nombre||'Cliente'}</p>
+                          <p style={{margin:'2px 0 0',fontSize:11,color:'#555'}}>{c.servicio?.nombre} · {c.fecha}</p>
+                        </div>
+                        <div style={{textAlign:'right'}}>
+                          <p style={{margin:0,fontSize:13,fontWeight:900,color:'#2ECC71'}}>{c.servicio?.precio?`$${c.servicio.precio}`:'-'}</p>
+                          <span style={{fontSize:10,color:c.estado==='completada'?'#2ECC71':'#C9A84C',fontWeight:700}}>{c.estado}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.03))',border:'1px solid rgba(201,168,76,0.3)',borderRadius:14,padding:'20px 18px',textAlign:'center'}}>
+                  <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:12}}>Tu calificación</p>
+                  {perfilBarbero?.calificacion_promedio>0
+                    ? <>
+                        <p style={{fontSize:52,fontWeight:900,color:'#C9A84C',margin:'0 0 8px',lineHeight:1}}>{Number(perfilBarbero.calificacion_promedio).toFixed(1)}</p>
+                        <div style={{display:'flex',justifyContent:'center',marginBottom:8}}><StarRating value={Math.round(perfilBarbero.calificacion_promedio)}/></div>
+                        <p style={{color:'#555',fontSize:12,margin:0}}>Tus clientes te califican después de cada cita</p>
+                      </>
+                    : <p style={{color:'#444',fontSize:13,margin:0}}>Aún sin calificaciones. ¡Tus clientes podrán calificarte después de cada cita!</p>
+                  }
+                </div>
+              </div>
+            ) : (
             <div className="page" style={{background:'linear-gradient(180deg,rgba(201,168,76,0.04) 0%,transparent 300px)'}}>
               <div style={{textAlign:'center',marginBottom:28}}>
                 <div style={{fontSize:44,marginBottom:8}}>💎</div>
@@ -1948,20 +2029,35 @@ function App() {
                     </button>
                   </div>
                 ) : (
-                  <button onClick={async()=>{
+                  <button onClick={async(e)=>{
+                    const btn = e.currentTarget; btn.disabled=true; btn.textContent='Enviando...'
                     const nombre = userData?.nombre || 'Barbero'
                     const email = userData?.email || ''
                     const tel = userData?.telefono || perfilBarbero?.telefono || ''
+                    if (!email) { alert('Tu cuenta no tiene email registrado. Contacta soporte.'); btn.disabled=false; btn.textContent='💎 Ya pagué — Activar Pro'; return }
                     const payload = {titulo:'💎 PLAN PRO - Barbero',subtitulo:nombre,anunciante_nombre:nombre,anunciante_email:email,anunciante_telefono:tel,ciudad:userData?.ciudad||'',pais:userData?.pais||'',boton_texto:'',boton_url:'',imagen_url:'',latitud:'',longitud:'',activo:false,estado:'pendiente'}
-                    try { await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}) } catch(e) { console.error('Pro fetch error:',e) }
-                    localStorage.setItem('pro_b_'+userData?.id,'1')
-                    window.location.reload()
+                    try {
+                      const res = await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+                      const data = await res.json()
+                      if (res.ok || data.success || data.id || data.message) {
+                        localStorage.setItem('pro_b_'+userData?.id,'1')
+                        window.location.reload()
+                      } else {
+                        alert('Error al enviar solicitud: '+(data.error||'Respuesta inesperada. Intenta de nuevo.'))
+                        btn.disabled=false; btn.textContent='💎 Ya pagué — Activar Pro'
+                      }
+                    } catch(e) {
+                      console.error('Pro fetch error:',e)
+                      alert('Error de conexión. Verifica tu internet e intenta de nuevo.')
+                      btn.disabled=false; btn.textContent='💎 Ya pagué — Activar Pro'
+                    }
                   }} style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'13px',fontSize:13,fontWeight:800,cursor:'pointer',letterSpacing:0.5,textTransform:'uppercase',boxShadow:'0 4px 16px rgba(201,168,76,0.25)'}}>
                     💎 Ya pagué — Activar Pro
                   </button>
                 )}
               </div>
             </div>
+            )
           )}
         </div>
       </div>
@@ -2048,6 +2144,27 @@ function App() {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0,Math.ceil(14-(Date.now()-new Date(userData.fecha_trial_inicio).getTime())/(1000*60*60*24))) : 14
     // @ts-ignore
     const maxCitas = Math.max(...rankingBarberos.map(b=>b.total_citas),1)
+    const isProD = localStorage.getItem('pro_activo_d_'+userData?.id)==='1'
+    const hoyD = new Date().toISOString().split('T')[0]
+    const semanaStartD = new Date(Date.now()-6*24*60*60*1000).toISOString().split('T')[0]
+    const mesD = hoyD.substring(0,7)
+    const citasCompD = citas.filter((c:any)=>c.estado==='completada')
+    const ingrHoyD = citasCompD.filter((c:any)=>c.fecha===hoyD).reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+    const ingrSemD = citasCompD.filter((c:any)=>c.fecha>=semanaStartD&&c.fecha<=hoyD).reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+    const ingrMesD = citasCompD.filter((c:any)=>c.fecha.startsWith(mesD)).reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+    const ingrTotalD = citasCompD.reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+    const diasLabD = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
+    const diasMapD = [1,2,3,4,5,6,0]
+    const diasCountD = diasMapD.map(d=>citas.filter((c:any)=>{try{return new Date(c.fecha+'T12:00').getDay()===d}catch{return false}}).length)
+    const maxDiaD = Math.max(...diasCountD,1)
+    const exportarCSVD = () => {
+      const header = 'Fecha,Hora,Cliente,Barbero,Servicio,Precio,Estado'
+      const rows = citas.map((c:any)=>`${c.fecha||''},${c.hora||''},${c.usuario?.nombre||''},${c.barbero?.nombre||''},${c.servicio?.nombre||''},${c.servicio?.precio||0},${c.estado||''}`)
+      const csv = [header,...rows].join('\n')
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'})
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href=url; a.download=`citas_${hoyD}.csv`; a.click(); URL.revokeObjectURL(url)
+    }
     return (
       <div className="dashboard-container">
         <nav className="navbar">
@@ -2061,7 +2178,7 @@ function App() {
             <button className={currentPage==='citas'?'active':''} onClick={()=>{setCurrentPage('citas');cargarCitasDueno()}}>Citas</button>
             <button className={currentPage==='negocio'?'active':''} onClick={()=>setCurrentPage('negocio')}>Mi negocio</button>
             <button className={currentPage==='yo-barbero'?'active':''} onClick={()=>{setCurrentPage('yo-barbero');cargarPerfilDuenoBarbero()}} style={{color: perfilDuenoBarbero ? '#2ECC71' : '#C9A84C', fontWeight:700}}>✂️ Yo corto</button>
-            <button className={currentPage==='pro-dueno'?'active':''} onClick={()=>setCurrentPage('pro-dueno')} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro</button>
+            <button className={currentPage==='pro-dueno'?'active':''} onClick={()=>{setCurrentPage('pro-dueno');cargarCitasDueno();cargarRanking();cargarMisBarberos()}} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
@@ -2279,6 +2396,95 @@ function App() {
             </div>
           )}
           {currentPage==='pro-dueno' && (
+            isProD ? (
+              <div className="page" style={{background:'linear-gradient(180deg,#0e0b00 0%,#0a0a0a 100%)',minHeight:'80vh',borderTop:'2px solid rgba(201,168,76,0.35)'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22,flexWrap:'wrap',gap:10}}>
+                  <div>
+                    <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.06))',border:'1px solid rgba(201,168,76,0.5)',borderRadius:100,padding:'6px 16px',marginBottom:8,boxShadow:'0 0 24px rgba(201,168,76,0.12)'}}>
+                      <span>💎</span><span style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700}}>Dashboard Pro</span>
+                    </div>
+                    <h2 style={{margin:0,fontSize:20,fontWeight:900}}>{userData?.negocio_nombre}</h2>
+                  </div>
+                  <button onClick={exportarCSVD} style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C',borderRadius:10,padding:'10px 16px',fontSize:12,fontWeight:700,cursor:'pointer',letterSpacing:0.3,display:'flex',alignItems:'center',gap:6}}>📥 Exportar CSV</button>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+                  {([{l:'Hoy',v:ingrHoyD,c:'#C9A84C'},{l:'Esta semana',v:ingrSemD,c:'#00D4FF'},{l:'Este mes',v:ingrMesD,c:'#2ECC71'},{l:'Total histórico',v:ingrTotalD,c:'#BB8FCE'}] as any[]).map((s:any)=>(
+                    <div key={s.l} style={{background:'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:14,padding:'20px 12px',textAlign:'center',boxShadow:'0 2px 20px rgba(201,168,76,0.08)'}}>
+                      <p style={{fontSize:22,fontWeight:900,color:s.c,margin:0}}>${s.v}</p>
+                      <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:6}}>{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 16px',marginBottom:20}}>
+                  <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:14}}>Actividad del negocio</p>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                    {([{l:'Citas hoy',v:citas.filter((c:any)=>c.fecha===hoyD).length,c:'#C9A84C'},{l:'Completadas',v:citas.filter((c:any)=>c.estado==='completada').length,c:'#2ECC71'},{l:'Pendientes',v:citas.filter((c:any)=>c.estado==='agendada').length,c:'#FFA500'}] as any[]).map((s:any)=>(
+                      <div key={s.l} style={{textAlign:'center',padding:'12px 6px',background:'rgba(255,255,255,0.02)',borderRadius:10}}>
+                        <p style={{fontSize:22,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
+                        <p style={{fontSize:9,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 16px',marginBottom:20}}>
+                  <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:14}}>Días más concurridos</p>
+                  <div style={{display:'flex',gap:6,alignItems:'flex-end',height:72}}>
+                    {diasLabD.map((d:string,i:number)=>{
+                      const pct=diasCountD[i]/maxDiaD
+                      return (
+                        <div key={d} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                          <div style={{width:'100%',background:`rgba(201,168,76,${0.15+pct*0.7})`,borderRadius:'4px 4px 0 0',height:`${Math.max(pct*56,4)}px`,minHeight:4,transition:'height 0.5s ease'}} />
+                          <span style={{fontSize:9,color:'#555',fontWeight:700}}>{d}</span>
+                          <span style={{fontSize:9,color:'#666'}}>{diasCountD[i]}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {misBarberos.length>0&&(
+                  <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 16px',marginBottom:20}}>
+                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:14}}>Ranking del equipo</p>
+                    {misBarberos.map((b:any,i:number)=>{
+                      const bCitas=citas.filter((c:any)=>c.barbero?.id===b.id||c.barbero_id===b.id)
+                      const bIngr=bCitas.filter((c:any)=>c.estado==='completada').reduce((s:number,c:any)=>s+(Number(c.servicio?.precio)||0),0)
+                      return (
+                        <div key={b.id} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:i<misBarberos.length-1?'1px solid rgba(255,255,255,0.04)':'none'}}>
+                          <div style={{width:28,height:28,borderRadius:'50%',background:i===0?'linear-gradient(135deg,#FFD700,#C9A84C)':i===1?'linear-gradient(135deg,#C0C0C0,#aaa)':'linear-gradient(135deg,#CD7F32,#a06020)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:900,color:'#000',flexShrink:0}}>
+                            {i+1}
+                          </div>
+                          <BarberoAvatar foto={b.foto} nombre={b.nombre} size={36}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <p style={{margin:0,fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.nombre}</p>
+                            {b.calificacion_promedio>0&&<div style={{display:'flex',alignItems:'center',gap:4,marginTop:2}}><StarRating value={Math.round(b.calificacion_promedio)}/><span style={{fontSize:10,color:'#777'}}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
+                          </div>
+                          <div style={{textAlign:'right',flexShrink:0}}>
+                            <p style={{margin:0,fontSize:14,fontWeight:900,color:'#2ECC71'}}>${bIngr}</p>
+                            <p style={{margin:'2px 0 0',fontSize:10,color:'#555'}}>{bCitas.length} citas</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {citas.length>0&&(
+                  <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 16px'}}>
+                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:12}}>Últimas citas</p>
+                    {citas.slice(0,6).map((c:any)=>(
+                      <div key={c.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
+                        <div>
+                          <p style={{margin:0,fontSize:12,fontWeight:700}}>{c.usuario?.nombre||'Cliente'}</p>
+                          <p style={{margin:'2px 0 0',fontSize:10,color:'#555'}}>{c.barbero?.nombre||''} · {c.fecha}</p>
+                        </div>
+                        <div style={{textAlign:'right'}}>
+                          <p style={{margin:0,fontSize:12,fontWeight:900,color:'#2ECC71'}}>{c.servicio?.precio?`$${c.servicio.precio}`:c.servicio?.nombre||'-'}</p>
+                          <span style={{fontSize:10,color:c.estado==='completada'?'#2ECC71':'#C9A84C',fontWeight:600}}>{c.estado}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
             <div className="page" style={{background:'linear-gradient(180deg,rgba(201,168,76,0.06) 0%,transparent 320px)'}}>
               <div style={{textAlign:'center',marginBottom:28}}>
                 <div style={{fontSize:44,marginBottom:8}}>👑</div>
@@ -2343,20 +2549,34 @@ function App() {
                     </button>
                   </div>
                 ) : (
-                  <button onClick={async()=>{
+                  <button onClick={async(e)=>{
+                    const btn = e.currentTarget; btn.disabled=true; btn.textContent='Enviando...'
                     const nombre = userData?.negocio_nombre||userData?.nombre||'Negocio'
                     const email = userData?.email||''
                     const tel = userData?.negocio_telefono||userData?.telefono||''
                     const payload = {titulo:'💎 PLAN PRO - Negocio',subtitulo:nombre,anunciante_nombre:nombre,anunciante_email:email,anunciante_telefono:tel,ciudad:userData?.ciudad||'',pais:userData?.pais||'',boton_texto:'',boton_url:'',imagen_url:'',latitud:'',longitud:'',activo:false,estado:'pendiente'}
-                    try { await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}) } catch(e) { console.error('Pro dueño fetch error:',e) }
-                    localStorage.setItem('pro_d_'+userData?.id,'1')
-                    window.location.reload()
+                    try {
+                      const res = await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+                      const data = await res.json()
+                      if (res.ok || data.success || data.id || data.message) {
+                        localStorage.setItem('pro_d_'+userData?.id,'1')
+                        window.location.reload()
+                      } else {
+                        alert('Error al enviar solicitud: '+(data.error||'Respuesta inesperada. Intenta de nuevo.'))
+                        btn.disabled=false; btn.textContent='💎 Ya pagué — Activar Pro'
+                      }
+                    } catch(e) {
+                      console.error('Pro dueño fetch error:',e)
+                      alert('Error de conexión. Verifica tu internet e intenta de nuevo.')
+                      btn.disabled=false; btn.textContent='💎 Ya pagué — Activar Pro'
+                    }
                   }} style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'14px',fontSize:13,fontWeight:800,cursor:'pointer',letterSpacing:0.5,textTransform:'uppercase',marginTop:12,boxShadow:'0 4px 16px rgba(201,168,76,0.25)'}}>
                     💎 Ya pagué — Activar Pro
                   </button>
                 )}
               </div>
             </div>
+            )
           )}
           {currentPage==='yo-barbero' && (
             <div className="page">
