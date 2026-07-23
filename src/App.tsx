@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 const API = 'https://cutconnect-backend-production.up.railway.app'
-const SB_URL = 'https://mypcsegsvarcwylgzodc.supabase.co'
+const SB_URL = 'https://mypcsegsvarcwyigzodc.supabase.co'
 const SB_KEY = 'sb_publishable_su1RyR6QAGMUNqU_OG5Anw__xkiIM7p'
 const sbH = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
 const ADMIN_PATH = '/admin'
@@ -690,7 +690,7 @@ function App() {
   const [adminNegocios, setAdminNegocios] = useState<any[]>([])
   const [adminStats, setAdminStats] = useState<any>(null)
   const [adminMsg, setAdminMsg] = useState('')
-  const [adminPage, setAdminPage] = useState<'pendientes'|'todos'|'clientes'|'anuncios'|'publicidad'>('pendientes')
+  const [adminPage, setAdminPage] = useState<'pendientes'|'vip'|'publicidad'|'negados'|'ingresos'>('pendientes')
   const [adminSearch, setAdminSearch] = useState('')
   const [adminFiltroPais, setAdminFiltroPais] = useState('')
   const [adminFiltroTipo, setAdminFiltroTipo] = useState('')
@@ -717,6 +717,8 @@ function App() {
   const [proPendD, setProPendD] = useState(false)
   const [proActB, setProActB] = useState(false)
   const [proPendB, setProPendB] = useState(false)
+  const [rangoB, setRangoB] = useState({desde:'',hasta:''})
+  const [rangoD, setRangoD] = useState({desde:'',hasta:''})
 
   const isAdminRoute = window.location.pathname === ADMIN_PATH
   const isPublicidadRoute = window.location.pathname === PUBLICIDAD_PATH
@@ -745,21 +747,17 @@ function App() {
   useEffect(() => {
     if (!userData?.id) return
     const uid = String(userData.id)
-    const email = encodeURIComponent(String(userData.email||''))
-    fetch(`${SB_URL}/rest/v1/pro_users?usuario_id=eq.${email}&select=id`, {headers: sbH})
-      .then(r => r.json())
-      .then(d => {
-        if (!Array.isArray(d) || d.length === 0) return
-        if (userData.rol === 'barbero') {
-          localStorage.setItem('pro_activo_b_'+uid, 'true')
-          localStorage.setItem('pro_b_'+uid, 'true')
-          setProActB(true); setProPendB(false)
-        } else if (userData.rol === 'dueño') {
-          localStorage.setItem('pro_activo_d_'+uid, 'true')
-          localStorage.setItem('pro_d_'+uid, 'true')
-          setProActD(true); setProPendD(false)
-        }
-      }).catch(()=>{})
+    if (userData.is_pro) {
+      if (userData.rol === 'barbero') {
+        localStorage.setItem('pro_activo_b_'+uid, 'true')
+        localStorage.setItem('pro_b_'+uid, 'true')
+        setProActB(true); setProPendB(false)
+      } else if (userData.rol === 'dueño') {
+        localStorage.setItem('pro_activo_d_'+uid, 'true')
+        localStorage.setItem('pro_d_'+uid, 'true')
+        setProActD(true); setProPendD(false)
+      }
+    }
   }, [userData?.id])
 
   const cargarDatos = async (lat?: number, lon?: number, ciudad?: string, tipo?: string) => {
@@ -940,7 +938,7 @@ function App() {
     const negociosFiltrados = adminNegocios.filter(n => {
       const q = adminSearch.toLowerCase()
       const matchSearch = !adminSearch || n.nombre?.toLowerCase().includes(q) || n.email_dueno?.toLowerCase().includes(q) || n.ciudad?.toLowerCase().includes(q)
-      const matchEstado = adminPage==='pendientes' ? n.estado_verificacion==='pendiente' : true
+      const matchEstado = adminPage==='pendientes' ? n.estado_verificacion==='pendiente' : adminPage==='negados' ? n.estado_verificacion==='rechazado' : false
       const matchPais = !adminFiltroPais || n.pais===adminFiltroPais
       const matchTipo = !adminFiltroTipo || n.tipo_negocio===adminFiltroTipo
       return matchSearch && matchEstado && matchPais && matchTipo
@@ -1014,11 +1012,11 @@ function App() {
         {/* TABS */}
         <div style={{padding:'16px 28px 0',display:'flex',gap:4,flexWrap:'wrap',borderBottom:'1px solid rgba(255,255,255,0.04)',marginTop:8}}>
           {[
-            {key:'pendientes',label:'Pendientes',icon:'📋',badge:adminNegocios.filter(n=>n.estado_verificacion==='pendiente').length},
-            {key:'todos',label:'Negocios',icon:'🏪',badge:0},
-            {key:'clientes',label:'Clientes',icon:'👥',badge:0},
-            {key:'anuncios',label:'Anuncios',icon:'📢',badge:0},
-            {key:'publicidad',label:'Publicidad',icon:'📬',badge:solPendientes.length},
+            {key:'pendientes',label:'Pendientes',icon:'📋',badge:adminNegocios.filter(n=>n.estado_verificacion==='pendiente').length+solPendientes.length},
+            {key:'vip',label:'Plan VIP',icon:'💎',badge:solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&((s.titulo||'').includes('PRO')||(s.titulo||'').includes('VIP'))).length},
+            {key:'publicidad',label:'Publicidad',icon:'📢',badge:solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP')).length},
+            {key:'negados',label:'Negados',icon:'🚫',badge:0},
+            {key:'ingresos',label:'Ingresos',icon:'💰',badge:0},
           ].map(tab=>(
             <button key={tab.key} onClick={()=>{setAdminPage(tab.key as any);setAdminSearch('');setAdminFiltroPais('');setAdminFiltroTipo('')}} style={{background:adminPage===tab.key?'rgba(201,168,76,0.08)':'transparent',color:adminPage===tab.key?'#C9A84C':'#555',border:'none',borderBottom:adminPage===tab.key?'2px solid #C9A84C':'2px solid transparent',padding:'10px 18px',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,letterSpacing:0.5,transition:'all 0.2s',borderRadius:'6px 6px 0 0'}}>
               {tab.icon} {tab.label}
@@ -1032,7 +1030,7 @@ function App() {
           {adminMsg && <div style={{background:'rgba(74,222,128,0.08)',border:'1px solid rgba(74,222,128,0.25)',borderRadius:10,padding:'12px 16px',marginBottom:16,color:'#4ade80',fontSize:13,fontWeight:600}}>{adminMsg}</div>}
 
           {/* NEGOCIOS: pendientes + todos */}
-          {(adminPage==='pendientes'||adminPage==='todos') && (
+          {(adminPage==='pendientes'||adminPage==='negados') && (
             <div>
               <div style={{display:'flex',gap:10,marginBottom:20,flexWrap:'wrap',alignItems:'center'}}>
                 <input type="text" placeholder="🔍  Buscar por nombre, email o ciudad..." value={adminSearch} onChange={e=>setAdminSearch(e.target.value)}
@@ -1134,38 +1132,67 @@ function App() {
             </div>
           )}
 
-          {/* CLIENTES */}
-          {adminPage==='clientes' && (
-            <div>
-              <div style={{display:'flex',gap:10,marginBottom:20,alignItems:'center',flexWrap:'wrap'}}>
-                <input type="text" placeholder="🔍  Buscar cliente por nombre o email..." value={adminSearch} onChange={e=>setAdminSearch(e.target.value)}
-                  style={{flex:1,minWidth:200,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 16px',color:'#fff',fontSize:13,outline:'none'}} />
-                <span style={{color:'#444',fontSize:12}}>{clientesFiltrados.length} cliente(s)</span>
-              </div>
-              {clientesFiltrados.length===0 && (
-                <div style={{textAlign:'center',padding:'60px 20px'}}>
-                  <div style={{fontSize:48,marginBottom:12,opacity:0.3}}>👥</div>
-                  <p style={{color:'#444',fontSize:15}}>No hay clientes registrados aún</p>
-                  <button onClick={cargarAdminData} style={{marginTop:12,background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C',borderRadius:8,padding:'8px 16px',fontSize:12,cursor:'pointer',fontWeight:700}}>Recargar datos</button>
+              {adminPage==='pendientes' && solPendientes.length>0 && (
+                <div style={{marginTop:24}}>
+                  <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:12}}>💎 Solicitudes VIP y Publicidad pendientes</p>
+                  {solPendientes.map((s:any)=>(
+                    <div key={s.id} style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,padding:'14px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+                      <div style={{flex:1,minWidth:160}}>
+                        <div style={{fontSize:14,fontWeight:700,color:'#fff'}}>{s.titulo}</div>
+                        <div style={{fontSize:12,color:'#777'}}>{s.anunciante_nombre} · {s.anunciante_email}</div>
+                        <div style={{fontSize:11,color:'#555'}}>{s.ciudad}, {s.pais} · {s.anunciante_telefono}</div>
+                      </div>
+                      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                        <button className="btn-admin btn-aprobar" onClick={async()=>{const fechaVenc=new Date();fechaVenc.setDate(fechaVenc.getDate()+30);await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:true,estado:'activo',fecha_vencimiento:fechaVenc.toISOString()})});if((s.titulo||'').includes('PRO')||(s.titulo||'').includes('VIP')){const uR=await fetch(`${SB_URL}/rest/v1/usuarios?email=eq.${encodeURIComponent(s.anunciante_email)}&select=id`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}}).then(r=>r.json()).catch(()=>[]);if(Array.isArray(uR)&&uR.length>0)await fetch(`${API}/api/admin/pro/${uR[0].id}`,{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({activo:true})}).catch(()=>{})}setAdminMsg('Aprobado ✅');cargarAdminData();setTimeout(()=>setAdminMsg(''),3000)}}>✓ Aprobar</button>
+                        <button className="btn-admin btn-rechazar" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:false,estado:'inactivo'})});cargarAdminData()}}>✗ Rechazar</button>
+                        {s.anunciante_telefono&&<a href={`https://wa.me/${s.anunciante_telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,textDecoration:'none'}}>WhatsApp</a>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
-              <div style={{display:'grid',gap:6}}>
-                {clientesFiltrados.map((c:any,i:number)=>(
-                  <div key={c.id||i} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'14px 18px',display:'flex',alignItems:'center',gap:14}}>
-                    <div style={{width:40,height:40,borderRadius:'50%',background:'linear-gradient(135deg,#0d1a2e,#091422)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'#00D4FF',border:'1px solid rgba(0,212,255,0.15)',flexShrink:0}}>{getInitials(c.nombre||c.email||'?')}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:14,fontWeight:600,color:'#e0e0e0'}}>{c.nombre||'Sin nombre'}</div>
-                      <div style={{fontSize:12,color:'#555'}}>{c.email}</div>
-                      {c.telefono&&<div style={{fontSize:11,color:'#3a3a4a'}}>{c.telefono}</div>}
-                    </div>
-                    <div style={{textAlign:'right',flexShrink:0}}>
-                      {c.pais&&<div style={{fontSize:12,color:'#555',marginBottom:2}}>{c.pais}</div>}
-                      {c.fecha_registro&&<div style={{fontSize:11,color:'#333'}}>{new Date(c.fecha_registro).toLocaleDateString()}</div>}
-                      {c.total_citas!==undefined&&<div style={{fontSize:13,fontWeight:700,color:'#C9A84C',marginTop:2}}>{c.total_citas} citas</div>}
-                    </div>
+
+          {/* NEGADOS */}
+          {adminPage==='negados' && (
+            <div>
+              <p style={{fontSize:10,color:'#FF6B6B',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Negocios rechazados</p>
+              {negociosFiltrados.length===0&&<div style={{textAlign:'center',padding:'30px',color:'#444'}}>No hay negocios rechazados</div>}
+              {negociosFiltrados.map((n:any)=>(
+                <div key={n.id} style={{background:'rgba(255,107,107,0.04)',border:'1px solid rgba(255,107,107,0.12)',borderRadius:12,padding:'14px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+                  <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:'#fff'}}>{n.nombre}</div><div style={{fontSize:12,color:'#777'}}>{n.email_dueno} · {n.ciudad}</div></div>
+                  <button className="btn-admin btn-activar" onClick={e=>{e.stopPropagation();accionAdmin('activar',n.id)}}>Reactivar</button>
+                </div>
+              ))}
+              <p style={{fontSize:10,color:'#FF6B6B',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16,marginTop:24}}>Solicitudes rechazadas / inactivas</p>
+              {solicitudesPublicidad.filter((s:any)=>s.estado==='inactivo').length===0&&<div style={{textAlign:'center',padding:'30px',color:'#444'}}>No hay solicitudes rechazadas</div>}
+              {solicitudesPublicidad.filter((s:any)=>s.estado==='inactivo').map((s:any)=>(
+                <div key={s.id} style={{background:'rgba(255,107,107,0.04)',border:'1px solid rgba(255,107,107,0.12)',borderRadius:12,padding:'14px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+                  <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:'#fff'}}>{s.titulo}</div><div style={{fontSize:12,color:'#777'}}>{s.anunciante_nombre} · {s.anunciante_email}</div></div>
+                  <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:'rgba(255,107,107,0.12)',color:'#FF6B6B',border:'1px solid rgba(255,107,107,0.2)'}}>Rechazado</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* VIP */}
+          {adminPage==='vip' && (
+            <div>
+              <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Usuarios con Plan VIP activo</p>
+              {solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&((s.titulo||'').includes('PRO')||(s.titulo||'').includes('VIP'))).length===0&&<div style={{textAlign:'center',padding:'40px',color:'#444'}}>No hay usuarios VIP activos aún</div>}
+              {solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&((s.titulo||'').includes('PRO')||(s.titulo||'').includes('VIP'))).map((s:any)=>(
+                <div key={s.id} style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:14,padding:'16px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+                  <div style={{fontSize:28}}>💎</div>
+                  <div style={{flex:1,minWidth:160}}>
+                    <div style={{fontSize:15,fontWeight:700,color:'#fff'}}>{s.anunciante_nombre}</div>
+                    <div style={{fontSize:12,color:'#777'}}>{s.anunciante_email}</div>
+                    <div style={{fontSize:11,color:'#555'}}>{s.titulo}</div>
+                    {s.fecha_vencimiento&&<div style={{fontSize:11,color:new Date(s.fecha_vencimiento)<new Date(Date.now()+3*24*60*60*1000)?'#FF6B6B':'#C9A84C',fontWeight:600,marginTop:4}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</div>}
                   </div>
-                ))}
-              </div>
+                  <span style={{padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,background:'rgba(201,168,76,0.12)',color:'#C9A84C',border:'1px solid rgba(201,168,76,0.3)'}}>VIP Activo</span>
+                  <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:false,estado:'inactivo'})});const uR=await fetch(`${SB_URL}/rest/v1/usuarios?email=eq.${encodeURIComponent(s.anunciante_email)}&select=id`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}}).then(r=>r.json()).catch(()=>[]);if(Array.isArray(uR)&&uR.length>0)await fetch(`${API}/api/admin/pro/${uR[0].id}`,{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({activo:false})}).catch(()=>{});cargarAdminData()}}>Desactivar</button>
+                  {s.anunciante_telefono&&<a href={`https://wa.me/${s.anunciante_telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,textDecoration:'none'}}>WhatsApp</a>}
+                </div>
+              ))}
             </div>
           )}
 
@@ -1174,10 +1201,9 @@ function App() {
             <div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:10,marginBottom:24}}>
                 {[
-                  {label:'Total',value:solicitudesPublicidad.length,color:'#C9A84C'},
-                  {label:'Pendientes',value:solPendientes.length,color:'#FFA500'},
-                  {label:'Activos',value:solicitudesPublicidad.filter((s:any)=>s.estado==='activo').length,color:'#4ade80'},
-                  {label:'Ciudades',value:[...new Set(solicitudesPublicidad.map((s:any)=>s.ciudad))].length,color:'#BB8FCE'},
+                  {label:'Total activos',value:solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP')).length,color:'#4ade80'},
+                  {label:'Pendientes',value:solPendientes.filter((s:any)=>!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP')).length,color:'#FFA500'},
+                  {label:'Ciudades',value:[...new Set(solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP')).map((s:any)=>s.ciudad))].length,color:'#BB8FCE'},
                 ].map((s,i)=>(
                   <div key={i} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'16px 12px',textAlign:'center'}}>
                     <div style={{fontSize:28,fontWeight:900,color:s.color,lineHeight:1}}>{s.value}</div>
@@ -1185,91 +1211,65 @@ function App() {
                   </div>
                 ))}
               </div>
-              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Solicitudes de publicidad</p>
-              {solicitudesPublicidad.length===0&&<div style={{textAlign:'center',padding:'40px',color:'#333'}}><p>No hay solicitudes aún</p></div>}
-              {solicitudesPublicidad.map((s:any)=>(
-                <div key={s.id} style={{background:`rgba(12,12,22,0.9)`,border:`1px solid ${s.estado==='pendiente'?'rgba(255,165,0,0.2)':s.estado==='activo'?'rgba(74,222,128,0.12)':'rgba(255,255,255,0.05)'}`,borderRadius:14,padding:'16px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:16}}>Anuncios de publicidad activos</p>
+              {solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP')).length===0&&<div style={{textAlign:'center',padding:'40px',color:'#333'}}><p>No hay publicidad activa aún</p></div>}
+              {solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP')).map((s:any)=>(
+                <div key={s.id} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(74,222,128,0.12)',borderRadius:14,padding:'16px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
                   {s.imagen_url&&<img src={s.imagen_url} alt={s.titulo} style={{width:90,height:56,borderRadius:10,objectFit:'cover',flexShrink:0}}/>}
                   <div style={{flex:1,minWidth:160}}>
                     <div style={{fontSize:15,fontWeight:700,color:'#fff',marginBottom:3}}>{s.titulo}</div>
                     <div style={{fontSize:12,color:'#555'}}>{s.anunciante_nombre} · {s.ciudad}, {s.pais}</div>
-                    <div style={{fontSize:11,color:'#3a3a4a'}}>{s.anunciante_email} · {s.anunciante_telefono}</div>
+                    <div style={{fontSize:11,color:'#3a3a4a'}}>{s.anunciante_email}</div>
                     {s.fecha_vencimiento&&<div style={{fontSize:11,color:new Date(s.fecha_vencimiento)<new Date(Date.now()+3*24*60*60*1000)?'#FF6B6B':'#C9A84C',marginTop:4,fontWeight:600}}>Vence: {new Date(s.fecha_vencimiento).toLocaleDateString()}</div>}
                   </div>
-                  <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:s.estado==='activo'?'rgba(74,222,128,0.12)':s.estado==='pendiente'?'rgba(255,165,0,0.12)':'rgba(255,107,107,0.12)',color:s.estado==='activo'?'#4ade80':s.estado==='pendiente'?'#FFA500':'#FF6B6B',border:`1px solid ${s.estado==='activo'?'rgba(74,222,128,0.2)':s.estado==='pendiente'?'rgba(255,165,0,0.2)':'rgba(255,107,107,0.2)'}`}}>{s.estado==='activo'?'Activo':s.estado==='pendiente'?'Pendiente':'Inactivo'}</span>
+                  <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:'rgba(74,222,128,0.12)',color:'#4ade80',border:'1px solid rgba(74,222,128,0.2)'}}>Activo</span>
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                    {s.estado==='pendiente'&&(
-                      <button className="btn-admin btn-aprobar" onClick={async()=>{
-                        const fechaVenc=new Date(); fechaVenc.setDate(fechaVenc.getDate()+30)
-                        await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:true,estado:'activo',fecha_vencimiento:fechaVenc.toISOString()})})
-                        setAdminMsg('Aprobado ✅'); cargarAdminData(); setTimeout(()=>setAdminMsg(''),3000)
-                      }}>Aprobar</button>
-                    )}
-                    <button className="btn-admin btn-suspender" onClick={async()=>{
-                      await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:false,estado:'inactivo'})})
-                      cargarAdminData()
-                    }}>{s.estado==='activo'?'Desactivar':'Activar'}</button>
-                    {s.anunciante_telefono&&(
-                      <a href={`https://wa.me/${s.anunciante_telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
-                        style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,textDecoration:'none'}}>
-                        WhatsApp
-                      </a>
-                    )}
+                    <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${s.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...s,activo:false,estado:'inactivo'})});cargarAdminData()}}>Desactivar</button>
+                    {s.anunciante_telefono&&<a href={`https://wa.me/${s.anunciante_telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(37,211,102,0.08)',border:'1px solid rgba(37,211,102,0.2)',color:'#25D366',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,textDecoration:'none'}}>WhatsApp</a>}
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ANUNCIOS */}
-          {adminPage==='anuncios' && (
+          {/* INGRESOS */}
+          {adminPage==='ingresos' && (
             <div>
-              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:20}}>Gestión de anuncios</p>
-              <div style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:24,marginBottom:20}}>
-                <h3 style={{marginTop:0,marginBottom:16,fontSize:11,textTransform:'uppercase',letterSpacing:2,color:'#555'}}>{editAnuncio?'Editar anuncio':'Nuevo anuncio'}</h3>
-                <div className="form-group" style={{marginBottom:12}}><label>Título</label><input type="text" placeholder="Ej: Productos para Barbería" value={formAnuncio.titulo} onChange={e=>setFormAnuncio({...formAnuncio,titulo:e.target.value})} /></div>
-                <div className="form-group" style={{marginBottom:12}}><label>Subtítulo</label><input type="text" placeholder="Descripción breve..." value={formAnuncio.subtitulo} onChange={e=>setFormAnuncio({...formAnuncio,subtitulo:e.target.value})} /></div>
-                <div className="form-group" style={{marginBottom:12}}>
-                  <label>Imagen de fondo</label>
-                  {formAnuncio.imagen_url&&<img src={formAnuncio.imagen_url} alt="preview" style={{width:'100%',height:120,objectFit:'cover',borderRadius:10,marginBottom:10}}/>}
-                  <input type="file" accept="image/*" style={{display:'none'}} id="upload-anuncio"
-                    onChange={async(e)=>{
-                      const file=e.target.files?.[0]; if(!file) return
-                      if(file.size>5*1024*1024){alert('Máximo 5MB');return}
-                      const fd=new FormData(); fd.append('imagen',file)
-                      try{const res=await fetch(`${API}/api/upload/anuncio/0`,{method:'POST',body:fd}); const data=await res.json(); if(data.success)setFormAnuncio({...formAnuncio,imagen_url:data.url}); else alert('Error: '+data.error)}catch{alert('Error de conexión')}
-                    }}
-                  />
-                  <button type="button" className="btn-upload" style={{width:'100%'}} onClick={()=>document.getElementById('upload-anuncio')?.click()}>{formAnuncio.imagen_url?'Cambiar imagen':'Subir imagen'}</button>
-                </div>
-                <div className="form-row" style={{marginBottom:12}}>
-                  <div className="form-group"><label>Texto del botón</label><input type="text" placeholder="Ver más" value={formAnuncio.boton_texto} onChange={e=>setFormAnuncio({...formAnuncio,boton_texto:e.target.value})} /></div>
-                  <div className="form-group"><label>URL del botón</label><input type="url" placeholder="https://..." value={formAnuncio.boton_url} onChange={e=>setFormAnuncio({...formAnuncio,boton_url:e.target.value})} /></div>
-                </div>
-                <div className="form-row" style={{marginBottom:12}}>
-                  <div className="form-group"><label>Ciudad</label><input type="text" placeholder="Medellín" value={formAnuncio.ciudad} onChange={e=>setFormAnuncio({...formAnuncio,ciudad:e.target.value})} /></div>
-                  <div className="form-group"><label>País</label><input type="text" placeholder="Colombia" value={formAnuncio.pais} onChange={e=>setFormAnuncio({...formAnuncio,pais:e.target.value})} /></div>
-                </div>
-                <div style={{display:'flex',gap:10,marginTop:16}}>
-                  <button className="btn-primary" onClick={guardarAnuncio}>{editAnuncio?'Actualizar':'Publicar anuncio'}</button>
-                  {editAnuncio&&<button className="btn-secondary" onClick={()=>{setEditAnuncio(null);setFormAnuncio({titulo:'',subtitulo:'',imagen_url:'',boton_texto:'Ver más',boton_url:'',ciudad:'',pais:'',activo:true})}}>Cancelar</button>}
-                </div>
-              </div>
-              {anuncios.map((a:any)=>(
-                <div key={a.id} style={{background:'rgba(12,12,22,0.9)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:'14px 18px',marginBottom:8,display:'flex',alignItems:'center',gap:14}}>
-                  {a.imagen_url&&<img src={a.imagen_url} alt={a.titulo} style={{width:70,height:46,borderRadius:8,objectFit:'cover',flexShrink:0}}/>}
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:14,fontWeight:700,color:'#e0e0e0'}}>{a.titulo}</div>
-                    <div style={{fontSize:12,color:'#555'}}>{a.subtitulo} {a.ciudad&&`· ${a.ciudad}`}</div>
-                    <div style={{fontSize:11,color:'#333'}}>{a.boton_url}</div>
+              <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:20}}>Dashboard de ingresos</p>
+              {(()=>{
+                const vipActivos=solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&((s.titulo||'').includes('PRO')||(s.titulo||'').includes('VIP')))
+                const pubActivos=solicitudesPublicidad.filter((s:any)=>s.estado==='activo'&&!(s.titulo||'').includes('PRO')&&!(s.titulo||'').includes('VIP'))
+                const ingVIP=vipActivos.length*3.99
+                const ingPub=pubActivos.length*9.99
+                const total=ingVIP+ingPub
+                return (
+                  <div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:12,marginBottom:28}}>
+                      {[
+                        {label:'Usuarios VIP activos',value:vipActivos.length,color:'#C9A84C',icon:'💎'},
+                        {label:'Publicidad activa',value:pubActivos.length,color:'#00D4FF',icon:'📢'},
+                        {label:'Ingresos VIP/mes',value:'$'+ingVIP.toFixed(2),color:'#2ECC71',icon:'💰'},
+                        {label:'Ingresos Pub/mes',value:'$'+ingPub.toFixed(2),color:'#BB8FCE',icon:'📊'},
+                        {label:'Total mensual est.',value:'$'+total.toFixed(2),color:'#fff',icon:'🏆'},
+                        {label:'Pendientes',value:adminNegocios.filter(n=>n.estado_verificacion==='pendiente').length+solPendientes.length,color:'#FFA500',icon:'⏳'},
+                      ].map((s,i)=>(
+                        <div key={i} style={{background:'rgba(12,12,22,0.9)',border:`1px solid ${s.color}22`,borderRadius:14,padding:'20px 16px',textAlign:'center'}}>
+                          <div style={{fontSize:24,marginBottom:6}}>{s.icon}</div>
+                          <div style={{fontSize:22,fontWeight:900,color:s.color,lineHeight:1}}>{s.value}</div>
+                          <div style={{fontSize:9,color:'#555',marginTop:6,textTransform:'uppercase',letterSpacing:1}}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:12}}>Usuarios VIP activos</p>
+                    {vipActivos.map((s:any)=>(
+                      <div key={s.id} style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:10,padding:'10px 16px',marginBottom:6,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <div><span style={{fontSize:13,color:'#fff',fontWeight:600}}>{s.anunciante_nombre}</span><span style={{fontSize:11,color:'#555',marginLeft:8}}>{s.anunciante_email}</span></div>
+                        <span style={{fontSize:13,fontWeight:700,color:'#C9A84C'}}>$3.99/mes</span>
+                      </div>
+                    ))}
                   </div>
-                  <span style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:700,background:a.activo?'rgba(74,222,128,0.12)':'rgba(255,107,107,0.12)',color:a.activo?'#4ade80':'#FF6B6B',border:`1px solid ${a.activo?'rgba(74,222,128,0.2)':'rgba(255,107,107,0.2)'}`}}>{a.activo?'Activo':'Inactivo'}</span>
-                  <div style={{display:'flex',gap:6}}>
-                    <button className="btn-admin btn-activar" onClick={()=>{setEditAnuncio(a);setFormAnuncio({titulo:a.titulo,subtitulo:a.subtitulo||'',imagen_url:a.imagen_url||'',boton_texto:a.boton_texto||'Ver más',boton_url:a.boton_url||'',ciudad:a.ciudad||'',pais:a.pais||'',activo:a.activo})}}>Editar</button>
-                    <button className="btn-admin btn-suspender" onClick={async()=>{await fetch(`${API}/api/admin/anuncios/${a.id}`,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':'admin_token_cutconnect'},body:JSON.stringify({...a,activo:!a.activo})}); cargarAdminData()}}>{a.activo?'Desactivar':'Activar'}</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })()}
             </div>
           )}
         </div>
@@ -1665,7 +1665,7 @@ function App() {
               Citas {citas.length>0&&<span style={{background:'#C9A84C',color:'#000',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:900,marginLeft:4}}>{citas.length}</span>}
             </button>
             <button className={currentPage==='perfil'?'active':''} onClick={()=>{setCurrentPage('perfil');cargarPerfilBarbero()}}>Mi perfil</button>
-            <button className={currentPage==='pro'?'active':''} onClick={()=>setCurrentPage('pro')} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro</button>
+            <button className={currentPage==='pro'?'active':''} onClick={()=>{if(isProB){setCurrentPage('pro')}else{setCurrentPage('pro')}}} style={{color:isProB?'#2ECC71':'#C9A84C',fontWeight:700}}>💎 VIP{isProB&&<span style={{marginLeft:4,fontSize:8,verticalAlign:'middle',color:'#2ECC71'}}>●</span>}</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
@@ -1861,16 +1861,44 @@ function App() {
                 <div>
                   <div style={{textAlign:'center',marginBottom:20}}>
                     <div style={{fontSize:40,marginBottom:6}}>💎</div>
-                    <h2 style={{fontSize:20,fontWeight:900,marginBottom:4}}>Dashboard Pro Barbero</h2>
+                    <h2 style={{fontSize:20,fontWeight:900,marginBottom:4}}>Dashboard VIP Barbero</h2>
                     <p style={{color:'#888',fontSize:12}}>Tus ingresos en tiempo real</p>
                   </div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
-                    {[{l:'Hoy',v:'$'+ingrHoyB,c:'#C9A84C'},{l:'Semana',v:'$'+ingrSemB,c:'#00D4FF'},{l:'Mes',v:'$'+ingrMesB,c:'#2ECC71'},{l:'Citas',v:citasComp.length,c:'#BB8FCE'}].map(s=>(
-                      <div key={s.l} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
-                        <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
-                        <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
+                  <div style={{marginBottom:16}}>
+                    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:12}}>
+                      <div style={{flex:1,minWidth:130}}>
+                        <label style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:4}}>Desde</label>
+                        <input type="date" value={rangoB.desde} onChange={e=>setRangoB({...rangoB,desde:e.target.value})} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 10px',color:'#fff',fontSize:12}} />
                       </div>
-                    ))}
+                      <div style={{flex:1,minWidth:130}}>
+                        <label style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:4}}>Hasta</label>
+                        <input type="date" value={rangoB.hasta} onChange={e=>setRangoB({...rangoB,hasta:e.target.value})} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 10px',color:'#fff',fontSize:12}} />
+                      </div>
+                      {(rangoB.desde||rangoB.hasta)&&<button onClick={()=>setRangoB({desde:'',hasta:''})} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:8,padding:'8px 12px',fontSize:11,cursor:'pointer',fontWeight:700,alignSelf:'flex-end'}}>✕ Limpiar</button>}
+                    </div>
+                    {(()=>{
+                      const desde=rangoB.desde?new Date(rangoB.desde+'T00:00:00'):null
+                      const hasta=rangoB.hasta?new Date(rangoB.hasta+'T23:59:59'):null
+                      const filtradas=citasComp.filter((c:any)=>{
+                        if(!desde&&!hasta) return true
+                        const f=new Date(c.fecha+'T12:00:00')
+                        if(desde&&f<desde) return false
+                        if(hasta&&f>hasta) return false
+                        return true
+                      })
+                      const totalRango=filtradas.reduce((a:any,cc:any)=>a+(cc.servicio?.precio||0),0)
+                      const label=desde||hasta?`${rangoB.desde||'inicio'} → ${rangoB.hasta||'hoy'}`:'Todo el período'
+                      return (
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                          {[{l:desde||hasta?'Período selec.':'Hoy',v:'$'+(desde||hasta?totalRango:ingrHoyB),c:'#C9A84C'},{l:'Semana actual',v:'$'+ingrSemB,c:'#00D4FF'},{l:'Mes actual',v:'$'+ingrMesB,c:'#2ECC71'},{l:'Citas en rango',v:filtradas.length,c:'#BB8FCE'}].map(s=>(
+                            <div key={s.l} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
+                              <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
+                              <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </div>
                   <h4 style={{marginBottom:10,color:'#999',fontSize:12,textTransform:'uppercase',letterSpacing:2}}>Citas recientes completadas</h4>
                   {citasComp.slice(0,5).length===0
@@ -1891,23 +1919,23 @@ function App() {
                   <div style={{fontSize:44,marginBottom:12}}>⏳</div>
                   <h2 style={{fontSize:20,fontWeight:900,marginBottom:8}}>Pago en verificaci\u00f3n</h2>
                   <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Estamos verificando tu pago. En 24\u201348 horas tu plan quedar\u00e1 activo.</p>
-                  <button onClick={async()=>{const uid=String(userData?.id);const em=encodeURIComponent(String(userData?.email||''));const r=await fetch(`${SB_URL}/rest/v1/pro_users?usuario_id=eq.${em}&select=id`,{headers:sbH}).then(d=>d.json()).catch(()=>[]);if(Array.isArray(r)&&r.length>0){localStorage.setItem('pro_activo_b_'+uid,'true');localStorage.setItem('pro_b_'+uid,'true');setProActB(true);setProPendB(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13}}>🔄 Verificar activaci\u00f3n</button>
+                  <button onClick={async()=>{const uid=String(userData?.id);const em=String(userData?.email||'').toLowerCase();const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const found=r.data?.find((a:any)=>a.activo&&a.estado==='activo'&&(a.anunciante_email||'').toLowerCase()===em&&(a.titulo||'').includes('PRO'));if(found){localStorage.setItem('pro_activo_b_'+uid,'true');localStorage.setItem('pro_b_'+uid,'true');setProActB(true);setProPendB(false);setCurrentPage('pro')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13}}>🔄 Verificar activaci\u00f3n</button>
                   <p style={{marginTop:16,fontSize:11,color:'#444',cursor:'pointer',textDecoration:'underline'}} onClick={()=>{localStorage.removeItem('pro_b_'+userData?.id);alert('Solicitud reiniciada.')}}>Reiniciar solicitud</p>
                   <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                     <p style={{fontSize:12,color:'#666',marginBottom:10}}>¿Ya enviaste el pago y no recibiste confirmación?</p>
-                    <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.nombre||'barbero')}%20y%20acabo%20de%20pagar%20el%20Plan%20Pro%20Barbero%20por%20Binance%20Pay.`} style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:0.5}}>📱 Enviar comprobante por WhatsApp</a>
+                    <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.nombre||'barbero')}%20y%20acabo%20de%20pagar%20el%20Plan%20VIP%20Barbero%20por%20Binance%20Pay.`} style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:0.5}}>📱 Enviar comprobante por WhatsApp</a>
                   </div>
                 </div>
               ) : (
                 <div>
                   <div style={{textAlign:'center',marginBottom:28}}>
                     <div style={{fontSize:44,marginBottom:8}}>💎</div>
-                    <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,marginBottom:8}}>Plan Pro Barbero</p>
+                    <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,marginBottom:8}}>Plan VIP Barbero</p>
                     <h2 style={{fontSize:24,fontWeight:900,marginBottom:8}}>Eleva tu carrera al siguiente nivel</h2>
                     <p style={{color:'#666',fontSize:13,lineHeight:1.7}}>Todo lo que necesitas para destacar, crecer y ganar m\u00e1s</p>
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24}}>
-                    {[{icon:'📊',t:'Ingresos en tiempo real',d:'Hoy, semana y mes'},{icon:'🌟',t:'Perfil destacado',d:'Apareces primero en b\u00fasquedas'},{icon:'⭐',t:'Tus rese\u00f1as',d:'Ve y gestiona todas tus calificaciones'},{icon:'📋',t:'Exportar en PDF',d:'Historial de citas listo para imprimir'},{icon:'🔔',t:'Recordatorios autom\u00e1ticos',d:'Aviso a clientes 24h antes'},{icon:'🎖️',t:'Badge Pro',d:'Sello visible en tu perfil p\u00fablico'}].map(f=>(
+                    {[{icon:'📊',t:'Ingresos en tiempo real',d:'Hoy, semana y mes'},{icon:'🌟',t:'Perfil destacado',d:'Apareces primero en b\u00fasquedas'},{icon:'⭐',t:'Tus rese\u00f1as',d:'Ve y gestiona todas tus calificaciones'},{icon:'📋',t:'Exportar en PDF',d:'Historial de citas listo para imprimir'},{icon:'🔔',t:'Recordatorios autom\u00e1ticos',d:'Aviso a clientes 24h antes'},{icon:'🎖️',t:'Badge VIP',d:'Sello visible en tu perfil p\u00fablico'}].map(f=>(
                       <div key={f.t} style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:12,padding:'14px 12px',textAlign:'center'}}>
                         <div style={{fontSize:24,marginBottom:6}}>{f.icon}</div>
                         <p style={{fontSize:12,fontWeight:700,color:'#fff',marginBottom:3,lineHeight:1.3}}>{f.t}</p>
@@ -1996,7 +2024,7 @@ function App() {
             <div className="stats-grid" style={{opacity:0.6,pointerEvents:'none'}}>
               <div className="stat-card"><h4>Citas</h4><p className="stat-number">{citas.length}</p></div>
               <div className="stat-card"><h4>Equipo</h4><p className="stat-number">{misBarberos.length}</p></div>
-              <div className="stat-card"><h4>Confirmadas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='agendada').length}</p></div>
+              <div className="stat-card"><h4>Canceladas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='cancelada'||c.estado==='cancelado').length}</p></div>
             </div>
             <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24,maxWidth:480}}>
               <div style={{textAlign:'center',marginBottom:10}}>
@@ -2046,7 +2074,7 @@ function App() {
             <button className={currentPage==='citas'?'active':''} onClick={()=>{setCurrentPage('citas');cargarCitasDueno()}}>Citas</button>
             <button className={currentPage==='negocio'?'active':''} onClick={()=>setCurrentPage('negocio')}>Mi negocio</button>
             <button className={currentPage==='yo-barbero'?'active':''} onClick={()=>{setCurrentPage('yo-barbero');cargarPerfilDuenoBarbero()}} style={{color: perfilDuenoBarbero ? '#2ECC71' : '#C9A84C', fontWeight:700}}>✂️ Yo corto</button>
-            <button className={(currentPage==='pro-dueno'||(currentPage==='dashboard'&&isProD))?'active':''} onClick={()=>{if(isProD){setCurrentPage('dashboard');cargarMisBarberos();cargarRanking()}else setCurrentPage('pro-dueno')}} style={{color:'#C9A84C',fontWeight:700}}>💎 Pro{isProD&&<span style={{marginLeft:4,fontSize:8,verticalAlign:'middle',color:'#2ECC71'}}>●</span>}</button>
+            <button className={(currentPage==='pro-dueno'||(currentPage==='dashboard'&&isProD))?'active':''} onClick={()=>{if(isProD){setCurrentPage('dashboard');cargarMisBarberos();cargarRanking()}else setCurrentPage('pro-dueno')}} style={{color:'#C9A84C',fontWeight:700}}>💎 VIP{isProD&&<span style={{marginLeft:4,fontSize:8,verticalAlign:'middle',color:'#2ECC71'}}>●</span>}</button>
             <button className="btn-logout" onClick={handleLogout}>Salir</button>
           </div>
         </nav>
@@ -2070,25 +2098,50 @@ function App() {
               <div className="stats-grid">
                 <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.length}</p></div>
                 <div className="stat-card"><h4>Profesionales</h4><p className="stat-number">{misBarberos.length}</p></div>
-                <div className="stat-card"><h4>Confirmadas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='agendada').length}</p></div>
+                <div className="stat-card"><h4>Canceladas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='cancelada'||c.estado==='cancelado').length}</p></div>
                 {userData?.estado_verificacion==='trial'&&<div className="stat-card"><h4>Días trial</h4><p className="stat-number" style={{color:diasRestantes<=3?'#FF6B6B':'#fff'}}>{diasRestantes}</p></div>}
               </div>
               {isProD ? (
                 <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))',border:'1px solid rgba(201,168,76,0.2)',borderRadius:16,padding:24}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
                     <div>
-                      <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:4}}>💎 Pro - Finanzas en tiempo real</p>
+                      <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:4}}>💎 VIP - Finanzas en tiempo real</p>
                       <h3 style={{margin:0,fontSize:16,fontWeight:800}}>Ingresos del negocio</h3>
                     </div>
                     <button onClick={()=>{const csv='Fecha,Cliente,Servicio,Monto\n'+citasCompD.map((c:any)=>c.fecha+','+c.cliente_nombre+','+c.servicio?.nombre+','+c.servicio?.precio).join('\n');const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ingresos.csv';a.click()}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:8,padding:'8px 14px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:11}}>📥 Exportar CSV</button>
                   </div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
-                    {[{l:'Hoy',v:'$'+ingrHoyD,c:'#C9A84C'},{l:'Semana',v:'$'+ingrSemD,c:'#00D4FF'},{l:'Mes',v:'$'+ingrMesD,c:'#2ECC71'},{l:'Gastos mes',v:'-$'+gastosMesD,c:'#E74C3C'}].map(s=>(
-                      <div key={s.l} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
-                        <p style={{fontSize:24,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
-                        <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
+                  <div style={{marginBottom:16}}>
+                    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:12}}>
+                      <div style={{flex:1,minWidth:130}}>
+                        <label style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:4}}>Desde</label>
+                        <input type="date" value={rangoD.desde} onChange={e=>setRangoD({...rangoD,desde:e.target.value})} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 10px',color:'#fff',fontSize:12}} />
                       </div>
-                    ))}
+                      <div style={{flex:1,minWidth:130}}>
+                        <label style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:4}}>Hasta</label>
+                        <input type="date" value={rangoD.hasta} onChange={e=>setRangoD({...rangoD,hasta:e.target.value})} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 10px',color:'#fff',fontSize:12}} />
+                      </div>
+                      {(rangoD.desde||rangoD.hasta)&&<button onClick={()=>setRangoD({desde:'',hasta:''})} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:8,padding:'8px 12px',fontSize:11,cursor:'pointer',fontWeight:700,alignSelf:'flex-end'}}>✕ Limpiar</button>}
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                    {(()=>{
+                      const desdeD=rangoD.desde?new Date(rangoD.desde+'T00:00:00'):null
+                      const hastaD=rangoD.hasta?new Date(rangoD.hasta+'T23:59:59'):null
+                      const filtradas=citasCompD.filter((cc:any)=>{
+                        if(!desdeD&&!hastaD) return true
+                        const f=new Date(cc.fecha+'T12:00:00')
+                        if(desdeD&&f<desdeD) return false
+                        if(hastaD&&f>hastaD) return false
+                        return true
+                      })
+                      const totalRango=filtradas.reduce((a:any,cc:any)=>a+(cc.servicio?.precio||0),0)
+                      return [{l:desdeD||hastaD?'Período sel.':'Hoy',v:'$'+(desdeD||hastaD?totalRango:ingrHoyD),c:'#C9A84C'},{l:'Semana',v:'$'+ingrSemD,c:'#00D4FF'},{l:'Mes',v:'$'+ingrMesD,c:'#2ECC71'},{l:'Gastos mes',v:'-$'+gastosMesD,c:'#E74C3C'}].map(s=>(
+                        <div key={s.l} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
+                          <p style={{fontSize:24,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
+                          <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
+                        </div>
+                      ))
+                    })()}
+                    </div>
                   </div>
                   <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:16,marginBottom:16}}>
                     <p style={{fontSize:11,color:'#888',textTransform:'uppercase',letterSpacing:2,marginBottom:12}}>💰 Registrar gasto</p>
@@ -2141,7 +2194,7 @@ function App() {
                 <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.06),rgba(201,168,76,0.01))',border:'1px solid rgba(201,168,76,0.15)',borderRadius:16,padding:24,position:'relative',overflow:'hidden'}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
                     <div>
-                      <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:4}}>💎 Pro - Finanzas avanzadas</p>
+                      <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:3,fontWeight:700,marginBottom:4}}>💎 VIP - Finanzas avanzadas</p>
                       <h3 style={{margin:0,fontSize:16,fontWeight:800}}>Ingresos y estadísticas del negocio</h3>
                     </div>
                     <button onClick={()=>setCurrentPage('pro-dueno')} style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:10,padding:'10px 18px',fontSize:12,fontWeight:800,cursor:'pointer',letterSpacing:0.5,whiteSpace:'nowrap'}}>Ver planes</button>
@@ -2155,7 +2208,7 @@ function App() {
                     ))}
                   </div>
                   <div style={{textAlign:'center',marginTop:16}}>
-                    <p style={{color:'#888',fontSize:13}}>Activa <strong style={{color:'#C9A84C'}}>💎 Pro</strong> para ver tus ingresos en tiempo real</p>
+                    <p style={{color:'#888',fontSize:13}}>Activa <strong style={{color:'#C9A84C'}}>💎 VIP</strong> para ver tus ingresos en tiempo real</p>
                   </div>
                 </div>
               )}
@@ -2334,32 +2387,32 @@ function App() {
               {isProD ? (
                 <div style={{textAlign:'center',padding:'40px 24px'}}>
                   <div style={{fontSize:52,marginBottom:12}}>👑</div>
-                  <h2 style={{fontSize:22,fontWeight:900,marginBottom:8}}>¡Ya eres Pro!</h2>
-                  <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Tu plan Pro está activo. Accede al Dashboard para ver tus ingresos y ranking.</p>
-                  <button onClick={()=>{setCurrentPage('dashboard');cargarMisBarberos();cargarRanking()}} style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:12,padding:'14px 28px',fontSize:14,fontWeight:900,cursor:'pointer',letterSpacing:0.5}}>📊 Ir al Dashboard Pro</button>
+                  <h2 style={{fontSize:22,fontWeight:900,marginBottom:8}}>¡Ya eres VIP!</h2>
+                  <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Tu plan VIP está activo. Accede al Dashboard para ver tus ingresos y ranking.</p>
+                  <button onClick={()=>{setCurrentPage('dashboard');cargarMisBarberos();cargarRanking()}} style={{background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:12,padding:'14px 28px',fontSize:14,fontWeight:900,cursor:'pointer',letterSpacing:0.5}}>📊 Ir al Dashboard VIP</button>
                 </div>
               ) : isPendingD ? (
                 <div style={{textAlign:'center',padding:'40px 24px'}}>
                   <div style={{fontSize:44,marginBottom:12}}>⏳</div>
                   <h2 style={{fontSize:20,fontWeight:900,marginBottom:8}}>Pago en verificación</h2>
                   <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Estamos verificando tu pago. En 24–48 horas tu plan quedará activo.</p>
-                  <button onClick={async()=>{const uid=String(userData?.id);const em=encodeURIComponent(String(userData?.email||''));const r=await fetch(`${SB_URL}/rest/v1/pro_users?usuario_id=eq.${em}&select=id`,{headers:sbH}).then(d=>d.json()).catch(()=>[]);if(Array.isArray(r)&&r.length>0){localStorage.setItem('pro_activo_d_'+uid,'true');localStorage.setItem('pro_d_'+uid,'true');setProActD(true);setProPendD(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13,marginBottom:16}}>🔄 Verificar activación</button>
+                  <button onClick={async()=>{const uid=String(userData?.id);const em=String(userData?.email||'').toLowerCase();const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const found=r.data?.find((a:any)=>a.activo&&a.estado==='activo'&&(a.anunciante_email||'').toLowerCase()===em&&(a.titulo||'').includes('PRO'));if(found){localStorage.setItem('pro_activo_d_'+uid,'true');localStorage.setItem('pro_d_'+uid,'true');setProActD(true);setProPendD(false);setCurrentPage('dashboard');}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13,marginBottom:16}}>🔄 Verificar activación</button>
                   <p style={{marginTop:8,fontSize:11,color:'#444',cursor:'pointer',textDecoration:'underline'}} onClick={()=>{localStorage.removeItem('pro_d_'+userData?.id);alert('Solicitud reiniciada.')}}>Reiniciar solicitud</p>
                   <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                     <p style={{fontSize:12,color:'#666',marginBottom:10}}>¿Ya enviaste el pago y no recibiste confirmación?</p>
-                    <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.negocio_nombre||'due%C3%B1o')}%20y%20acabo%20de%20pagar%20el%20Plan%20Pro%20Negocio%20por%20Binance%20Pay.`} style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:0.5}}>📱 Enviar comprobante por WhatsApp</a>
+                    <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.negocio_nombre||'due%C3%B1o')}%20y%20acabo%20de%20pagar%20el%20Plan%20VIP%20Negocio%20por%20Binance%20Pay.`} style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'12px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:0.5}}>📱 Enviar comprobante por WhatsApp</a>
                   </div>
                 </div>
               ) : (
                 <div>
                   <div style={{textAlign:'center',marginBottom:28}}>
                     <div style={{fontSize:44,marginBottom:8}}>👑</div>
-                    <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,marginBottom:8}}>Plan Pro Negocio</p>
+                    <p style={{fontSize:11,color:'#C9A84C',textTransform:'uppercase',letterSpacing:4,marginBottom:8}}>Plan VIP Negocio</p>
                     <h2 style={{fontSize:24,fontWeight:900,marginBottom:8}}>Gestiona tu barber\u00eda como un pro</h2>
                     <p style={{color:'#666',fontSize:13,lineHeight:1.7}}>Todo lo que necesitas para hacer crecer tu negocio y tu equipo</p>
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24}}>
-                    {[{icon:'📊',t:'Dashboard financiero',d:'Ingresos hoy, semana y mes'},{icon:'🏆',t:'Ranking del equipo',d:'Qui\u00e9n genera m\u00e1s citas y dinero'},{icon:'📋',t:'Exportar en PDF',d:'Reportes listos para imprimir'},{icon:'⭐',t:'Rese\u00f1as del negocio',d:'Gestiona todas las calificaciones'},{icon:'🌟',t:'Negocio destacado',d:'Aparece primero en b\u00fasquedas'},{icon:'🔔',t:'Notificaciones WhatsApp',d:'Avisos autom\u00e1ticos a clientes'},{icon:'💬',t:'Confirmaci\u00f3n autom\u00e1tica',d:'Citas confirmadas sin intervenci\u00f3n'},{icon:'🎨',t:'Sello Verificado Pro',d:'Insignia visible en tu perfil'}].map(f=>(
+                    {[{icon:'📊',t:'Dashboard financiero',d:'Ingresos hoy, semana y mes'},{icon:'🏆',t:'Ranking del equipo',d:'Qui\u00e9n genera m\u00e1s citas y dinero'},{icon:'📋',t:'Exportar en PDF',d:'Reportes listos para imprimir'},{icon:'⭐',t:'Rese\u00f1as del negocio',d:'Gestiona todas las calificaciones'},{icon:'🌟',t:'Negocio destacado',d:'Aparece primero en b\u00fasquedas'},{icon:'🔔',t:'Notificaciones WhatsApp',d:'Avisos autom\u00e1ticos a clientes'},{icon:'💬',t:'Confirmaci\u00f3n autom\u00e1tica',d:'Citas confirmadas sin intervenci\u00f3n'},{icon:'🎨',t:'Sello Verificado VIP',d:'Insignia visible en tu perfil'}].map(f=>(
                       <div key={f.t} style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:12,padding:'14px 12px',textAlign:'center'}}>
                         <div style={{fontSize:24,marginBottom:6}}>{f.icon}</div>
                         <p style={{fontSize:12,fontWeight:700,color:'#fff',marginBottom:3,lineHeight:1.3}}>{f.t}</p>
@@ -2368,7 +2421,7 @@ function App() {
                     ))}
                   </div>
                   <div style={{background:'#141414',border:'1px solid rgba(201,168,76,0.3)',borderRadius:16,padding:24,marginBottom:20}}>
-                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,marginBottom:16,fontWeight:700,textAlign:'center'}}>C\u00f3mo activar tu Plan Pro</p>
+                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,marginBottom:16,fontWeight:700,textAlign:'center'}}>C\u00f3mo activar tu Plan VIP</p>
                     <div style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:12,padding:24,textAlign:'center',marginBottom:16}}>
                       <p style={{fontSize:32,fontWeight:900,color:'#C9A84C',marginBottom:4}}>$3.99 <span style={{fontSize:16,fontWeight:400,color:'#777'}}>USD/mes</span></p>
                       <p style={{fontSize:13,color:'#555',marginBottom:20}}>Env\u00eda exactamente <strong style={{color:'#C9A84C'}}>$3.99 USDT</strong> por Binance Pay</p>
@@ -2380,7 +2433,7 @@ function App() {
                   <img src="data:image/jpeg;base64,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" alt="QR Binance Pay" style={{width:160,height:160,borderRadius:10,border:'1px solid rgba(201,168,76,0.3)',display:'block',margin:'0 auto 16px'}} />
                     </div>
                     <button onClick={async()=>{const ciudad=userData?.ciudad||userData?.pais||'N/A';const payload={titulo:'\ud83d\udcb8 PLAN PRO DUENO - '+userData?.negocio_nombre,descripcion:'Solicitud Pro de due\u00f1o '+userData?.id,ciudad,imagen_url:'https://cutconnect.app/pro-badge.png',tipo:'banner',precio_dia:3.99};const res=await fetch(`${API}/api/anuncios/solicitud`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await res.json().catch(()=>({}));if(res.ok||data.success||data.id||data.message){localStorage.setItem('pro_d_'+userData?.id,'true');alert('\u00a1Solicitud enviada! Te avisaremos cuando se active.');}else{alert('Error al enviar solicitud. Intenta de nuevo.')}}} style={{width:'100%',background:'linear-gradient(135deg,#C9A84C,#B8972A)',color:'#000',border:'none',borderRadius:12,padding:'16px',fontSize:14,fontWeight:900,cursor:'pointer',letterSpacing:0.5,marginBottom:16}}>✅ Ya pagué – Solicitar activación</button>
-                    <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.negocio_nombre||'due\u00f1o')}%20y%20acabo%20de%20pagar%20el%20Plan%20Pro%20Negocio%20por%20Binance%20Pay.`}
+                    <a href={`https://wa.me/+32455136804?text=Hola%20CutConnect%2C%20soy%20${encodeURIComponent(userData?.negocio_nombre||'due\u00f1o')}%20y%20acabo%20de%20pagar%20el%20Plan%20VIP%20Negocio%20por%20Binance%20Pay.`}
                       style={{display:'block',background:'#25D366',color:'#fff',textAlign:'center',padding:'14px',borderRadius:10,fontWeight:700,textDecoration:'none',fontSize:13,textTransform:'uppercase',letterSpacing:1}}>
                       📱 Enviar comprobante por WhatsApp
                     </a>
