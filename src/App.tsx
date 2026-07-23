@@ -744,28 +744,22 @@ function App() {
   }, [userData?.id])
   useEffect(() => {
     if (!userData?.id) return
-    fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{
-      if (!d.data) return
-      const uid = String(userData.id)
-      const found = d.data.find((a:any) => {
-        if (!a.activo) return false
-        const haystack = (a.titulo||'') + '|' + (a.descripcion||'')
-        if (haystack.includes(uid)) return true
-        if (userData.rol === 'barbero' && userData.nombre && haystack.toLowerCase().includes(String(userData.nombre).toLowerCase())) return true
-        if (userData.rol === 'dueño' && userData.negocio_nombre && haystack.toLowerCase().includes(String(userData.negocio_nombre).toLowerCase())) return true
-        return false
-      })
-      if (!found) return
-      if (userData.rol === 'barbero') {
-        localStorage.setItem('pro_activo_b_'+uid, 'true')
-        localStorage.setItem('pro_b_'+uid, 'true')
-        setProActB(true); setProPendB(false)
-      } else if (userData.rol === 'dueño') {
-        localStorage.setItem('pro_activo_d_'+uid, 'true')
-        localStorage.setItem('pro_d_'+uid, 'true')
-        setProActD(true); setProPendD(false)
-      }
-    }).catch(()=>{})
+    const uid = String(userData.id)
+    const email = encodeURIComponent(String(userData.email||''))
+    fetch(`${SB_URL}/rest/v1/pro_users?usuario_id=eq.${email}&select=id`, {headers: sbH})
+      .then(r => r.json())
+      .then(d => {
+        if (!Array.isArray(d) || d.length === 0) return
+        if (userData.rol === 'barbero') {
+          localStorage.setItem('pro_activo_b_'+uid, 'true')
+          localStorage.setItem('pro_b_'+uid, 'true')
+          setProActB(true); setProPendB(false)
+        } else if (userData.rol === 'dueño') {
+          localStorage.setItem('pro_activo_d_'+uid, 'true')
+          localStorage.setItem('pro_d_'+uid, 'true')
+          setProActD(true); setProPendD(false)
+        }
+      }).catch(()=>{})
   }, [userData?.id])
 
   const cargarDatos = async (lat?: number, lon?: number, ciudad?: string, tipo?: string) => {
@@ -1897,7 +1891,7 @@ function App() {
                   <div style={{fontSize:44,marginBottom:12}}>⏳</div>
                   <h2 style={{fontSize:20,fontWeight:900,marginBottom:8}}>Pago en verificaci\u00f3n</h2>
                   <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Estamos verificando tu pago. En 24\u201348 horas tu plan quedar\u00e1 activo.</p>
-                  <button onClick={async()=>{const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const uid=String(userData?.id);const haystack=(a:any)=>(a.titulo||'')+'|'+(a.descripcion||'');const found=r.data?.find((a:any)=>a.activo&&haystack(a).includes(uid));if(found){localStorage.setItem('pro_activo_b_'+uid,'true');localStorage.setItem('pro_b_'+uid,'true');setProActB(true);setProPendB(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13}}>🔄 Verificar activaci\u00f3n</button>
+                  <button onClick={async()=>{const uid=String(userData?.id);const em=encodeURIComponent(String(userData?.email||''));const r=await fetch(`${SB_URL}/rest/v1/pro_users?usuario_id=eq.${em}&select=id`,{headers:sbH}).then(d=>d.json()).catch(()=>[]);if(Array.isArray(r)&&r.length>0){localStorage.setItem('pro_activo_b_'+uid,'true');localStorage.setItem('pro_b_'+uid,'true');setProActB(true);setProPendB(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13}}>🔄 Verificar activaci\u00f3n</button>
                   <p style={{marginTop:16,fontSize:11,color:'#444',cursor:'pointer',textDecoration:'underline'}} onClick={()=>{localStorage.removeItem('pro_b_'+userData?.id);alert('Solicitud reiniciada.')}}>Reiniciar solicitud</p>
                   <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                     <p style={{fontSize:12,color:'#666',marginBottom:10}}>¿Ya enviaste el pago y no recibiste confirmación?</p>
@@ -2349,7 +2343,7 @@ function App() {
                   <div style={{fontSize:44,marginBottom:12}}>⏳</div>
                   <h2 style={{fontSize:20,fontWeight:900,marginBottom:8}}>Pago en verificación</h2>
                   <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Estamos verificando tu pago. En 24–48 horas tu plan quedará activo.</p>
-                  <button onClick={async()=>{const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const uid=String(userData?.id);const haystack=(a:any)=>(a.titulo||'')+'|'+(a.descripcion||'');const found=r.data?.find((a:any)=>a.activo&&haystack(a).includes(uid));if(found){localStorage.setItem('pro_activo_d_'+uid,'true');localStorage.setItem('pro_d_'+uid,'true');setProActD(true);setProPendD(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13,marginBottom:16}}>🔄 Verificar activación</button>
+                  <button onClick={async()=>{const uid=String(userData?.id);const em=encodeURIComponent(String(userData?.email||''));const r=await fetch(`${SB_URL}/rest/v1/pro_users?usuario_id=eq.${em}&select=id`,{headers:sbH}).then(d=>d.json()).catch(()=>[]);if(Array.isArray(r)&&r.length>0){localStorage.setItem('pro_activo_d_'+uid,'true');localStorage.setItem('pro_d_'+uid,'true');setProActD(true);setProPendD(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13,marginBottom:16}}>🔄 Verificar activación</button>
                   <p style={{marginTop:8,fontSize:11,color:'#444',cursor:'pointer',textDecoration:'underline'}} onClick={()=>{localStorage.removeItem('pro_d_'+userData?.id);alert('Solicitud reiniciada.')}}>Reiniciar solicitud</p>
                   <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                     <p style={{fontSize:12,color:'#666',marginBottom:10}}>¿Ya enviaste el pago y no recibiste confirmación?</p>
