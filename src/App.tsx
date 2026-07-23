@@ -713,6 +713,10 @@ function App() {
   const [adBanners, setAdBanners] = useState<any[]>(AD_BANNER_DEFAULT)
   const [gastosD, setGastosD] = useState<any[]>([])
   const [gastosFormD, setGastosFormD] = useState({descripcion:'',monto:'',categoria:'Suministros'})
+  const [proActD, setProActD] = useState(false)
+  const [proPendD, setProPendD] = useState(false)
+  const [proActB, setProActB] = useState(false)
+  const [proPendB, setProPendB] = useState(false)
 
   const isAdminRoute = window.location.pathname === ADMIN_PATH
   const isPublicidadRoute = window.location.pathname === PUBLICIDAD_PATH
@@ -725,6 +729,19 @@ function App() {
     fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
   useEffect(() => { if (userData?.id && userData?.rol==='dueño') cargarGastosD(String(userData.id)) }, [userData?.id])
+  useEffect(() => {
+    if (!userData?.id) return
+    const uid = String(userData.id)
+    if (userData.rol === 'dueño') {
+      const act = localStorage.getItem('pro_activo_d_'+uid)==='true'
+      const pend = localStorage.getItem('pro_d_'+uid)==='true' && !act
+      setProActD(act); setProPendD(pend)
+    } else if (userData.rol === 'barbero') {
+      const act = localStorage.getItem('pro_activo_b_'+uid)==='true'
+      const pend = localStorage.getItem('pro_b_'+uid)==='true' && !act
+      setProActB(act); setProPendB(pend)
+    }
+  }, [userData?.id])
   useEffect(() => {
     if (!userData?.id) return
     fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{
@@ -742,9 +759,11 @@ function App() {
       if (userData.rol === 'barbero') {
         localStorage.setItem('pro_activo_b_'+uid, 'true')
         localStorage.setItem('pro_b_'+uid, 'true')
+        setProActB(true); setProPendB(false)
       } else if (userData.rol === 'dueño') {
         localStorage.setItem('pro_activo_d_'+uid, 'true')
         localStorage.setItem('pro_d_'+uid, 'true')
+        setProActD(true); setProPendD(false)
       }
     }).catch(()=>{})
   }, [userData?.id])
@@ -1635,8 +1654,8 @@ function App() {
     const hoy = new Date().toISOString().split('T')[0]
     const citasHoy = citas.filter((c:any) => c.fecha === hoy)
     const citasProximas = citas.filter((c:any) => c.fecha > hoy).slice(0, 3)
-    const isProB = localStorage.getItem('pro_activo_b_'+userData?.id)==='true'
-    const isPendingB = localStorage.getItem('pro_b_'+userData?.id)==='true' && !isProB
+    const isProB = proActB
+    const isPendingB = proPendB && !proActB
     const nowB = new Date()
     const citasComp = citas.filter((c:any)=>c.estado==='completada')
     const ingrHoyB = citasComp.filter((c:any)=>c.fecha===nowB.toISOString().split('T')[0]).reduce((a:any,c:any)=>a+(c.servicio?.precio||0),0)
@@ -1878,7 +1897,7 @@ function App() {
                   <div style={{fontSize:44,marginBottom:12}}>⏳</div>
                   <h2 style={{fontSize:20,fontWeight:900,marginBottom:8}}>Pago en verificaci\u00f3n</h2>
                   <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Estamos verificando tu pago. En 24\u201348 horas tu plan quedar\u00e1 activo.</p>
-                  <button onClick={async()=>{const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const found=r.data?.find((a:any)=>a.titulo?.includes('PRO')&&a.titulo?.includes(userData?.id));if(found&&found.activo){localStorage.setItem('pro_activo_b_'+userData?.id,'true');alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13}}>🔄 Verificar activaci\u00f3n</button>
+                  <button onClick={async()=>{const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const uid=String(userData?.id);const haystack=(a:any)=>(a.titulo||'')+'|'+(a.descripcion||'');const found=r.data?.find((a:any)=>a.activo&&haystack(a).includes(uid));if(found){localStorage.setItem('pro_activo_b_'+uid,'true');localStorage.setItem('pro_b_'+uid,'true');setProActB(true);setProPendB(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13}}>🔄 Verificar activaci\u00f3n</button>
                   <p style={{marginTop:16,fontSize:11,color:'#444',cursor:'pointer',textDecoration:'underline'}} onClick={()=>{localStorage.removeItem('pro_b_'+userData?.id);alert('Solicitud reiniciada.')}}>Reiniciar solicitud</p>
                   <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                     <p style={{fontSize:12,color:'#666',marginBottom:10}}>¿Ya enviaste el pago y no recibiste confirmación?</p>
@@ -2012,8 +2031,8 @@ function App() {
     const diasRestantes = userData?.fecha_trial_inicio ? Math.max(0,Math.ceil(14-(Date.now()-new Date(userData.fecha_trial_inicio).getTime())/(1000*60*60*24))) : 14
     // @ts-ignore
     const maxCitas = Math.max(...rankingBarberos.map(b=>b.total_citas),1)
-    const isProD = localStorage.getItem('pro_activo_d_'+userData?.id)==='true'
-    const isPendingD = localStorage.getItem('pro_d_'+userData?.id)==='true' && !isProD
+    const isProD = proActD
+    const isPendingD = proPendD && !proActD
     const nowD = new Date()
     const citasCompD = citas.filter((c:any)=>c.estado==='completada')
     const ingrHoyD = citasCompD.filter((c:any)=>c.fecha===nowD.toISOString().split('T')[0]).reduce((a:any,c:any)=>a+(c.servicio?.precio||0),0)
@@ -2330,7 +2349,7 @@ function App() {
                   <div style={{fontSize:44,marginBottom:12}}>⏳</div>
                   <h2 style={{fontSize:20,fontWeight:900,marginBottom:8}}>Pago en verificación</h2>
                   <p style={{color:'#888',fontSize:13,lineHeight:1.6,marginBottom:24}}>Estamos verificando tu pago. En 24–48 horas tu plan quedará activo.</p>
-                  <button onClick={async()=>{const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const found=r.data?.find((a:any)=>a.titulo?.includes('PRO')&&a.titulo?.includes(userData?.id));if(found&&found.activo){localStorage.setItem('pro_activo_d_'+userData?.id,'true');alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13,marginBottom:16}}>🔄 Verificar activación</button>
+                  <button onClick={async()=>{const r=await fetch(`${API}/api/anuncios`).then(d=>d.json()).catch(()=>({data:[]}));const uid=String(userData?.id);const haystack=(a:any)=>(a.titulo||'')+'|'+(a.descripcion||'');const found=r.data?.find((a:any)=>a.activo&&haystack(a).includes(uid));if(found){localStorage.setItem('pro_activo_d_'+uid,'true');localStorage.setItem('pro_d_'+uid,'true');setProActD(true);setProPendD(false);alert('\u00a1Plan Pro activado!')}else{alert('A\u00fan en verificaci\u00f3n. Te avisaremos pronto.')}}} style={{background:'rgba(201,168,76,0.1)',border:'1px solid #C9A84C',borderRadius:10,padding:'12px 24px',color:'#C9A84C',fontWeight:700,cursor:'pointer',fontSize:13,marginBottom:16}}>🔄 Verificar activación</button>
                   <p style={{marginTop:8,fontSize:11,color:'#444',cursor:'pointer',textDecoration:'underline'}} onClick={()=>{localStorage.removeItem('pro_d_'+userData?.id);alert('Solicitud reiniciada.')}}>Reiniciar solicitud</p>
                   <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                     <p style={{fontSize:12,color:'#666',marginBottom:10}}>¿Ya enviaste el pago y no recibiste confirmación?</p>
