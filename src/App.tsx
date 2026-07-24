@@ -1477,7 +1477,7 @@ function App() {
             <div className="welcome-card">
               <p><strong>País:</strong> {userData?.pais}</p>
               <p><strong>Email:</strong> {userData?.email}</p>
-              <p><strong>Citas pendientes:</strong> {citas.length}</p>
+              <p><strong>Citas pendientes:</strong> {citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado').length}</p>
             </div>
             <div style={{display:'flex',gap:12}}>
               <div style={{flex:1,borderRadius:16,overflow:'hidden',position:'relative',minHeight:140,cursor:'pointer'}} onClick={()=>{setTipoNegocioFiltro('barberia');setCurrentPage('agendar');cargarDatos()}}>
@@ -1727,7 +1727,7 @@ function App() {
                   <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Hoy</p>
                 </div>
                 <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'18px 14px',textAlign:'center'}}>
-                  <p style={{fontSize:32,fontWeight:900,color:'#fff',margin:0}}>{citas.length}</p>
+                  <p style={{fontSize:32,fontWeight:900,color:'#fff',margin:0}}>{citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado').length}</p>
                   <p style={{fontSize:10,color:'#777',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Pendientes</p>
                 </div>
                 <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:'18px 14px',textAlign:'center'}}>
@@ -2086,7 +2086,7 @@ function App() {
               <p style={{fontSize:11,color:'#C9A84C',marginTop:6}}>Vista de solo lectura - activa tu plan para editar</p>
             </div>
             <div className="stats-grid" style={{opacity:0.6,pointerEvents:'none'}}>
-              <div className="stat-card"><h4>Citas</h4><p className="stat-number">{citas.length}</p></div>
+              <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado').length}</p></div>
               <div className="stat-card"><h4>Equipo</h4><p className="stat-number">{misBarberos.length}</p></div>
               <div className="stat-card"><h4>Canceladas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='cancelada'||c.estado==='cancelado').length}</p></div>
             </div>
@@ -2160,7 +2160,7 @@ function App() {
                 <p>{userData?.email}</p>
               </div>
               <div className="stats-grid">
-                <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.length}</p></div>
+                <div className="stat-card"><h4>Citas pendientes</h4><p className="stat-number">{citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado').length}</p></div>
                 <div className="stat-card"><h4>Profesionales</h4><p className="stat-number">{misBarberos.length}</p></div>
                 <div className="stat-card"><h4>Canceladas</h4><p className="stat-number">{citas.filter((c:any)=>c.estado==='cancelada'||c.estado==='cancelado').length}</p></div>
                 {userData?.estado_verificacion==='trial'&&<div className="stat-card"><h4>Días trial</h4><p className="stat-number" style={{color:diasRestantes<=3?'#FF6B6B':'#fff'}}>{diasRestantes}</p></div>}
@@ -2408,7 +2408,7 @@ function App() {
           )}
           {currentPage==='citas' && (
             <div className="page">
-              <h2>Citas pendientes - {citas.length}</h2>
+              <h2>Citas pendientes - {citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado').length}</h2>
               {citas.length===0
                 ? <div className="empty-state"><p>No hay citas pendientes</p></div>
                 : <div className="citas-grid">
