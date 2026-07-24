@@ -37,14 +37,6 @@ function getInitials(nombre: string) {
 const TIPO_INFO: Record<string,{label:string,emoji:string}> = {
   barberia:{label:'Barbería',emoji:'✂️'},
   peluqueria:{label:'Peluquería',emoji:'💇'},
-  spa:{label:'Spa',emoji:'🧖'},
-  gimnasio:{label:'Gimnasio',emoji:'🏋️'},
-  manicurista:{label:'Manicure & Pedicure',emoji:'💅'},
-  estetica:{label:'Estética',emoji:'💄'},
-  masajes:{label:'Masajes',emoji:'💆'},
-  tatuajes:{label:'Tatuajes & Piercing',emoji:'🎨'},
-  cejas:{label:'Cejas & Depilación',emoji:'👁️'},
-  veterinaria:{label:'Peluquería Canina',emoji:'🐾'},
 }
 const getTipoLabel = (t:string) => TIPO_INFO[t]?.label || t
 const getTipoEmoji = (t:string) => TIPO_INFO[t]?.emoji || '🏪'
@@ -675,9 +667,9 @@ function App() {
   const [tipoNegocioFiltro, setTipoNegocioFiltro] = useState('todos')
   const [codigoInvitacion, setCodigoInvitacion] = useState('')
   const [usarCodigo, setUsarCodigo] = useState(false)
-  const [ownerData, setOwnerData] = useState({ negocio_nombre:'', pais:'Colombia', estado:'', municipio:'', ciudad:'', negocio_telefono:'', negocio_logo:'', negocio_descripcion:'', direccion:'', latitud:'', longitud:'', tipo_negocio:'barberia', instagram:'', facebook:'', web:'' })
+  const [ownerData, setOwnerData] = useState({ negocio_nombre:'', pais:'Colombia', estado:'', municipio:'', ciudad:'', negocio_telefono:'', negocio_logo:'', negocio_descripcion:'', direccion:'', latitud:'', longitud:'', tipo_negocio:'barberia', instagram:'' })
   const [editNegocio, setEditNegocio] = useState(false)
-  const [editNegocioData, setEditNegocioData] = useState({ nombre:'', descripcion:'', telefono:'', logo:'', tipo_negocio:'barberia', fidelizacion_citas:10, fidelizacion_beneficio:'', instagram:'', facebook:'', web:'' })
+  const [editNegocioData, setEditNegocioData] = useState({ nombre:'', descripcion:'', telefono:'', logo:'', tipo_negocio:'barberia', fidelizacion_citas:10, fidelizacion_beneficio:'', instagram:'' })
   const [formData, setFormData] = useState({ barberia_id:'', barbero_id:'', servicio_id:'', fecha:'', hora:'' })
   const [selectedBarberia, setSelectedBarberia] = useState<any>(null)
   const [selectedBarbero, setSelectedBarbero] = useState<any>(null)
@@ -1099,7 +1091,7 @@ function App() {
                             <span style={{fontSize:12,color:'#666'}}>📍 Ubicación: <span style={{color:'#ccc'}}>{n.ciudad}, {n.estado}</span></span>
                             <span style={{fontSize:12,color:'#666'}}>📞 Tel: <span style={{color:'#ccc'}}>{n.telefono||'-'}</span></span>
                             {n.instagram&&<span style={{fontSize:12,color:'#666'}}>📸 IG: <a href={`https://instagram.com/${n.instagram}`} target="_blank" rel="noreferrer" style={{color:'#C9A84C'}}>@{n.instagram}</a></span>}
-                            {n.facebook&&<span style={{fontSize:12,color:'#666'}}>📘 FB: <span style={{color:'#ccc'}}>{n.facebook}</span></span>}
+
                             <span style={{fontSize:11,color:'#444'}}>ID: <span style={{fontFamily:'monospace',color:'#555'}}>{n.id}</span></span>
                           </div>
                         </div>
@@ -1338,14 +1330,6 @@ function App() {
               <div className="category-selector" style={{gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
                 <button type="button" className={`category-btn ${ownerData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'barberia'})}><span className="cat-icon">✂️</span>Barbería</button>
                 <button type="button" className={`category-btn ${ownerData.tipo_negocio==='peluqueria'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='spa'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'spa'})}><span className="cat-icon">🧖</span>Spa</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='gimnasio'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'gimnasio'})}><span className="cat-icon">🏋️</span>Gimnasio</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='manicurista'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'manicurista'})}><span className="cat-icon">💅</span>Manicure & Pedicure</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='estetica'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'estetica'})}><span className="cat-icon">💄</span>Estética</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='masajes'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'masajes'})}><span className="cat-icon">💆</span>Masajes</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='tatuajes'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'tatuajes'})}><span className="cat-icon">🎨</span>Tatuajes & Piercing</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='cejas'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'cejas'})}><span className="cat-icon">👁️</span>Cejas & Depilación</button>
-                <button type="button" className={`category-btn ${ownerData.tipo_negocio==='veterinaria'?'active':''}`} onClick={()=>setOwnerData({...ownerData,tipo_negocio:'veterinaria'})}><span className="cat-icon">🐾</span>Peluquería Canina</button>
               </div>
             </fieldset>
             <fieldset className="form-section"><legend>Acceso</legend>
@@ -1470,18 +1454,12 @@ function App() {
               {modalBarberoFull.calificacion_promedio>0&&<p style={{color:'#F1C40F',fontSize:13,marginTop:4}}>{'★'.repeat(Math.round(modalBarberoFull.calificacion_promedio))} {Number(modalBarberoFull.calificacion_promedio).toFixed(1)}</p>}
             </div>
             {modalBarberoFull.descripcion&&<p style={{color:'#aaa',fontSize:13,lineHeight:1.6,marginBottom:16,textAlign:'center'}}>{modalBarberoFull.descripcion}</p>}
-            {(modalBarberoFull.instagram||modalBarberoFull.facebook||modalBarberoFull.web)&&(
-              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
-                <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:4}}>Redes sociales</p>
-                {modalBarberoFull.instagram&&<a href={`https://instagram.com/${modalBarberoFull.instagram}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,rgba(131,58,180,0.15),rgba(253,29,29,0.1))',border:'1px solid rgba(253,29,29,0.25)',borderRadius:12,padding:'10px 16px',textDecoration:'none'}}>
-                  <span style={{fontSize:20}}>📸</span><span style={{color:'#fd1d1d',fontWeight:700,fontSize:13}}>@{modalBarberoFull.instagram}</span>
-                </a>}
-                {modalBarberoFull.facebook&&<a href={modalBarberoFull.facebook.startsWith('http')?modalBarberoFull.facebook:`https://facebook.com/${modalBarberoFull.facebook}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'rgba(24,119,242,0.1)',border:'1px solid rgba(24,119,242,0.25)',borderRadius:12,padding:'10px 16px',textDecoration:'none'}}>
-                  <span style={{fontSize:20}}>📘</span><span style={{color:'#1877F2',fontWeight:700,fontSize:13}}>Facebook</span>
-                </a>}
-                {modalBarberoFull.web&&<a href={modalBarberoFull.web.startsWith('http')?modalBarberoFull.web:`https://${modalBarberoFull.web}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.25)',borderRadius:12,padding:'10px 16px',textDecoration:'none'}}>
-                  <span style={{fontSize:20}}>🌐</span><span style={{color:'#C9A84C',fontWeight:700,fontSize:13}}>Sitio web</span>
-                </a>}
+            {modalBarberoFull.instagram&&(
+              <div style={{marginBottom:16}}>
+                <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:8}}>Instagram</p>
+                <a href={`https://instagram.com/${modalBarberoFull.instagram}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,rgba(131,58,180,0.15),rgba(253,29,29,0.1))',border:'1px solid rgba(253,29,29,0.25)',borderRadius:12,padding:'12px 16px',textDecoration:'none'}}>
+                  <span style={{fontSize:22}}>📸</span><span style={{color:'#fd1d1d',fontWeight:700,fontSize:14}}>@{modalBarberoFull.instagram}</span>
+                </a>
               </div>
             )}
             {modalBarberoFull.whatsapp&&<a href={`https://wa.me/${modalBarberoFull.whatsapp}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,background:'rgba(37,211,102,0.1)',border:'1px solid rgba(37,211,102,0.3)',borderRadius:12,padding:'12px',textDecoration:'none',marginBottom:16}}>
@@ -1536,7 +1514,7 @@ function App() {
             <div className="search-section">
               <p className="search-title">Encuentra tu barbería o peluquería</p>
               <div className="tipo-filter">
-                {['todos','barberia','peluqueria','spa','gimnasio','manicurista','estetica','masajes','tatuajes','cejas','veterinaria'].map(t=>(
+                {['todos','barberia','peluqueria'].map(t=>(
                   <button key={t} className={`tipo-btn ${tipoNegocioFiltro===t?'active':''}`} onClick={()=>{setTipoNegocioFiltro(t);if(gpsUsado)buscarPorGPS()}}>
                     {t==='todos'?'Todos':getTipoLabel(t)}
                   </button>
@@ -1566,6 +1544,7 @@ function App() {
                         {b.distancia!==undefined&&<div className="barberia-distancia">{b.distancia.toFixed(1)} km</div>}
                         {b.calificacion_promedio>0&&<div style={{display:'flex',alignItems:'center',gap:6}}><StarRating value={Math.round(b.calificacion_promedio)}/><span style={{fontSize:12,color:'#777'}}>{Number(b.calificacion_promedio).toFixed(1)}</span></div>}
                         {b.descripcion&&<p className="barberia-descripcion">{b.descripcion}</p>}
+                        {b.instagram&&<a href={`https://instagram.com/${b.instagram}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:8,background:'linear-gradient(135deg,rgba(131,58,180,0.12),rgba(253,29,29,0.08))',border:'1px solid rgba(253,29,29,0.2)',color:'#fd1d1d',borderRadius:20,padding:'4px 12px',fontSize:11,fontWeight:700,textDecoration:'none'}}>📸 @{b.instagram}</a>}
                         <div style={{display:'flex',gap:8,marginTop:6}}>
                           <button className={`btn-elegir ${selectedBarberia?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarberia(b);setSelectedBarbero(null);setBarberosList([]);setFormData({...formData,barberia_id:b.id,barbero_id:'',hora:''});cargarBarberosBarberia(b.id)}}>
                             {selectedBarberia?.id===b.id?'Seleccionada':'Elegir'}
@@ -1597,13 +1576,7 @@ function App() {
                               </div>
                             </div>
                             {b.descripcion&&<p className="barberia-descripcion" style={{marginBottom:10}}>{b.descripcion}</p>}
-                            {(b.instagram||b.facebook||b.web)&&(
-                              <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:10}}>
-                                {b.instagram&&<a href={`https://instagram.com/${b.instagram}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,background:'linear-gradient(135deg,rgba(131,58,180,0.15),rgba(253,29,29,0.1))',border:'1px solid rgba(253,29,29,0.2)',color:'#fd1d1d',borderRadius:20,padding:'4px 12px',fontSize:11,fontWeight:700,textDecoration:'none'}}>📸 @{b.instagram}</a>}
-                                {b.facebook&&<a href={b.facebook.startsWith('http')?b.facebook:`https://facebook.com/${b.facebook}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(24,119,242,0.1)',border:'1px solid rgba(24,119,242,0.2)',color:'#1877F2',borderRadius:20,padding:'4px 12px',fontSize:11,fontWeight:700,textDecoration:'none'}}>📘 Facebook</a>}
-                                {b.web&&<a href={b.web.startsWith('http')?b.web:`https://${b.web}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C',borderRadius:20,padding:'4px 12px',fontSize:11,fontWeight:700,textDecoration:'none'}}>🌐 Sitio web</a>}
-                              </div>
-                            )}
+                            {b.instagram&&<a href={`https://instagram.com/${b.instagram}`} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:10,background:'linear-gradient(135deg,rgba(131,58,180,0.12),rgba(253,29,29,0.08))',border:'1px solid rgba(253,29,29,0.2)',color:'#fd1d1d',borderRadius:20,padding:'5px 14px',fontSize:12,fontWeight:700,textDecoration:'none'}}>📸 @{b.instagram}</a>}
                             <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:12}}>
                               {DIAS.map(dia=>{const h=b.horario[dia];return h?.activo?<span key={dia} style={{background:'rgba(201,168,76,0.08)',color:'#C9A84C',border:'1px solid rgba(201,168,76,0.2)',borderRadius:4,padding:'2px 8px',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>{DIAS_LABELS[dia]}</span>:null})}
                             </div>
@@ -1658,26 +1631,58 @@ function App() {
         )}
         {currentPage==='citas' && (
           <div className="page">
-            <h2>Mis citas pendientes</h2>
+            <h2>Mis citas</h2>
             {selectedBarberia && <FidelizacionCard barberiaId={selectedBarberia.id} usuarioId={userData.id} />}
-            {citas.length===0
-              ? <div className="empty-state"><div className="empty-icon">-</div><p>No tienes citas pendientes</p><button onClick={()=>setCurrentPage('agendar')} className="btn-primary">Agendar una cita</button></div>
-              : <div className="citas-grid">
-                  {citas.filter(esCitaVigente).map((c:any)=>(
-                    <div key={c.id} className="cita-card">
-                      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-                        <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={36} />
-                        <h4>{c.barberia?.nombre}</h4>
-                      </div>
-                      {c.barbero&&<p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
-                      <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
-                      <p><strong>Fecha:</strong> {c.fecha}</p>
-                      <p><strong>Hora:</strong> {c.hora}</p>
-                      <span className="badge-agendada">Confirmada</span>
+            {(()=>{
+              const pendientes=citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado'&&esCitaVigente(c))
+              const realizadas=citas.filter((c:any)=>c.estado==='completada')
+              const todasVacias=pendientes.length===0&&realizadas.length===0
+              return(<>
+                {todasVacias&&<div className="empty-state"><div className="empty-icon">-</div><p>No tienes citas</p><button onClick={()=>setCurrentPage('agendar')} className="btn-primary">Agendar una cita</button></div>}
+                {pendientes.length>0&&(
+                  <div style={{marginBottom:24}}>
+                    <p style={{fontSize:10,color:'#2ECC71',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:10}}>📅 Próximas · {pendientes.length}</p>
+                    <div className="citas-grid">
+                      {pendientes.map((c:any)=>(
+                        <div key={c.id} className="cita-card" style={{border:'1px solid rgba(46,204,113,0.2)',background:'linear-gradient(135deg,rgba(46,204,113,0.05),rgba(0,0,0,0))'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                            <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={36} />
+                            <h4>{c.barberia?.nombre}</h4>
+                          </div>
+                          {c.barbero&&<p><strong>Profesional:</strong> {c.barbero.nombre}</p>}
+                          <p><strong>Servicio:</strong> {c.servicio?.nombre}</p>
+                          <p><strong>Fecha:</strong> {c.fecha} · {c.hora}</p>
+                          <span className="badge-agendada" style={{background:'rgba(46,204,113,0.15)',color:'#2ECC71',border:'1px solid rgba(46,204,113,0.3)'}}>✓ Confirmada</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-            }
+                  </div>
+                )}
+                {realizadas.length>0&&(
+                  <div>
+                    <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:10}}>✂️ Realizadas · {realizadas.length}</p>
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      {realizadas.map((c:any)=>(
+                        <div key={c.id} style={{background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:16,opacity:0.75}}>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+                            <div>
+                              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                                <BarberiaLogo logo={c.barberia?.logo} nombre={c.barberia?.nombre||'B'} size={28} />
+                                <p style={{fontWeight:600,fontSize:14,color:'#777'}}>{c.barberia?.nombre}</p>
+                              </div>
+                              {c.barbero&&<p style={{fontSize:12,color:'#555'}}>👤 {c.barbero.nombre}</p>}
+                              <p style={{fontSize:12,color:'#555'}}>{c.servicio?.nombre} · {c.fecha}</p>
+                            </div>
+                            <span style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#555',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>✓ Realizada</span>
+                          </div>
+                          <button onClick={()=>setModalCal({tipo:'barbero',id:c.barbero_id,barberiaId:c.barberia_id,usuarioId:userData.id,nombre:c.barbero?.nombre||c.barberia?.nombre||''})} style={{width:'100%',background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:10,color:'#C9A84C',padding:'9px',fontSize:12,fontWeight:700,cursor:'pointer'}}>⭐ Calificar servicio</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>)
+            })()}
           </div>
         )}
       </div>
@@ -1686,8 +1691,8 @@ function App() {
 
   if (loggedIn && userData?.rol==='barbero') {
     const hoy = new Date().toISOString().split('T')[0]
-    const citasHoy = citas.filter((c:any) => c.fecha === hoy)
-    const citasProximas = citas.filter((c:any) => c.fecha > hoy).slice(0, 3)
+    const citasHoy = citas.filter((c:any) => c.fecha === hoy && c.estado!=='cancelada' && c.estado!=='cancelado')
+    const citasProximas = citas.filter((c:any) => c.fecha > hoy && c.estado!=='completada' && c.estado!=='cancelada' && c.estado!=='cancelado').slice(0, 3)
     const isProB = proActB
     const isPendingB = proPendB && !proActB
     const nowB = new Date()
@@ -1702,7 +1707,7 @@ function App() {
           <div className="nav-links">
             <button className={currentPage==='dashboard'?'active':''} onClick={()=>setCurrentPage('dashboard')}>Inicio</button>
             <button className={currentPage==='citas'?'active':''} onClick={()=>{setCurrentPage('citas');cargarCitasBarbero()}}>
-              Citas {citas.length>0&&<span style={{background:'#C9A84C',color:'#000',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:900,marginLeft:4}}>{citas.length}</span>}
+              Citas {citas.filter((cx:any)=>cx.estado!=='completada'&&cx.estado!=='cancelada'&&cx.estado!=='cancelado').length>0&&<span style={{background:'#C9A84C',color:'#000',borderRadius:10,padding:'1px 6px',fontSize:10,fontWeight:900,marginLeft:4}}>{citas.filter((cx:any)=>cx.estado!=='completada'&&cx.estado!=='cancelada'&&cx.estado!=='cancelado').length}</span>}
             </button>
             <button className={currentPage==='perfil'?'active':''} onClick={()=>{setCurrentPage('perfil');cargarPerfilBarbero()}}>Mi perfil</button>
             <button className={currentPage==='pro'?'active':''} onClick={()=>{if(isProB){setCurrentPage('pro')}else{setCurrentPage('pro')}}} style={{color:isProB?'#2ECC71':'#C9A84C',fontWeight:700}}>💎 VIP{isProB&&<span style={{marginLeft:4,fontSize:8,verticalAlign:'middle',color:'#2ECC71'}}>●</span>}</button>
@@ -1757,10 +1762,13 @@ function App() {
                           </div>
                         </div>
                         {c.cliente?.telefono&&<p style={{fontSize:11,color:'#555',marginBottom:12}}>📞 {c.cliente.telefono}</p>}
-                        <div style={{display:'flex',gap:8}}>
-                          <button onClick={()=>completarCita(c.id)} style={{flex:1,background:'rgba(46,204,113,0.12)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:10,color:'#2ECC71',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✓ Servicio realizado</button>
-                          <button onClick={()=>cancelarCita(c.id)} style={{background:'rgba(231,76,60,0.08)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:10,color:'#FF6B6B',padding:'11px 16px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✗</button>
-                        </div>
+                        {c.estado==='completada'
+                          ? <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,background:'rgba(46,204,113,0.06)',border:'1px solid rgba(46,204,113,0.15)',borderRadius:10,padding:'11px',color:'#2ECC71',fontSize:13,fontWeight:700}}>✓ Servicio realizado</div>
+                          : <div style={{display:'flex',gap:8}}>
+                              <button onClick={()=>completarCita(c.id)} style={{flex:1,background:'rgba(46,204,113,0.12)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:10,color:'#2ECC71',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✓ Realizado</button>
+                              <button onClick={()=>cancelarCita(c.id)} style={{flex:1,background:'rgba(231,76,60,0.08)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:10,color:'#FF6B6B',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✗ Cancelar</button>
+                            </div>
+                        }
                       </div>
                     ))}
                   </div>
@@ -1799,34 +1807,57 @@ function App() {
           )}
           {currentPage==='citas' && (
             <div className="page">
-              <h2>Mis citas - {citas.length}</h2>
-              {citas.filter(esCitaVigente).length===0
-                ? <div className="empty-state"><p style={{fontSize:32,marginBottom:8}}>✂️</p><p>No tienes citas pendientes</p></div>
-                : <div style={{display:'flex',flexDirection:'column',gap:12}}>
-                    {citas.filter(esCitaVigente).map((c:any)=>(
-                      <div key={c.id} style={{background:c.fecha===hoy?'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))':'rgba(255,255,255,0.02)',border:c.fecha===hoy?'1px solid rgba(201,168,76,0.2)':'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:18}}>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
-                          <div>
-                            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                              <p style={{fontWeight:700,fontSize:15,color:'#fff'}}>{c.cliente?.nombre||'Cliente'}</p>
-                              {c.fecha===hoy&&<span style={{background:'rgba(201,168,76,0.2)',color:'#C9A84C',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:6,textTransform:'uppercase',letterSpacing:1}}>Hoy</span>}
+              <h2>Mis citas</h2>
+              {(()=>{
+                const pendientes=citas.filter((c:any)=>c.estado!=='completada'&&c.estado!=='cancelada'&&c.estado!=='cancelado')
+                const completadas=citas.filter((c:any)=>c.estado==='completada')
+                return(<>
+                  {pendientes.length===0
+                    ? <div className="empty-state" style={{marginBottom:20}}><p style={{fontSize:32,marginBottom:8}}>✂️</p><p>No tienes citas pendientes</p></div>
+                    : <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:24}}>
+                        <p style={{fontSize:10,color:'#C9A84C',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:4}}>Pendientes · {pendientes.length}</p>
+                        {pendientes.map((c:any)=>(
+                          <div key={c.id} style={{background:c.fecha===hoy?'linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))':'rgba(255,255,255,0.02)',border:c.fecha===hoy?'1px solid rgba(201,168,76,0.2)':'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:18}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+                              <div>
+                                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                                  <p style={{fontWeight:700,fontSize:15,color:'#fff'}}>{c.cliente?.nombre||'Cliente'}</p>
+                                  {c.fecha===hoy&&<span style={{background:'rgba(201,168,76,0.2)',color:'#C9A84C',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:6,textTransform:'uppercase',letterSpacing:1}}>Hoy</span>}
+                                </div>
+                                <p style={{fontSize:13,color:'#777'}}>{c.servicio?.nombre}</p>
+                                {c.cliente?.telefono&&<p style={{fontSize:12,color:'#555',marginTop:4}}>📞 {c.cliente.telefono}</p>}
+                              </div>
+                              <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px 14px',textAlign:'center'}}>
+                                <p style={{fontSize:15,fontWeight:900,color:c.fecha===hoy?'#C9A84C':'#fff'}}>{c.hora}</p>
+                                <p style={{fontSize:10,color:'#555',marginTop:2}}>{c.fecha}</p>
+                              </div>
                             </div>
-                            <p style={{fontSize:13,color:'#777'}}>{c.servicio?.nombre}</p>
-                            {c.cliente?.telefono&&<p style={{fontSize:12,color:'#555',marginTop:4}}>📞 {c.cliente.telefono}</p>}
+                            <div style={{display:'flex',gap:8}}>
+                              <button onClick={()=>completarCita(c.id)} style={{flex:1,background:'rgba(46,204,113,0.12)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:10,color:'#2ECC71',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✓ Realizado</button>
+                              <button onClick={()=>cancelarCita(c.id)} style={{flex:1,background:'rgba(231,76,60,0.08)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:10,color:'#FF6B6B',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✗ Cancelar</button>
+                            </div>
                           </div>
-                          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:10,padding:'8px 14px',textAlign:'center'}}>
-                            <p style={{fontSize:15,fontWeight:900,color:c.fecha===hoy?'#C9A84C':'#fff'}}>{c.hora}</p>
-                            <p style={{fontSize:10,color:'#555',marginTop:2}}>{c.fecha}</p>
-                          </div>
-                        </div>
-                        <div style={{display:'flex',gap:8}}>
-                          <button onClick={()=>completarCita(c.id)} style={{flex:1,background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.25)',borderRadius:10,color:'#2ECC71',padding:'11px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✓ Servicio realizado</button>
-                          <button onClick={()=>cancelarCita(c.id)} style={{background:'rgba(231,76,60,0.08)',border:'1px solid rgba(231,76,60,0.2)',borderRadius:10,color:'#FF6B6B',padding:'11px 16px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✗ Cancelar</button>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-              }
+                  }
+                  {completadas.length>0&&(
+                    <div>
+                      <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:12}}>Realizadas · {completadas.length}</p>
+                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                        {completadas.map((c:any)=>(
+                          <div key={c.id} style={{background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.04)',borderRadius:12,padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',opacity:0.7}}>
+                            <div>
+                              <p style={{fontWeight:600,fontSize:14,color:'#777',marginBottom:2}}>{c.cliente?.nombre||'Cliente'}</p>
+                              <p style={{fontSize:12,color:'#444'}}>{c.servicio?.nombre} · {c.fecha}</p>
+                            </div>
+                            <span style={{background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.2)',color:'#2ECC71',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:700}}>✓ Realizada</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>)
+              })()}
             </div>
           )}
           {currentPage==='perfil' && (
@@ -1859,10 +1890,11 @@ function App() {
                         <input type="tel" placeholder="573001234567 (sin +)" value={perfilBarbero.whatsapp||''} onChange={e=>setPerfilBarbero({...perfilBarbero,whatsapp:e.target.value})} />
                         <p style={{fontSize:11,color:'#555',marginTop:6}}>Número con código de país, sin + ni espacios. Ej: 573001234567</p>
                       </div>
-                      <div className="form-group" style={{marginBottom:20}}><label>📸 Instagram (usuario sin @, opcional)</label>
+                      <div className="form-group" style={{marginBottom:14}}><label>📸 Instagram (usuario sin @, opcional)</label>
                         <input type="text" placeholder="tunombre" value={perfilBarbero.instagram||''} onChange={e=>setPerfilBarbero({...perfilBarbero,instagram:e.target.value})} />
-                        <p style={{fontSize:11,color:'#555',marginTop:6}}>Los clientes podrán seguirte desde tu perfil en la app</p>
+                        <p style={{fontSize:11,color:'#555',marginTop:6}}>Los clientes podrán seguirte desde tu perfil</p>
                       </div>
+
                       <p style={{color:'#555',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:14}}>Horario de trabajo</p>
                       {DIAS.map(dia=>{
                         const h=perfilBarbero.horario?.[dia]||{activo:false,inicio:'08:00',fin:'18:00'}
@@ -2279,14 +2311,6 @@ function App() {
                       <div className="category-selector" style={{gridTemplateColumns:'repeat(2,1fr)',gap:6}}>
                         <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='barberia'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'barberia'})}><span className="cat-icon">✂️</span>Barbería</button>
                         <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='peluqueria'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'peluqueria'})}><span className="cat-icon">💇</span>Peluquería</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='spa'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'spa'})}><span className="cat-icon">🧖</span>Spa</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='gimnasio'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'gimnasio'})}><span className="cat-icon">🏋️</span>Gimnasio</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='manicurista'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'manicurista'})}><span className="cat-icon">💅</span>Manicure</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='estetica'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'estetica'})}><span className="cat-icon">💄</span>Estética</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='masajes'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'masajes'})}><span className="cat-icon">💆</span>Masajes</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='tatuajes'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'tatuajes'})}><span className="cat-icon">🎨</span>Tatuajes</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='cejas'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'cejas'})}><span className="cat-icon">👁️</span>Cejas</button>
-                        <button type="button" className={`category-btn ${editNegocioData.tipo_negocio==='veterinaria'?'active':''}`} onClick={()=>setEditNegocioData({...editNegocioData,tipo_negocio:'veterinaria'})}><span className="cat-icon">🐾</span>Pet Grooming</button>
                       </div>
                     </div>
                     <div className="form-group"><label>Nombre</label><input type="text" value={editNegocioData.nombre} onChange={e=>setEditNegocioData({...editNegocioData,nombre:e.target.value})} /></div>
@@ -2309,14 +2333,7 @@ function App() {
                         <label>📸 Instagram (usuario sin @)</label>
                         <input type="text" placeholder="tunegocio" value={editNegocioData.instagram||''} onChange={e=>setEditNegocioData({...editNegocioData,instagram:e.target.value})} />
                       </div>
-                      <div className="form-group" style={{marginBottom:12}}>
-                        <label>📘 Facebook (usuario o URL)</label>
-                        <input type="text" placeholder="tunegocio o https://facebook.com/..." value={editNegocioData.facebook||''} onChange={e=>setEditNegocioData({...editNegocioData,facebook:e.target.value})} />
-                      </div>
-                      <div className="form-group">
-                        <label>🌐 Página web</label>
-                        <input type="url" placeholder="https://tunegocio.com" value={editNegocioData.web||''} onChange={e=>setEditNegocioData({...editNegocioData,web:e.target.value})} />
-                      </div>
+
                     </div>
                     {error&&<p className="error">{error}</p>}
                     <div style={{display:'flex',gap:10}}>
