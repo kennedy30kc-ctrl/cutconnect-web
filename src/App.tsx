@@ -135,8 +135,8 @@ function ModalCalificacion({ tipo, id, barberiaId, usuarioId, nombre, onClose, o
       if (tipo==='barbero') body.barbero_id = id
       const res = await fetch(`${API}/api/calificaciones`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) })
       const data = await res.json()
-      if (data.success) { onDone(); onClose() } else alert(data.error)
-    } catch { alert('Error de conexión') } finally { setLoading(false) }
+      if (data.success) { onDone() } else { alert(data.error||'No se pudo enviar la calificación') }
+    } catch { alert('Error de conexión') } finally { setLoading(false); onClose() }
   }
   return (
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
@@ -593,14 +593,6 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
               <button key='todos' className={`tipo-btn ${tipoFiltro==='todos'?'active':''}`} onClick={()=>{setTipoFiltro('todos');cargarBarberias(undefined,undefined,searchCiudad||undefined,'todos')}}>Todos</button>
               <button key='barberia' className={`tipo-btn ${tipoFiltro==='barberia'?'active':''}`} onClick={()=>{setTipoFiltro('barberia');cargarBarberias(undefined,undefined,searchCiudad||undefined,'barberia')}}>✂️ Barberías</button>
               <button key='peluqueria' className={`tipo-btn ${tipoFiltro==='peluqueria'?'active':''}`} onClick={()=>{setTipoFiltro('peluqueria');cargarBarberias(undefined,undefined,searchCiudad||undefined,'peluqueria')}}>💇 Peluquerías</button>
-              <button key='spa' className={`tipo-btn ${tipoFiltro==='spa'?'active':''}`} onClick={()=>{setTipoFiltro('spa');cargarBarberias(undefined,undefined,searchCiudad||undefined,'spa')}}>🧖 Spa</button>
-              <button key='gimnasio' className={`tipo-btn ${tipoFiltro==='gimnasio'?'active':''}`} onClick={()=>{setTipoFiltro('gimnasio');cargarBarberias(undefined,undefined,searchCiudad||undefined,'gimnasio')}}>🏋️ Gimnasio</button>
-              <button key='manicurista' className={`tipo-btn ${tipoFiltro==='manicurista'?'active':''}`} onClick={()=>{setTipoFiltro('manicurista');cargarBarberias(undefined,undefined,searchCiudad||undefined,'manicurista')}}>💅 Manicure</button>
-              <button key='estetica' className={`tipo-btn ${tipoFiltro==='estetica'?'active':''}`} onClick={()=>{setTipoFiltro('estetica');cargarBarberias(undefined,undefined,searchCiudad||undefined,'estetica')}}>💄 Estética</button>
-              <button key='masajes' className={`tipo-btn ${tipoFiltro==='masajes'?'active':''}`} onClick={()=>{setTipoFiltro('masajes');cargarBarberias(undefined,undefined,searchCiudad||undefined,'masajes')}}>💆 Masajes</button>
-              <button key='tatuajes' className={`tipo-btn ${tipoFiltro==='tatuajes'?'active':''}`} onClick={()=>{setTipoFiltro('tatuajes');cargarBarberias(undefined,undefined,searchCiudad||undefined,'tatuajes')}}>🎨 Tatuajes</button>
-              <button key='cejas' className={`tipo-btn ${tipoFiltro==='cejas'?'active':''}`} onClick={()=>{setTipoFiltro('cejas');cargarBarberias(undefined,undefined,searchCiudad||undefined,'cejas')}}>👁️ Cejas</button>
-              <button key='veterinaria' className={`tipo-btn ${tipoFiltro==='veterinaria'?'active':''}`} onClick={()=>{setTipoFiltro('veterinaria');cargarBarberias(undefined,undefined,searchCiudad||undefined,'veterinaria')}}>🐾 Pet</button>
           </div>
         </div>
         {barberias.length === 0 && (
@@ -625,7 +617,7 @@ function PublicPage({ onLogin, onRegister }: { onLogin:()=>void, onRegister:()=>
                 {b.descripcion && <p className="barberia-descripcion">{b.descripcion}</p>}
                 <div style={{ display:'flex', gap:8, marginTop:6 }}>
                   <button className="btn-elegir" onClick={e => { e.stopPropagation(); setSelectedBarberia(b); setShowLoginPrompt(true) }}>Reservar</button>
-                  <button style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'#555', fontSize:11, padding:'8px 12px', cursor:'pointer', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }} onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id:b.id, barberiaId:b.id, usuarioId:0, nombre:b.nombre }) }}>Calificar</button>
+                  <button style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'#555', fontSize:11, padding:'8px 12px', cursor:'pointer', fontWeight:600, textTransform:'uppercase', letterSpacing:1 }} onClick={e => { e.stopPropagation(); setModalCal({ tipo:'barberia', id:b.id, barberiaId:b.id, usuarioId:0, nombre:b.nombre }) }}>⭐ Calificar</button>
                 </div>
               </div>
             </div>
@@ -1549,7 +1541,7 @@ function App() {
                           <button className={`btn-elegir ${selectedBarberia?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarberia(b);setSelectedBarbero(null);setBarberosList([]);setFormData({...formData,barberia_id:b.id,barbero_id:'',hora:''});cargarBarberosBarberia(b.id)}}>
                             {selectedBarberia?.id===b.id?'Seleccionada':'Elegir'}
                           </button>
-                          <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barberia',id:b.id,barberiaId:b.id,usuarioId:userData.id,nombre:b.nombre})}>Calificar</button>
+                          <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barberia',id:b.id,barberiaId:b.id,usuarioId:userData.id,nombre:b.nombre})}>⭐ Calificar barbería</button>
                         </div>
                       </div>
                     </div>
@@ -1585,7 +1577,7 @@ function App() {
                                 {selectedBarbero?.id===b.id?'Seleccionado':'Elegir'}
                               </button>
                               <button style={{background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:8,color:'#C9A84C',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={async()=>{try{const r=await fetch(`${API}/api/barbero/perfil/${b.usuario_id}`);const d=await r.json();if(d.success&&d.data)setModalBarberoFull(d.data);else setModalBarberoFull({...b,nombre:b.nombre})}catch{setModalBarberoFull({...b,nombre:b.nombre})}}}>👤 Ver perfil</button>
-                              <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barbero',id:b.id,barberiaId:selectedBarberia.id,usuarioId:userData.id,nombre:b.nombre})}>Calificar</button>
+                              <button style={{background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:8,color:'#C9A84C',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barbero',id:b.id,barberiaId:selectedBarberia.id,usuarioId:userData.id,nombre:b.nombre})}>⭐ Calificar barbero</button>
                             </div>
                           </div>
                         </div>
