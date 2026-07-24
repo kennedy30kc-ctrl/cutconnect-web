@@ -727,7 +727,7 @@ function App() {
   useEffect(() => { if (loggedIn) cargarDatos() }, [loggedIn])
   useEffect(() => { if (formData.barbero_id && formData.fecha) cargarDisponibilidad(formData.barbero_id, formData.fecha); else setHorasDisponibles([]) }, [formData.barbero_id, formData.fecha])
   useEffect(() => { if (loggedIn && userData?.rol==='barbero') cargarPerfilBarbero() }, [loggedIn, userData?.rol])
-  useEffect(() => { if (loggedIn && userData?.rol==='dueño') cargarPerfilDuenoBarbero() }, [loggedIn, userData?.rol])
+  useEffect(() => { if (loggedIn && userData?.rol==='dueño') { cargarPerfilDuenoBarbero(); if(userData?.barberia_id) cargarRanking() } }, [loggedIn, userData?.rol])
   useEffect(() => {
     fetch(`${API}/api/anuncios`).then(r=>r.json()).then(d=>{ if(d.success && d.data?.length) setAdBanners(d.data.filter((a:any) => a.activo)) }).catch(()=>{})
   }, [])
@@ -776,12 +776,12 @@ function App() {
         : fetch(`${API}/api/citas/usuario/${userData?.id}`)
       ])
       const d1=await r1.json(); const d2=await r2.json(); const d3=await r3.json()
-      setBarberias(d1.data||[]); setServicios(d2.data||[]); setCitas(d3.data||[])
+      setBarberias(d1.data||[]); setServicios(d2.data||[]); setCitas((prev:any[])=>{const nd=d3.data||[];const nids=new Set(nd.map((c:any)=>c.id));const keep=prev.filter((c:any)=>c.estado==='completada'&&!nids.has(c.id));return[...nd,...keep]})
     } catch {}
   }
 
-  const cargarCitasDueno = async () => { try { const r=await fetch(`${API}/api/citas/barberia/${userData?.barberia_id}`); const d=await r.json(); setCitas(d.data||[]) } catch { setCitas([]) } }
-  const cargarCitasBarbero = async () => { try { const r=await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d=await r.json(); setCitas(d.data||[]) } catch { setCitas([]) } }
+  const cargarCitasDueno = async () => { try { const r=await fetch(`${API}/api/citas/barberia/${userData?.barberia_id}`); const d=await r.json(); setCitas((prev:any[])=>{const nd=d.data||[];const nids=new Set(nd.map((c:any)=>c.id));const keep=prev.filter((c:any)=>c.estado==='completada'&&!nids.has(c.id));return[...nd,...keep]}) } catch {} }
+  const cargarCitasBarbero = async () => { try { const r=await fetch(`${API}/api/citas/barbero/${userData?.barbero_id}`); const d=await r.json(); setCitas((prev:any[])=>{const nd=d.data||[];const nids=new Set(nd.map((c:any)=>c.id));const keep=prev.filter((c:any)=>c.estado==='completada'&&!nids.has(c.id));return[...nd,...keep]}) } catch {} }
   const cargarBarberosBarberia = async (id: any) => { try { const r=await fetch(`${API}/api/barberos/${id}`); const d=await r.json(); setBarberosList(d.data||[]) } catch { setBarberosList([]) } }
   const cargarMisBarberos = async () => { try { const r=await fetch(`${API}/api/barberos/${userData?.barberia_id}`); const d=await r.json(); setMisBarberos(d.data||[]) } catch { setMisBarberos([]) } }
   // @ts-ignore
