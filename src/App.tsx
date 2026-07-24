@@ -706,6 +706,7 @@ function App() {
   const [formBarbero, setFormBarbero] = useState({ nombre:'', foto:'', especialidad:'', descripcion:'', horario:{ lunes:{activo:true,inicio:'08:00',fin:'18:00'}, martes:{activo:true,inicio:'08:00',fin:'18:00'}, miercoles:{activo:true,inicio:'08:00',fin:'18:00'}, jueves:{activo:true,inicio:'08:00',fin:'18:00'}, viernes:{activo:true,inicio:'08:00',fin:'18:00'}, sabado:{activo:true,inicio:'08:00',fin:'14:00'}, domingo:{activo:false,inicio:'',fin:''} } })
   const [perfilBarbero, setPerfilBarbero] = useState<any>(null)
   const [modalCal, setModalCal] = useState<any>(null)
+  const [modalBarberoFull, setModalBarberoFull] = useState<any>(null)
   const [perfilDuenoBarbero, setPerfilDuenoBarbero] = useState<any>(null)
   const [citasPropias, setCitasPropias] = useState<any[]>([])
   const [showFormActivar, setShowFormActivar] = useState(false)
@@ -717,8 +718,8 @@ function App() {
   const [proPendD, setProPendD] = useState(false)
   const [proActB, setProActB] = useState(false)
   const [proPendB, setProPendB] = useState(false)
-  const [rangoB, setRangoB] = useState({desde:'',hasta:''})
-  const [rangoD, setRangoD] = useState({desde:'',hasta:''})
+  const [rangoB, setRangoB] = useState(()=>{const t=new Date().toISOString().split('T')[0];return{desde:t,hasta:t}})
+  const [rangoD, setRangoD] = useState(()=>{const t=new Date().toISOString().split('T')[0];return{desde:t,hasta:t}})
 
   const isAdminRoute = window.location.pathname === ADMIN_PATH
   const isPublicidadRoute = window.location.pathname === PUBLICIDAD_PATH
@@ -795,7 +796,7 @@ function App() {
   const buscarPorCiudad = () => { if (!searchCiudad.trim()) return; setGpsUsado(false); cargarDatos(undefined, undefined, searchCiudad, tipoNegocioFiltro) }
 
   const completarCita = async (id: number) => {
-    try { await fetch(`${API}/api/citas/completar/${id}`, { method:'POST' }); cargarCitasDueno(); cargarCitasBarbero() } catch {}
+    try { await fetch(`${API}/api/citas/completar/${id}`, { method:'POST' }); setCitas((prev:any)=>prev.map((cc:any)=>cc.id===id?{...cc,estado:'completada'}:cc)) } catch {}
   }
   const cancelarCita = async (id: number) => {
     if (!confirm('¿Cancelar esta cita?')) return
@@ -1459,6 +1460,37 @@ function App() {
   if (loggedIn && userData?.rol==='cliente') return (
     <div className="dashboard-container">
       {modalCal && <ModalCalificacion {...modalCal} onClose={()=>setModalCal(null)} onDone={()=>cargarDatos()} />}
+      {modalBarberoFull&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setModalBarberoFull(null)}>
+          <div style={{background:'#111',border:'1px solid rgba(255,255,255,0.1)',borderRadius:20,padding:28,maxWidth:400,width:'100%',maxHeight:'85vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+            <div style={{textAlign:'center',marginBottom:20}}>
+              {modalBarberoFull.foto?<img src={modalBarberoFull.foto} alt="" style={{width:90,height:90,borderRadius:'50%',objectFit:'cover',border:'3px solid #C9A84C',marginBottom:12}} />:<div style={{width:90,height:90,borderRadius:'50%',background:'linear-gradient(135deg,#C9A84C,#8B6914)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,fontWeight:700,color:'#fff',margin:'0 auto 12px'}}>{(modalBarberoFull.nombre||'B')[0].toUpperCase()}</div>}
+              <h3 style={{fontSize:20,fontWeight:800,color:'#fff',margin:0}}>{modalBarberoFull.nombre}</h3>
+              {modalBarberoFull.especialidad&&<p style={{color:'#C9A84C',fontSize:13,marginTop:4,fontWeight:600}}>{modalBarberoFull.especialidad}</p>}
+              {modalBarberoFull.calificacion_promedio>0&&<p style={{color:'#F1C40F',fontSize:13,marginTop:4}}>{'★'.repeat(Math.round(modalBarberoFull.calificacion_promedio))} {Number(modalBarberoFull.calificacion_promedio).toFixed(1)}</p>}
+            </div>
+            {modalBarberoFull.descripcion&&<p style={{color:'#aaa',fontSize:13,lineHeight:1.6,marginBottom:16,textAlign:'center'}}>{modalBarberoFull.descripcion}</p>}
+            {(modalBarberoFull.instagram||modalBarberoFull.facebook||modalBarberoFull.web)&&(
+              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
+                <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:2,fontWeight:700,marginBottom:4}}>Redes sociales</p>
+                {modalBarberoFull.instagram&&<a href={`https://instagram.com/${modalBarberoFull.instagram}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,rgba(131,58,180,0.15),rgba(253,29,29,0.1))',border:'1px solid rgba(253,29,29,0.25)',borderRadius:12,padding:'10px 16px',textDecoration:'none'}}>
+                  <span style={{fontSize:20}}>📸</span><span style={{color:'#fd1d1d',fontWeight:700,fontSize:13}}>@{modalBarberoFull.instagram}</span>
+                </a>}
+                {modalBarberoFull.facebook&&<a href={modalBarberoFull.facebook.startsWith('http')?modalBarberoFull.facebook:`https://facebook.com/${modalBarberoFull.facebook}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'rgba(24,119,242,0.1)',border:'1px solid rgba(24,119,242,0.25)',borderRadius:12,padding:'10px 16px',textDecoration:'none'}}>
+                  <span style={{fontSize:20}}>📘</span><span style={{color:'#1877F2',fontWeight:700,fontSize:13}}>Facebook</span>
+                </a>}
+                {modalBarberoFull.web&&<a href={modalBarberoFull.web.startsWith('http')?modalBarberoFull.web:`https://${modalBarberoFull.web}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:10,background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.25)',borderRadius:12,padding:'10px 16px',textDecoration:'none'}}>
+                  <span style={{fontSize:20}}>🌐</span><span style={{color:'#C9A84C',fontWeight:700,fontSize:13}}>Sitio web</span>
+                </a>}
+              </div>
+            )}
+            {modalBarberoFull.whatsapp&&<a href={`https://wa.me/${modalBarberoFull.whatsapp}`} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,background:'rgba(37,211,102,0.1)',border:'1px solid rgba(37,211,102,0.3)',borderRadius:12,padding:'12px',textDecoration:'none',marginBottom:16}}>
+              <span style={{fontSize:18}}>💬</span><span style={{color:'#25D166',fontWeight:700,fontSize:13}}>Escribir por WhatsApp</span>
+            </a>}
+            <button onClick={()=>setModalBarberoFull(null)} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,padding:'12px',color:'#555',fontWeight:700,cursor:'pointer',fontSize:13}}>Cerrar</button>
+          </div>
+        </div>
+      )}
       <nav className="navbar">
         <div className="navbar-left"><div className="navbar-brand"><h1>Cut<span>Connect</span></h1></div><span className="role-badge">Cliente</span></div>
         <div className="nav-links">
@@ -1575,10 +1607,11 @@ function App() {
                             <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:12}}>
                               {DIAS.map(dia=>{const h=b.horario[dia];return h?.activo?<span key={dia} style={{background:'rgba(201,168,76,0.08)',color:'#C9A84C',border:'1px solid rgba(201,168,76,0.2)',borderRadius:4,padding:'2px 8px',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>{DIAS_LABELS[dia]}</span>:null})}
                             </div>
-                            <div style={{display:'flex',gap:8}}>
+                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                               <button className={`btn-elegir ${selectedBarbero?.id===b.id?'selected':''}`} onClick={()=>{setSelectedBarbero(b);setFormData({...formData,barbero_id:b.id,hora:''})}}>
                                 {selectedBarbero?.id===b.id?'Seleccionado':'Elegir'}
                               </button>
+                              <button style={{background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:8,color:'#C9A84C',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={async()=>{try{const r=await fetch(`${API}/api/barbero/perfil/${b.usuario_id}`);const d=await r.json();if(d.success&&d.data)setModalBarberoFull(d.data);else setModalBarberoFull({...b,nombre:b.nombre})}catch{setModalBarberoFull({...b,nombre:b.nombre})}}}>👤 Ver perfil</button>
                               <button style={{background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#555',fontSize:11,padding:'8px 12px',cursor:'pointer',fontWeight:700,textTransform:'uppercase',letterSpacing:1}} onClick={()=>setModalCal({tipo:'barbero',id:b.id,barberiaId:selectedBarberia.id,usuarioId:userData.id,nombre:b.nombre})}>Calificar</button>
                             </div>
                           </div>
@@ -1881,23 +1914,22 @@ function App() {
                         <label style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:4}}>Hasta</label>
                         <input type="date" value={rangoB.hasta} onChange={e=>setRangoB({...rangoB,hasta:e.target.value})} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 10px',color:'#fff',fontSize:12}} />
                       </div>
-                      {(rangoB.desde||rangoB.hasta)&&<button onClick={()=>setRangoB({desde:'',hasta:''})} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:8,padding:'8px 12px',fontSize:11,cursor:'pointer',fontWeight:700,alignSelf:'flex-end'}}>✕ Limpiar</button>}
+                      {(()=>{const t=new Date().toISOString().split('T')[0];return(rangoB.desde!==t||rangoB.hasta!==t)&&<button onClick={()=>setRangoB({desde:t,hasta:t})} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:8,padding:'8px 12px',fontSize:11,cursor:'pointer',fontWeight:700,alignSelf:'flex-end'}}>↩ Volver a hoy</button>})()}
                     </div>
                     {(()=>{
-                      const desde=rangoB.desde?new Date(rangoB.desde+'T00:00:00'):null
-                      const hasta=rangoB.hasta?new Date(rangoB.hasta+'T23:59:59'):null
+                      const todayStr=new Date().toISOString().split('T')[0]
+                      const desde=new Date(rangoB.desde+'T00:00:00')
+                      const hasta=new Date(rangoB.hasta+'T23:59:59')
                       const filtradas=citasComp.filter((c:any)=>{
-                        if(!desde&&!hasta) return true
                         const f=new Date(c.fecha+'T12:00:00')
-                        if(desde&&f<desde) return false
-                        if(hasta&&f>hasta) return false
-                        return true
+                        return f>=desde&&f<=hasta
                       })
                       const totalRango=filtradas.reduce((a:any,cc:any)=>a+(cc.servicio?.precio||0),0)
-                      const label=desde||hasta?`${rangoB.desde||'inicio'} → ${rangoB.hasta||'hoy'}`:'Todo el período'
+                      const esHoy=rangoB.desde===todayStr&&rangoB.hasta===todayStr
+                      const label=esHoy?'Hoy':`${rangoB.desde} → ${rangoB.hasta}`
                       return (
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                          {[{l:desde||hasta?'Período selec.':'Hoy',v:'$'+(desde||hasta?totalRango:ingrHoyB),c:'#C9A84C'},{l:'Semana actual',v:'$'+ingrSemB,c:'#00D4FF'},{l:'Mes actual',v:'$'+ingrMesB,c:'#2ECC71'},{l:'Citas en rango',v:filtradas.length,c:'#BB8FCE'}].map(s=>(
+                          {[{l:label,v:'$'+totalRango,c:'#C9A84C'},{l:'Semana actual',v:'$'+ingrSemB,c:'#00D4FF'},{l:'Mes actual',v:'$'+ingrMesB,c:'#2ECC71'},{l:'Citas en rango',v:filtradas.length,c:'#BB8FCE'}].map(s=>(
                             <div key={s.l} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                               <p style={{fontSize:26,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                               <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
@@ -2128,21 +2160,21 @@ function App() {
                         <label style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:4}}>Hasta</label>
                         <input type="date" value={rangoD.hasta} onChange={e=>setRangoD({...rangoD,hasta:e.target.value})} style={{width:'100%',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,padding:'8px 10px',color:'#fff',fontSize:12}} />
                       </div>
-                      {(rangoD.desde||rangoD.hasta)&&<button onClick={()=>setRangoD({desde:'',hasta:''})} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:8,padding:'8px 12px',fontSize:11,cursor:'pointer',fontWeight:700,alignSelf:'flex-end'}}>✕ Limpiar</button>}
+                      {(()=>{const t=new Date().toISOString().split('T')[0];return(rangoD.desde!==t||rangoD.hasta!==t)&&<button onClick={()=>setRangoD({desde:t,hasta:t})} style={{background:'rgba(255,107,107,0.08)',border:'1px solid rgba(255,107,107,0.2)',color:'#FF6B6B',borderRadius:8,padding:'8px 12px',fontSize:11,cursor:'pointer',fontWeight:700,alignSelf:'flex-end'}}>↩ Volver a hoy</button>})()}
                     </div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                     {(()=>{
-                      const desdeD=rangoD.desde?new Date(rangoD.desde+'T00:00:00'):null
-                      const hastaD=rangoD.hasta?new Date(rangoD.hasta+'T23:59:59'):null
+                      const todayStrD=new Date().toISOString().split('T')[0]
+                      const desdeD=new Date(rangoD.desde+'T00:00:00')
+                      const hastaD=new Date(rangoD.hasta+'T23:59:59')
                       const filtradas=citasCompD.filter((cc:any)=>{
-                        if(!desdeD&&!hastaD) return true
                         const f=new Date(cc.fecha+'T12:00:00')
-                        if(desdeD&&f<desdeD) return false
-                        if(hastaD&&f>hastaD) return false
-                        return true
+                        return f>=desdeD&&f<=hastaD
                       })
                       const totalRango=filtradas.reduce((a:any,cc:any)=>a+(cc.servicio?.precio||0),0)
-                      return [{l:desdeD||hastaD?'Período sel.':'Hoy',v:'$'+(desdeD||hastaD?totalRango:ingrHoyD),c:'#C9A84C'},{l:'Semana',v:'$'+ingrSemD,c:'#00D4FF'},{l:'Mes',v:'$'+ingrMesD,c:'#2ECC71'},{l:'Gastos mes',v:'-$'+gastosMesD,c:'#E74C3C'}].map(s=>(
+                      const esHoyD=rangoD.desde===todayStrD&&rangoD.hasta===todayStrD
+                      const labelD=esHoyD?'Hoy':`${rangoD.desde} → ${rangoD.hasta}`
+                      return [{l:labelD,v:'$'+totalRango,c:'#C9A84C'},{l:'Semana',v:'$'+ingrSemD,c:'#00D4FF'},{l:'Mes',v:'$'+ingrMesD,c:'#2ECC71'},{l:'Gastos mes',v:'-$'+gastosMesD,c:'#E74C3C'}].map(s=>(
                         <div key={s.l} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:12,padding:'18px 14px',textAlign:'center'}}>
                           <p style={{fontSize:24,fontWeight:900,color:s.c,margin:0}}>{s.v}</p>
                           <p style={{fontSize:10,color:'#555',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>{s.l}</p>
